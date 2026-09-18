@@ -24,6 +24,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# -------------------------------------------------------------
+# ۱. مینی وب‌سرور سبک برای پاس کردن پورت
+# -------------------------------------------------------------
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -40,6 +43,20 @@ def start_health_server():
     logger.info(f"Health server listening on port {port}")
     server.serve_forever()
 
+# نام‌های فارسی لیگ‌ها
+LEAGUE_TITLES = {
+    "eng.1": "🇬🇧 لیگ برتر انگلیس",
+    "esp.1": "🇪🇸 لالیگا اسپانیا",
+    "ita.1": "🇮🇹 سری آ ایتالیا",
+    "ger.1": "🇩🇪 بوندسلیگا آلمان",
+    "fra.1": "🇫🇷 لوشامپیونه فرانسه",
+    "irn.1": "🇮🇷 لیگ برتر ایران",
+    "all": "🌍 بازی‌های مهم منتخب"
+}
+
+# -------------------------------------------------------------
+# ۲. هندلرها و هدایت‌کننده دکمه‌ها
+# -------------------------------------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -52,8 +69,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         f"⚽ **به FOOTBALL HUB خوش آمدید {user.first_name}!**\n\n"
-        "مرجع هوشمند نتایج زنده، مسابقات آینده، پیش‌بینی مسابقات و رقابت با دوستان.\n"
-        "یک بخش را از منوی زیر انتخاب کنید:"
+        "مرجع هوشمند نتایج زنده، برنامه مسابقات، جدول لیگ‌های جهان و پیش‌بینی مسابقات.\n"
+        "از منوی زیر بخش مورد نظر را انتخاب کنید:"
     )
     if update.callback_query:
         await update.callback_query.message.edit_text(text, reply_markup=kb.get_main_menu(), parse_mode="Markdown")
@@ -68,16 +85,57 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "home":
         await start(update, context)
 
-    elif data in ["matches_today", "matches_tomorrow"]:
-        target_date = datetime.utcnow() if data == "matches_today" else datetime.utcnow() + timedelta(days=1)
-        matches = await provider.get_matches(target_date.strftime("%Y%m%d"))
-        
+    # انتخاب لیگ برای بازی‌های امروز و فردا
+    elif data == "select_matches_today":
+        await query.message.edit_text(
+            "🔥 **مشاهده بازی‌های امروز**\n\nلطفاً لیگ مورد نظر را انتخاب کنید:",
+            reply_markup=kb.get_leagues_keyboard("today"),
+            parse_mode="Markdown"
+        )
+
+    elif data == "select_matches_tomorrow":
+        await query.message.edit_text(
+            "📅 **مشاهده بازی‌های فردا**\n\nلطفاً لیگ مورد نظر را انتخاب کنید:",
+            reply_markup=kb.get_leagues_keyboard("tmrw"),
+            parse_mode="Markdown"
+        )
+
+    # انتخاب لیگ برای جدول
+    elif data == "select_standings_league":
+        await query.message.edit_text(
+            "🏆 **مشاهده جداول لیگ‌ها**\n\nجدول کدام لیگ را می‌خواهید مشاهده کنید؟",
+            reply_markup=kb.get_leagues_keyboard("table"),
+            parse_mode="Markdown"
+        )
+
+    # نمایش بازی‌های تاریخ و لیگ انتخاب شده
+    elif data.startswith("today_") or data.startswith("tmrw_"):
+        is_today = data.startswith("today_")
+        league_code = data.replace("today_", "").replace("tmrw_", "")
+        target_date = datetime.utcnow() if is_today else datetime.utcnow() + timedelta(days=1)
+        date_str = target_date.strftime("%Y%m%d")
+
+        matches = []
+        if league_code == "all":
+            # دریافت گزیده‌ای از چند لیگ اصلی
+            for l_id in ["eng.1", "esp.1", "ita.1", "irn.1"]:
+                m_list = await provider.get_matches(date_str, league_code=l_id)
+                matches.extend(m_list[:2])
+        else:
+            matches = await provider.get_matches(date_str, league_code=league_code)
+
+        league_title = LEAGUE_TITLES.get(league_code, "فوتبال")
+        day_title = "امروز" if is_today else "فردا"
+
         if not matches:
-            await query.message.edit_text("⏳ در حال حاضر مسابقه‌ای در این تاریخ ثبت نشده است.", reply_markup=kb.get_back_button())
+            await query.message.edit_text(
+                f"⏳ برای {league_title} در تاریخ {day_title} مسابقه‌ای در منبع ثبت نشده است.",
+                reply_markup=kb.get_back_button()
+            )
             return
 
-        text = "🔥 **برنامه مسابقات معتبر:**\n━━━━━━━━━━━━━━━━━━━━\n\n"
-        for m in matches[:6]:
+        text = f"🔥 **برنامه مسابقات {league_title} ({day_title}):**\n━━━━━━━━━━━━━━━━━━━━\n\n"
+        for m in matches[:8]:
             status_icon = "🟢 در حال برگزاری" if m['status'] == "LIVE" else ("✅ پایان یافته" if m['status'] == "FINISHED" else "⏳ شروع نشده")
             score_line = f"\n⚽ نتیجه: {m['home_score']} - {m['away_score']}" if m['home_score'] is not None else ""
             text += (
@@ -88,16 +146,28 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         await query.message.edit_text(text, reply_markup=kb.get_back_button(), parse_mode="Markdown")
 
-    elif data == "standings_hub":
-        standings = await provider.get_standings("eng.1")
+    # نمایش جدول لیگ انتخاب شده
+    elif data.startswith("table_"):
+        league_code = data.replace("table_", "")
+        if league_code == "all":
+            league_code = "eng.1"
+
+        league_title = LEAGUE_TITLES.get(league_code, "لیگ")
+        standings = await provider.get_standings(league_code)
+        
         if not standings:
-            await query.message.edit_text("⏳ جدول در حال حاضر در دسترس نیست.", reply_markup=kb.get_back_button())
+            await query.message.edit_text(
+                f"⏳ جدول {league_title} در حال حاضر از منبع داده در دسترس نیست یا مسابقات این لیگ هنوز به پایان فصل رسیده است.",
+                reply_markup=kb.get_back_button()
+            )
             return
             
-        text = "🏆 **جدول لیگ برتر انگلیس (۱۰ تیم اول):**\n━━━━━━━━━━━━━━━━━━━━\n"
-        text += "`تیم              | ب | م | ب | امت`\n"
-        for s in standings:
-            text += f"`{s['team'][:12]:<12} | {s['w']} | {s['d']} | {s['l']} | {s['pts']}`\n"
+        text = f"🏆 **جدول رده‌بندی {league_title} (۱۰ تیم برتر):**\n━━━━━━━━━━━━━━━━━━━━\n"
+        text += "`رتبه | تیم             | ب  | امت`\n"
+        text += "`--------------------------------`\n"
+        for idx, s in enumerate(standings, 1):
+            team_name = s['team'][:13]
+            text += f"`{idx:<4} | {team_name:<15} | {s['w']:<2} | {s['pts']:<3}`\n"
         await query.message.edit_text(text, reply_markup=kb.get_back_button(), parse_mode="Markdown")
 
     elif data == "user_profile":
@@ -137,16 +207,18 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text(text, reply_markup=kb.get_back_button(), parse_mode="Markdown")
 
     elif data == "predictions_hub":
-        matches = await provider.get_matches()
+        matches = await provider.get_matches(league_code="eng.1")
         if not matches:
-            await query.message.edit_text("⏳ مسابقه‌ای برای پیش‌بینی وجود ندارد.", reply_markup=kb.get_back_button())
+            matches = await provider.get_matches(league_code="esp.1")
+        if not matches:
+            await query.message.edit_text("⏳ مسابقه‌ای برای پیش‌بینی در حال حاضر موجود نیست.", reply_markup=kb.get_back_button())
             return
         m = matches[0]
         text = (
-            f"🎯 **ثبت پیش‌بینی مسابقه:**\n\n"
+            f"🎯 **ثبت پیش‌بینی مسابقه حساس:**\n\n"
             f"🏆 {m['league']}\n"
             f"⚪ {m['home_team']} 🆚 {m['away_team']} 🔴\n\n"
-            "گزینه مورد نظر خود را انتخاب کنید:"
+            "گزینه پیش‌بینی خود را ثبت کنید:"
         )
         await query.message.edit_text(text, reply_markup=kb.get_prediction_keyboard(m['id']), parse_mode="Markdown")
 
@@ -181,7 +253,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🤖 **پنل مدیریت فوتبال هاب**\n\n"
         f"👥 تعداد کل کاربران: {user_count}\n"
         f"🎯 کل پیش‌بینی‌های ثبت‌شده: {pred_count}\n"
-        "سیستم در وضعیت پایدار و آنلاین است."
+        "سیستم چندلیگی فعال است."
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
