@@ -15,21 +15,25 @@ def get_main_menu():
     return InlineKeyboardMarkup(keyboard)
 
 def get_leagues_keyboard(action_prefix="matches_today"):
-    """کیبورد شیشه‌ای انتخاب لیگ برای بازی‌ها یا جداول"""
     keyboard = [
         [InlineKeyboardButton("🇬🇧 لیگ جزیره (انگلیس)", callback_data=f"{action_prefix}_eng.1"),
          InlineKeyboardButton("🇪🇸 لالیگا (اسپانیا)", callback_data=f"{action_prefix}_esp.1")],
         [InlineKeyboardButton("🇮🇹 سری آ (ایتالیا)", callback_data=f"{action_prefix}_ita.1"),
          InlineKeyboardButton("🇩🇪 بوندسلیگا (آلمان)", callback_data=f"{action_prefix}_ger.1")],
-        [InlineKeyboardButton("🇫🇷 لوشامپیونه (فرانسه)", callback_data=f"{action_prefix}_fra.1"),
-         InlineKeyboardButton("🇮🇷 لیگ برتر ایران", callback_data=f"{action_prefix}_irn.1")],
+        [InlineKeyboardButton("🇫🇷 لوشامپیونه (فرانسه)", callback_data=f"{action_prefix}_fra.1")],
         [InlineKeyboardButton("🌍 همه بازی‌های مهم", callback_data=f"{action_prefix}_all")],
         [InlineKeyboardButton("◀️ بازگشت به خانه 🏠", callback_data="home")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
-def get_back_button(target="home"):
-    return InlineKeyboardMarkup([[InlineKeyboardButton("◀️ بازگشت به خانه 🏠", callback_data=target)]])
+def get_upcoming_matches_keyboard(matches):
+    """لیست مسابقات آینده که هنوز شروع نشده‌اند برای انتخاب جهت پیش‌بینی"""
+    keyboard = []
+    for m in matches[:6]:
+        btn_text = f"⚽ {m['home_team']} 🆚 {m['away_team']}"
+        keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"select_pred_{m['id']}")])
+    keyboard.append([InlineKeyboardButton("◀️ بازگشت به منو اصلی 🏠", callback_data="home")])
+    return InlineKeyboardMarkup(keyboard)
 
 def get_prediction_keyboard(match_id):
     keyboard = [
@@ -38,8 +42,9 @@ def get_prediction_keyboard(match_id):
             InlineKeyboardButton("🤝 تساوی", callback_data=f"pred_out_{match_id}_DRAW"),
             InlineKeyboardButton("🔵 برد میهمان", callback_data=f"pred_out_{match_id}_AWAY")
         ],
-        [
-            InlineKeyboardButton("◀️ بازگشت", callback_data="predictions_hub")
-        ]
+        [InlineKeyboardButton("◀️ بازگشت به لیست پیش‌بینی‌ها", callback_data="predictions_hub")]
     ]
     return InlineKeyboardMarkup(keyboard)
+
+def get_back_button(target="home"):
+    return InlineKeyboardMarkup([[InlineKeyboardButton("◀️ بازگشت به خانه 🏠", callback_data=target)]])
