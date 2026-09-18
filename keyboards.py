@@ -6,15 +6,15 @@ def get_main_menu():
          InlineKeyboardButton("📅 بازی‌های فردا", callback_data="select_matches_tomorrow")],
         [InlineKeyboardButton("🎯 بخش پیش‌بینی", callback_data="predictions_hub"),
          InlineKeyboardButton("🏆 جداول لیگ‌ها", callback_data="select_standings_league")],
-        [InlineKeyboardButton("⭐ تیم‌های من", callback_data="my_teams"),
-         InlineKeyboardButton("🔎 جستجوی تیم", callback_data="search_team")],
         [InlineKeyboardButton("👤 پروفایل کاربری", callback_data="user_profile"),
          InlineKeyboardButton("🏅 رنکینگ و جدول", callback_data="leaderboard_hub")],
-        [InlineKeyboardButton("👥 لیگ دوستان", callback_data="private_leagues_hub")]
+        [InlineKeyboardButton("⭐ تیم‌های من", callback_data="my_teams"),
+         InlineKeyboardButton("🔎 جستجوی تیم", callback_data="search_team")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
-def get_leagues_keyboard(action_prefix="matches_today"):
+def get_matches_leagues_keyboard(action_prefix="today"):
+    """کیبورد بازی‌ها که شامل گزینه همه بازی‌ها نیز هست"""
     keyboard = [
         [InlineKeyboardButton("🇬🇧 لیگ جزیره (انگلیس)", callback_data=f"{action_prefix}_eng.1"),
          InlineKeyboardButton("🇪🇸 لالیگا (اسپانیا)", callback_data=f"{action_prefix}_esp.1")],
@@ -26,13 +26,24 @@ def get_leagues_keyboard(action_prefix="matches_today"):
     ]
     return InlineKeyboardMarkup(keyboard)
 
+def get_standings_leagues_keyboard():
+    """کیبورد جدول لیگ‌ها — بدون گزینه غیرمنطقی همه بازی‌ها"""
+    keyboard = [
+        [InlineKeyboardButton("🇬🇧 لیگ برتر انگلیس", callback_data="table_eng.1"),
+         InlineKeyboardButton("🇪🇸 لالیگا اسپانیا", callback_data="table_esp.1")],
+        [InlineKeyboardButton("🇮🇹 سری آ ایتالیا", callback_data="table_ita.1"),
+         InlineKeyboardButton("🇩🇪 بوندسلیگا آلمان", callback_data="table_ger.1")],
+        [InlineKeyboardButton("🇫🇷 لوشامپیونه فرانسه", callback_data="table_fra.1")],
+        [InlineKeyboardButton("◀️ بازگشت به خانه 🏠", callback_data="home")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
 def get_upcoming_matches_keyboard(matches):
-    """لیست مسابقات آینده که هنوز شروع نشده‌اند برای انتخاب جهت پیش‌بینی"""
     keyboard = []
     for m in matches[:6]:
         btn_text = f"⚽ {m['home_team']} 🆚 {m['away_team']}"
         keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"select_pred_{m['id']}")])
-    keyboard.append([InlineKeyboardButton("◀️ بازگشت به منو اصلی 🏠", callback_data="home")])
+    keyboard.append([InlineKeyboardButton("◀️ بازگشت به خانه 🏠", callback_data="home")])
     return InlineKeyboardMarkup(keyboard)
 
 def get_prediction_keyboard(match_id):
@@ -42,7 +53,7 @@ def get_prediction_keyboard(match_id):
             InlineKeyboardButton("🤝 تساوی", callback_data=f"pred_out_{match_id}_DRAW"),
             InlineKeyboardButton("🔵 برد میهمان", callback_data=f"pred_out_{match_id}_AWAY")
         ],
-        [InlineKeyboardButton("◀️ بازگشت به لیست پیش‌بینی‌ها", callback_data="predictions_hub")]
+        [InlineKeyboardButton("◀️ بازگشت به مسابقات", callback_data="predictions_hub")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
