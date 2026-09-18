@@ -24,9 +24,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# -------------------------------------------------------------
-# ۱. مینی وب‌سرور سبک برای پاس کردن پورت
-# -------------------------------------------------------------
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -43,20 +40,18 @@ def start_health_server():
     logger.info(f"Health server listening on port {port}")
     server.serve_forever()
 
-# نام‌های فارسی لیگ‌ها
 LEAGUE_TITLES = {
     "eng.1": "🇬🇧 لیگ برتر انگلیس",
     "esp.1": "🇪🇸 لالیگا اسپانیا",
     "ita.1": "🇮🇹 سری آ ایتالیا",
     "ger.1": "🇩🇪 بوندسلیگا آلمان",
     "fra.1": "🇫🇷 لوشامپیونه فرانسه",
-    "irn.1": "🇮🇷 لیگ برتر ایران",
     "all": "🌍 بازی‌های مهم منتخب"
 }
 
-# -------------------------------------------------------------
-# ۲. هندلرها و هدایت‌کننده دکمه‌ها
-# -------------------------------------------------------------
+# کش ساده برای دسترسی به مشخصات بازی‌ها
+MATCH_CACHE = {}
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -69,8 +64,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         f"⚽ **به FOOTBALL HUB خوش آمدید {user.first_name}!**\n\n"
-        "مرجع هوشمند نتایج زنده، برنامه مسابقات، جدول لیگ‌های جهان و پیش‌بینی مسابقات.\n"
-        "از منوی زیر بخش مورد نظر را انتخاب کنید:"
+        "مرجع هوشمند نتایج زنده، برنامه مسابقات آینده، جداول معتبر و پیش‌بینی مسابقات.\n"
+        "یکی از گزینه‌های زیر را انتخاب کنید:"
     )
     if update.callback_query:
         await update.callback_query.message.edit_text(text, reply_markup=kb.get_main_menu(), parse_mode="Markdown")
@@ -85,7 +80,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "home":
         await start(update, context)
 
-    # انتخاب لیگ برای بازی‌های امروز و فردا
     elif data == "select_matches_today":
         await query.message.edit_text(
             "🔥 **مشاهده بازی‌های امروز**\n\nلطفاً لیگ مورد نظر را انتخاب کنید:",
@@ -100,7 +94,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown"
         )
 
-    # انتخاب لیگ برای جدول
     elif data == "select_standings_league":
         await query.message.edit_text(
             "🏆 **مشاهده جداول لیگ‌ها**\n\nجدول کدام لیگ را می‌خواهید مشاهده کنید؟",
@@ -108,7 +101,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown"
         )
 
-    # نمایش بازی‌های تاریخ و لیگ انتخاب شده
     elif data.startswith("today_") or data.startswith("tmrw_"):
         is_today = data.startswith("today_")
         league_code = data.replace("today_", "").replace("tmrw_", "")
@@ -117,8 +109,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         matches = []
         if league_code == "all":
-            # دریافت گزیده‌ای از چند لیگ اصلی
-            for l_id in ["eng.1", "esp.1", "ita.1", "irn.1"]:
+            for l_id in ["eng.1", "esp.1", "ita.1"]:
                 m_list = await provider.get_matches(date_str, league_code=l_id)
                 matches.extend(m_list[:2])
         else:
@@ -129,7 +120,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not matches:
             await query.message.edit_text(
-                f"⏳ برای {league_title} در تاریخ {day_title} مسابقه‌ای در منبع ثبت نشده است.",
+                f"⏳ برای {league_title} در تاریخ {day_title} مسابقه‌ای ثبت نشده است.",
                 reply_markup=kb.get_back_button()
             )
             return
@@ -146,7 +137,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         await query.message.edit_text(text, reply_markup=kb.get_back_button(), parse_mode="Markdown")
 
-    # نمایش جدول لیگ انتخاب شده
     elif data.startswith("table_"):
         league_code = data.replace("table_", "")
         if league_code == "all":
@@ -157,7 +147,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if not standings:
             await query.message.edit_text(
-                f"⏳ جدول {league_title} در حال حاضر از منبع داده در دسترس نیست یا مسابقات این لیگ هنوز به پایان فصل رسیده است.",
+                f"⏳ جدول {league_title} در حال حاضر در دسترس نیست.",
                 reply_markup=kb.get_back_button()
             )
             return
@@ -167,8 +157,89 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += "`--------------------------------`\n"
         for idx, s in enumerate(standings, 1):
             team_name = s['team'][:13]
-            text += f"`{idx:<4} | {team_name:<15} | {s['w']:<2} | {s['pts']:<3}`\n"
+            text += f"`{idx:<4} | {team_name:<15} | {s['p']:<2} | {s['pts']:<3}`\n"
         await query.message.edit_text(text, reply_markup=kb.get_back_button(), parse_mode="Markdown")
+
+    # =========================================================================
+    # بخش پیش‌بینی هوشمند (فقط مسابقات آینده و شروع‌نشده)
+    # =========================================================================
+    elif data == "predictions_hub":
+        today_str = datetime.utcnow().strftime("%Y%m%d")
+        tmrw_str = (datetime.utcnow() + timedelta(days=1)).strftime("%Y%m%d")
+
+        # جمع‌آوری بازی‌های امروز و فردا
+        candidate_matches = []
+        for l_code in ["eng.1", "esp.1", "ita.1", "ger.1"]:
+            # بازی‌های امروز
+            candidate_matches.extend(await provider.get_matches(today_str, league_code=l_code))
+            # بازی‌های فردا
+            candidate_matches.extend(await provider.get_matches(tmrw_str, league_code=l_code))
+
+        # فیلتر جدی: فقط بازی‌هایی که قطعاً شروع نشده‌اند (UPCOMING)
+        upcoming_matches = [m for m in candidate_matches if m.get("status") == "UPCOMING"]
+
+        if not upcoming_matches:
+            await query.message.edit_text(
+                "⏳ در حال حاضر هیچ مسابقه‌ای که شروع نشده باشد برای ثبت پیش‌بینی پیدا نشد.",
+                reply_markup=kb.get_back_button()
+            )
+            return
+
+        # ذخیره در کش
+        for m in upcoming_matches:
+            MATCH_CACHE[m["id"]] = m
+
+        text = (
+            "🎯 **بخش پیش‌بینی مسابقات آینده:**\n\n"
+            "یکی از بازی‌های زیر را که هنوز شروع نشده است انتخاب کنید و نتیجه را حدس بزنید:\n"
+            "━━━━━━━━━━━━━━━━━━━━"
+        )
+        await query.message.edit_text(
+            text,
+            reply_markup=kb.get_upcoming_matches_keyboard(upcoming_matches),
+            parse_mode="Markdown"
+        )
+
+    elif data.startswith("select_pred_"):
+        match_id = data.replace("select_pred_", "")
+        m = MATCH_CACHE.get(match_id)
+        if not m:
+            # اگر در حافظه نبود، مستقیم از بازی‌های فردا مجدد جستجو کن
+            candidate = await provider.get_matches((datetime.utcnow() + timedelta(days=1)).strftime("%Y%m%d"))
+            for item in candidate:
+                if item["id"] == match_id:
+                    m = item
+                    break
+
+        if not m:
+            await query.message.edit_text("⚠️ اطلاعات مسابقه یافت نشد یا مهلت پیش‌بینی به پایان رسیده است.", reply_markup=kb.get_back_button())
+            return
+
+        text = (
+            f"🎯 **ثبت پیش‌بینی مسابقه:**\n\n"
+            f"🏆 {m['league']}\n"
+            f"⚪ **{m['home_team']}** 🆚 **{m['away_team']}** 🔴\n"
+            f"🏟 {m['venue']}\n\n"
+            "نتیجه احتمالی را انتخاب کنید:"
+        )
+        await query.message.edit_text(text, reply_markup=kb.get_prediction_keyboard(m['id']), parse_mode="Markdown")
+
+    elif data.startswith("pred_out_"):
+        parts = data.split("_")
+        match_id, choice = parts[2], parts[3]
+        user_id = query.from_user.id
+        
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            try:
+                await db.execute("""
+                    INSERT INTO predictions (user_id, match_id, outcome_choice, predicted_home, predicted_away)
+                    VALUES (?, ?, ?, 0, 0)
+                """, (user_id, match_id, choice))
+                await db.execute("UPDATE users SET total_predictions = total_predictions + 1 WHERE user_id = ?", (user_id,))
+                await db.commit()
+                await query.message.edit_text("✅ **پیش‌بینی شما با موفقیت ثبت شد و قفل گردید!**", reply_markup=kb.get_back_button())
+            except Exception:
+                await query.message.edit_text("⚠️ شما قبلاً پیش‌بینی خود را برای این بازی ثبت کرده‌اید.", reply_markup=kb.get_back_button())
 
     elif data == "user_profile":
         user_id = query.from_user.id
@@ -206,38 +277,14 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.edit_text(text, reply_markup=kb.get_back_button(), parse_mode="Markdown")
 
-    elif data == "predictions_hub":
-        matches = await provider.get_matches(league_code="eng.1")
-        if not matches:
-            matches = await provider.get_matches(league_code="esp.1")
-        if not matches:
-            await query.message.edit_text("⏳ مسابقه‌ای برای پیش‌بینی در حال حاضر موجود نیست.", reply_markup=kb.get_back_button())
-            return
-        m = matches[0]
-        text = (
-            f"🎯 **ثبت پیش‌بینی مسابقه حساس:**\n\n"
-            f"🏆 {m['league']}\n"
-            f"⚪ {m['home_team']} 🆚 {m['away_team']} 🔴\n\n"
-            "گزینه پیش‌بینی خود را ثبت کنید:"
-        )
-        await query.message.edit_text(text, reply_markup=kb.get_prediction_keyboard(m['id']), parse_mode="Markdown")
+    elif data == "my_teams":
+        await query.message.edit_text("⭐ به زودی: امکان افزودن تیم‌های دلخواه به لیست علاقه‌مندی‌ها.", reply_markup=kb.get_back_button())
 
-    elif data.startswith("pred_out_"):
-        parts = data.split("_")
-        match_id, choice = parts[2], parts[3]
-        user_id = query.from_user.id
-        
-        async with aiosqlite.connect(DATABASE_PATH) as db:
-            try:
-                await db.execute("""
-                    INSERT INTO predictions (user_id, match_id, outcome_choice, predicted_home, predicted_away)
-                    VALUES (?, ?, ?, 0, 0)
-                """, (user_id, match_id, choice))
-                await db.execute("UPDATE users SET total_predictions = total_predictions + 1 WHERE user_id = ?", (user_id,))
-                await db.commit()
-                await query.message.edit_text("✅ **پیش‌بینی شما با موفقیت ثبت شد و قفل گردید!**", reply_markup=kb.get_back_button())
-            except Exception:
-                await query.message.edit_text("⚠️ شما قبلاً پیش‌بینی خود را برای این بازی ثبت کرده‌اید.", reply_markup=kb.get_back_button())
+    elif data == "search_team":
+        await query.message.edit_text("🔎 به زودی: موتور جستجوی اختصاصی تیم‌ها و وضعیت فرم ۵ بازی اخیر.", reply_markup=kb.get_back_button())
+
+    elif data == "private_leagues_hub":
+        await query.message.edit_text("👥 **لیگ خصوصی بین دوستان**\n\nبه زودی با ساخت کد اختصاصی می‌توانید دوستانتان را به چالش بکشید!", reply_markup=kb.get_back_button())
 
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -253,7 +300,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🤖 **پنل مدیریت فوتبال هاب**\n\n"
         f"👥 تعداد کل کاربران: {user_count}\n"
         f"🎯 کل پیش‌بینی‌های ثبت‌شده: {pred_count}\n"
-        "سیستم چندلیگی فعال است."
+        "وضعیت سرور و وب‌هوک کاملاً نرمال است."
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
