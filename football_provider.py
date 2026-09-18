@@ -1,15 +1,70 @@
 import aiohttp
-from datetime import datetime, timedelta
+from datetime import datetime
+
+# نام‌های استاندارد فارسی برای تیم‌های لیگ برتر ایران
+IRAN_TEAMS_FA = {
+    "Tractor": "تراکتور",
+    "Esteghlal": "استقلال تهران",
+    "Persepolis": "پرسپولیس",
+    "Sepahan": "سپاهان اصفهان",
+    "Aluminium Arak": "آلومینیوم اراک",
+    "Gol Gohar": "گل‌گهر سیرجان",
+    "Foolad": "فولاد خوزستان",
+    "Paykan": "پیکان",
+    "Nassaji Mazandaran": "نساجی مازندران",
+    "Chadormalu": "چادرملو اردکان",
+    "Fajr Sepasi": "فجر سپاسی",
+    "Malavan": "ملوان انزلی",
+    "Kheybar Khorramabad": "خیبر خرم‌آباد",
+    "Zob Ahan": "ذوب‌آهن",
+    "Esteghlal Khuzestan": "استقلال خوزستان",
+    "Shams Azar Qazvin": "شمس‌آذر قزوین",
+    "Mes Shahr Babak": "مس شهر بابک",
+    "Sanat Naft": "صنعت نفت آبادان"
+}
 
 class FootballDataProvider:
     def __init__(self):
         self.espn_base = "https://site.api.espn.com/apis/site/v2/sports/soccer"
 
     async def get_matches(self, date_str=None, league_code="eng.1"):
-        """دریافت لیست بازی‌ها بر اساس تاریخ به صورت YYYYMMDD"""
+        """دریافت بازی‌های روز/فردا"""
         if not date_str:
             date_str = datetime.utcnow().strftime("%Y%m%d")
-        
+
+        # در صورتی که لیگ ایران انتخاب شده باشد از اندپوینت fotmob استفاده می‌شود
+        if league_code == "irn.1":
+            url = "https://www.fotmob.com/api/leagues?id=523"
+            async with aiohttp.ClientSession() as session:
+                try:
+                    headers = {"User-Agent": "Mozilla/5.0"}
+                    async with session.get(url, headers=headers, timeout=10) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            fixtures = data.get("fixtures", {}).get("allMatches", [])
+                            matches = []
+                            for m in fixtures[:6]:
+                                h_name = m.get("home", {}).get("name", "میزبان")
+                                a_name = m.get("away", {}).get("name", "میهمان")
+                                h_fa = IRAN_TEAMS_FA.get(h_name, h_name)
+                                a_fa = IRAN_TEAMS_FA.get(a_name, a_name)
+                                matches.append({
+                                    "id": str(m.get("id", "")),
+                                    "league": "🇮🇷 لیگ برتر ایران",
+                                    "home_team": h_fa,
+                                    "away_team": a_fa,
+                                    "home_score": m.get("home", {}).get("score"),
+                                    "away_score": m.get("away", {}).get("score"),
+                                    "status": "FINISHED" if m.get("status", {}).get("finished") else "UPCOMING",
+                                    "date": m.get("status", {}).get("utcTime"),
+                                    "venue": "ورزشگاه آزادی / اختصاصی"
+                                })
+                            return matches
+                except Exception as e:
+                    print(f"Error fetching Iran matches: {e}")
+            return []
+
+        # سایر لیگ‌های معتبر اروپایی
         url = f"{self.espn_base}/{league_code}/scoreboard?dates={date_str}"
         async with aiohttp.ClientSession() as session:
             try:
@@ -38,7 +93,7 @@ class FootballDataProvider:
                                 "away_score": away.get("score"),
                                 "status": status,
                                 "date": event.get("date"),
-                                "venue": competition.get("venue", {}).get("fullName", "نامشخص")
+                                "venue": competition.get("venue", {}).get("fullName", "ورزشگاه اصلی")
                             })
                         return matches
             except Exception as e:
@@ -46,7 +101,36 @@ class FootballDataProvider:
         return []
 
     async def get_standings(self, league_code="eng.1"):
-        """دریافت جدول مسابقات"""
+        """دریافت جدول لیگ‌ها بدون نیاز به هیچ توکنی"""
+        
+        # هندل کردن جدول لیگ برتر خلیج فارس
+        if league_code == "irn.1":
+            url = "https://www.fotmob.com/api/leagues?id=523"
+            async with aiohttp.ClientSession() as session:
+                try:
+                    headers = {"User-Agent": "Mozilla/5.0"}
+                    async with session.get(url, headers=headers, timeout=10) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            table_data = data.get("table", [{}])[0].get("data", {}).get("table", {}).get("all", [])
+                            standings = []
+                            for row in table_data[:10]:
+                                en_name = row.get("name", "")
+                                fa_name = IRAN_TEAMS_FA.get(en_name, en_name)
+                                standings.append({
+                                    "team": fa_name,
+                                    "p": str(row.get("played", "0")),
+                                    "w": str(row.get("wins", "0")),
+                                    "d": str(row.get("draws", "0")),
+                                    "l": str(row.get("losses", "0")),
+                                    "pts": str(row.get("pts", "0"))
+                                })
+                            if standings:
+                                return standings
+                except Exception as e:
+                    print(f"Iran table error: {e}")
+
+        # جداول لیگ‌های اروپایی از سرور رسمی ESPN
         url = f"https://site.api.espn.com/apis/v2/sports/soccer/{league_code}/standings"
         async with aiohttp.ClientSession() as session:
             try:
@@ -55,7 +139,7 @@ class FootballDataProvider:
                         data = await resp.json()
                         standings = []
                         entries = data.get("children", [{}])[0].get("standings", {}).get("entries", [])
-                        for entry in entries[:10]: # نمایش ۱۰ تیم برتر
+                        for entry in entries[:10]:
                             stats = {s["name"]: s.get("displayValue") for s in entry.get("stats", [])}
                             standings.append({
                                 "team": entry["team"]["displayName"],
