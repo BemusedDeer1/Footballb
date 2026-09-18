@@ -1,7 +1,7 @@
 import aiohttp
 from datetime import datetime
 
-# ترجمه و یکسان‌سازی نام تیم‌های لیگ برتر ایران
+# تطبیق نام انگلیسی تیم‌های لیگ ایران با نام فارسی
 IRAN_TEAMS_FA = {
     "Tractor": "تراکتور تبریز",
     "Tractor Sazi": "تراکتور تبریز",
@@ -21,8 +21,9 @@ IRAN_TEAMS_FA = {
     "Nassaji Mazandaran FC": "نساجی مازندران",
     "Chador Malu Yazd": "چادرملو اردکان",
     "Chadormalu": "چادرملو اردکان",
+    "Chadormalou Ardakan": "چادرملو اردکان",
     "Fajr Sepasi": "فجر سپاسی شیراز",
-    "Fajr Sepasi FC": "فجر سپاسی شیراز",
+    "Fajr Sepasi Shiraz": "فجر سپاسی شیراز",
     "Malavan": "ملوان بندرانزلی",
     "Malavan Bandar Anzali FC": "ملوان بندرانزلی",
     "Kheybar Khorramabad": "خیبر خرم‌آباد",
@@ -31,23 +32,25 @@ IRAN_TEAMS_FA = {
     "Esteghlal Khuzestan": "استقلال خوزستان",
     "Shams Azar Qazvin": "شمس‌آذر قزوین",
     "Mes Shahr Babak": "مس شهر بابک",
-    "Sanat Naft Abadan": "صنعت نفت آبادان"
+    "Mes Shahr-e Babak": "مس شهر بابک",
+    "Sanat Naft": "صنعت نفت آبادان",
+    "Havadar": "هوادار تهران",
+    "Mes Rafsanjan": "مس رفسنجان"
 }
 
 class FootballDataProvider:
     def __init__(self):
         self.espn_base = "https://site.api.espn.com/apis/site/v2/sports/soccer"
-        # اندپوینت رایگان و آزاد دیتای لیگ ایران
         self.tsdb_base = "https://www.thesportsdb.com/api/v1/json/3"
 
     async def get_matches(self, date_str=None, league_code="eng.1"):
-        """دریافت زنده برنامه مسابقات و نتایج"""
+        """دریافت زنده مسابقات با تفکیک دقیق بازی‌های شروع‌نشده و تمام‌شده"""
         if not date_str:
             date_str = datetime.utcnow().strftime("%Y%m%d")
 
-        # اگر لیگ ایران بود، دیتای زنده مسابقات از لیگ ۴۶۹۱ (Persian Gulf Pro League) دریافت می‌شود
+        # لیگ برتر ایران با شناسه رسمی 4742
         if league_code == "irn.1":
-            url = f"{self.tsdb_base}/eventsnextleague.php?id=4691"
+            url = f"{self.tsdb_base}/eventsnextleague.php?id=4742"
             async with aiohttp.ClientSession() as session:
                 try:
                     async with session.get(url, timeout=10) as resp:
@@ -58,24 +61,33 @@ class FootballDataProvider:
                             for ev in events[:6]:
                                 h_name = ev.get("strHomeTeam", "میزبان")
                                 a_name = ev.get("strAwayTeam", "میهمان")
+                                st = ev.get("strStatus", "")
+                                
+                                if st in ["Match Finished", "FT", "AET"]:
+                                    status = "FINISHED"
+                                elif "In Progress" in st or "Live" in st:
+                                    status = "LIVE"
+                                else:
+                                    status = "UPCOMING"
+
                                 matches.append({
                                     "id": str(ev.get("idEvent")),
                                     "league": "🇮🇷 لیگ برتر ایران",
                                     "home_team": IRAN_TEAMS_FA.get(h_name, h_name),
                                     "away_team": IRAN_TEAMS_FA.get(a_name, a_name),
-                                    "home_score": ev.get("intHomeScore"),
-                                    "away_score": ev.get("intAwayScore"),
-                                    "status": "FINISHED" if ev.get("strStatus") == "Match Finished" else "UPCOMING",
+                                    "home_score": ev.get("intHomeScore") if status != "UPCOMING" else None,
+                                    "away_score": ev.get("intAwayScore") if status != "UPCOMING" else None,
+                                    "status": status,
                                     "date": ev.get("dateEvent"),
-                                    "venue": ev.get("strVenue") or "ورزشگاه اصلی"
+                                    "venue": ev.get("strVenue") or "ورزشگاه اختصاصی"
                                 })
                             if matches:
                                 return matches
                 except Exception as e:
-                    print(f"Live Iran matches fetch error: {e}")
+                    print(f"Iran matches fetch error: {e}")
             return []
 
-        # سایر لیگ‌های اروپایی (ESPN)
+        # سایر لیگ‌های اروپایی از سرور رسمی ESPN
         url = f"{self.espn_base}/{league_code}/scoreboard?dates={date_str}"
         async with aiohttp.ClientSession() as session:
             try:
@@ -91,20 +103,25 @@ class FootballDataProvider:
                             status_obj = event.get("status", {})
                             status_type = status_obj.get("type", {})
                             type_name = status_type.get("name", "").upper()
+                            state = status_type.get("state", "").lower()
                             is_completed = status_type.get("completed", False)
 
-                            # رفع باگ نمایش وضعیت: اگر نتیجه داشت یا تایپ نهایی بود بازی تمام شده است
-                            h_score = home.get("score")
-                            a_score = away.get("score")
-
-                            if is_completed or "FINAL" in type_name or "FULL_TIME" in type_name or "FT" in type_name:
+                            # تفکیک دقیق:
+                            # 1. بازی تمام شده
+                            if is_completed or "FINAL" in type_name or "FULL_TIME" in type_name or state == "post":
                                 status = "FINISHED"
-                            elif "PROGRESS" in type_name or "HALFTIME" in type_name or "LIVE" in type_name:
+                                h_score = home.get("score")
+                                a_score = away.get("score")
+                            # 2. بازی در حال برگزاری
+                            elif "PROGRESS" in type_name or "HALFTIME" in type_name or state == "in":
                                 status = "LIVE"
-                            elif h_score is not None and a_score is not None:
-                                status = "FINISHED"
+                                h_score = home.get("score")
+                                a_score = away.get("score")
+                            # 3. بازی شروع نشده (نتیجه نباید نشان داده شود)
                             else:
                                 status = "UPCOMING"
+                                h_score = None
+                                a_score = None
 
                             matches.append({
                                 "id": event["id"],
@@ -115,7 +132,7 @@ class FootballDataProvider:
                                 "away_score": a_score,
                                 "status": status,
                                 "date": event.get("date"),
-                                "venue": competition.get("venue", {}).get("fullName", "ورزشگاه اختصاصی")
+                                "venue": competition.get("venue", {}).get("fullName", "ورزشگاه اصلی")
                             })
                         return matches
             except Exception as e:
@@ -123,11 +140,11 @@ class FootballDataProvider:
         return []
 
     async def get_standings(self, league_code="eng.1"):
-        """دریافت زنده جدول رده‌بندی از وب بدون هیچ فایل دستی"""
-        # جدول زنده لیگ برتر ایران از سرور زنده TheSportsDB (لیگ ۴۶۹۱)
+        """دریافت زنده و آنلاین جدول رده‌بندی"""
+        # جدول زنده لیگ برتر ایران با شناسه اصلاح‌شده 4742
         if league_code == "irn.1":
-            # دریافت جدول آخرین فصل فعال
-            url = f"{self.tsdb_base}/lookuptable.php?l=4691&s=2026-2027"
+            # جدول مسابقات از سرور آزاد دیتابیس فوتبال
+            url = f"{self.tsdb_base}/lookuptable.php?l=4742&s=2024-2025"
             async with aiohttp.ClientSession() as session:
                 try:
                     async with session.get(url, timeout=10) as resp:
@@ -148,10 +165,10 @@ class FootballDataProvider:
                             if standings:
                                 return standings
                 except Exception as e:
-                    print(f"Live Iran Standings fetch error: {e}")
+                    print(f"Iran Standings fetch error: {e}")
             return []
 
-        # جدول زنده لیگ‌های اروپایی از سرور رسمی ESPN
+        # جدول زنده لیگ‌های اروپایی از ESPN
         url = f"https://site.api.espn.com/apis/v2/sports/soccer/{league_code}/standings"
         async with aiohttp.ClientSession() as session:
             try:
