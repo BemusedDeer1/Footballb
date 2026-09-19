@@ -58,12 +58,13 @@ def get_user_badge(points: int) -> str:
     else:
         return "🥉"
 
+# سرور پایداری کلود
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header("Content-type", "text/plain; charset=utf-8")
         self.end_headers()
-        self.wfile.write(b"Football Hub Engine 3.0 Online! 200 OK")
+        self.wfile.write(b"Football Hub Engine is Online! 200 OK")
 
     def log_message(self, format, *args):
         return
@@ -158,7 +159,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
 
-    # بررسی رفرال کد (دعوت دوست)
     if context.args and len(context.args) > 0:
         referrer_id_str = context.args[0]
         if referrer_id_str.isdigit() and int(referrer_id_str) != user.id:
@@ -172,7 +172,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         try:
                             await context.bot.send_message(
                                 chat_id=ref_id,
-                                text=f"🎉 دوست شما <b>{html.escape(user.first_name)}</b> با لینک شما به ربات پیوست!\n💰 <b>+30 امتیاز پاداش</b> به موجودی شما اضافه شد.",
+                                text=f"🎉 دوست شما <b>{html.escape(user.first_name)}</b> با لینک شما به ربات پیوست!\n💰 <b>+30 امتیاز پاداش</b> به حساب شما اضافه شد.",
                                 parse_mode="HTML"
                             )
                         except Exception:
@@ -183,9 +183,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"⚽ <b>FOOTBALL HUB</b> | <i>PRO EDITION</i> ✨\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         f"سلام <b>{safe_name}</b> عزیز، خوش اومدی به هاب فوتبالی! 🔥\n\n"
-        "⚡️ نتایج زنده و برنامه مسابقات اروپایی\n"
+        "⚡️ نتایج زنده و برنامه لحظه‌ای مسابقات معتبر\n"
         "🎯 پیش‌بینی بازی‌ها و رقابت با <b>Escobar AI 🤖</b>\n"
-        "⚔️ دوئل اطلاعات عمومی و <b>پنالتی‌کشی دونفره</b> در گروه!\n"
+        "⚔️ دوئل اطلاعات عمومی و <b>پنالتی تک‌ضرب</b> در گروه!\n"
         "🎁 پاداش روزانه و شوت‌های سرعتی\n"
         "💰 موجودی شما: <b>100 امتیاز</b> 🪙\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
@@ -303,7 +303,7 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 # -------------------------------------------------------------
-# ۳. سیستم پنالتی‌کشی دونفره ۵ ضربه‌ای (Penalty Shootout ⚽️🥅)
+# ۳. سیستم پنالتی تک‌ضرب تا برنده قطعی (Sudden Death)
 # -------------------------------------------------------------
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -329,17 +329,17 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
 
     p_id = str(random.randint(10000, 99999))
     ACTIVE_SHOOTOUTS[p_id] = {
-        "p1": {"id": challenger.id, "name": challenger.first_name, "shots": []},
-        "p2": {"id": opponent.id, "name": opponent.first_name, "shots": []},
+        "p1": {"id": challenger.id, "name": challenger.first_name, "shot": None},
+        "p2": {"id": opponent.id, "name": opponent.first_name, "shot": None},
         "current_turn": challenger.id,
         "round": 1,
-        "stake": 30,
+        "stake": 25,
         "chat_id": update.effective_chat.id,
         "message_id": None
     }
 
     p_kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🧤 قبول چالش پنالتی‌کشی", callback_data=f"acp_{p_id}"),
+        [InlineKeyboardButton("🧤 قبول چالش پنالتی تک‌ضرب", callback_data=f"acp_{p_id}"),
          InlineKeyboardButton("❌ انصراف", callback_data=f"rjp_{p_id}")]
     ])
 
@@ -347,13 +347,14 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
     o_name = html.escape(opponent.first_name)
 
     text = (
-        "🥅 <b>نبرد نفس‌گیر پنالتی‌کشی (۵ ضربه)!</b> ⚽️\n"
+        "🥅 <b>دوئل تک‌ضرب پنالتی (مرگ ناگهانی)!</b> ⚽️\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 پنالتی‌زن اول: <b>{c_name}</b>\n"
-        f"👤 پنالتی‌زن دوم: <b>{o_name}</b>\n"
-        "💰 شرط مسابقه: <b>30 امتیاز</b> 🪙\n"
+        f"👤 شوت‌زن اول: <b>{c_name}</b>\n"
+        f"👤 شوت‌زن دوم: <b>{o_name}</b>\n"
+        "💰 شرط مسابقه: <b>25 امتیاز</b> 🪙\n"
+        "⚡️ قانون: هر نفر ۱ شوت می‌زند؛ در صورت تساوی، ضربات تا تعیین برنده قطعی ادامه پیدا می‌کند!\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
-        f"آیا <b>{o_name}</b> چالش پنالتی را می‌پذیرد؟"
+        f"آیا <b>{o_name}</b> چالش را می‌پذیرد؟"
     )
     sent_msg = await update.message.reply_text(text, reply_markup=p_kb, parse_mode="HTML")
     ACTIVE_SHOOTOUTS[p_id]["message_id"] = sent_msg.message_id
@@ -362,22 +363,19 @@ def render_shootout_board(shootout):
     p1 = shootout["p1"]
     p2 = shootout["p2"]
 
-    p1_board = " ".join(p1["shots"]) if p1["shots"] else "هنوز ضربه‌ای نزده"
-    p2_board = " ".join(p2["shots"]) if p2["shots"] else "هنوز ضربه‌ای نزده"
+    p1_status = p1["shot"] if p1["shot"] else "⏳ در انتظار شوت..."
+    p2_status = p2["shot"] if p2["shot"] else "⏳ در انتظار شوت..."
 
-    p1_score = p1["shots"].count("⚽️")
-    p2_score = p2["shots"].count("⚽️")
-
-    cur_shooter_name = p1["name"] if shootout["current_turn"] == p1["id"] else p2["name"]
+    cur_shooter = p1["name"] if shootout["current_turn"] == p1["id"] else p2["name"]
 
     text = (
-        f"🥅 <b>راند شماره {shootout['round']} از ۵:</b>\n"
+        f"🥅 <b>راند طلایی شماره {shootout['round']}:</b>\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 <b>{html.escape(p1['name'])}</b>: {p1_board} (<b>{p1_score} گل</b>)\n"
-        f"👤 <b>{html.escape(p2['name'])}</b>: {p2_board} (<b>{p2_score} گل</b>)\n"
+        f"👤 <b>{html.escape(p1['name'])}</b>: {p1_status}\n"
+        f"👤 <b>{html.escape(p2['name'])}</b>: {p2_status}\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
-        f"👉 نوبت شوت زدن: <b>{html.escape(cur_shooter_name)}</b>\n"
-        "روی دکمه زیر کلیک کن تا پنالتی رو شوت کنی! 👇"
+        f"👉 نوبت شوت زدن: <b>{html.escape(cur_shooter)}</b>\n"
+        "روی دکمه زیر کلیک کن تا ضربه‌ات را بزنی! 👇"
     )
     return text
 
@@ -389,71 +387,85 @@ async def execute_penalty_kick(query, context, p_id):
 
     user_id = query.from_user.id
     if user_id != shootout["current_turn"]:
-        await query.answer("⛔ نوبت شما نیست! صبور باشید.", show_alert=True)
+        await query.answer("⛔ نوبت شما نیست! اجازه دهید حریف شوت بزند.", show_alert=True)
         return
 
     chat_id = shootout["chat_id"]
-    # ارسال تاس واقعی شوت
     dice_msg = await context.bot.send_dice(chat_id=chat_id, emoji="⚽")
     val = dice_msg.dice.value
 
-    # انتظار برای نمایش انیمیشن شوت
     await asyncio.sleep(2.5)
 
     is_goal = (val in [3, 4, 5])
-    icon = "⚽️" if is_goal else "❌"
+    icon = "⚽️ گل شد!" if is_goal else "❌ مهار شد!"
 
     if user_id == shootout["p1"]["id"]:
-        shootout["p1"]["shots"].append(icon)
+        shootout["p1"]["shot"] = icon
         shootout["current_turn"] = shootout["p2"]["id"]
+        text = render_shootout_board(shootout)
+        kick_kb = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ نوبت توئه! پنالتی رو بزن", callback_data=f"shoot_pen_{p_id}")]])
+        await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=kick_kb, parse_mode="HTML")
     else:
-        shootout["p2"]["shots"].append(icon)
-        shootout["current_turn"] = shootout["p1"]["id"]
-        shootout["round"] += 1
+        shootout["p2"]["shot"] = icon
+        p1_goal = (shootout["p1"]["shot"] == "⚽️ گل شد!")
+        p2_goal = (shootout["p2"]["shot"] == "⚽️ گل شد!")
 
-    # بررسی پایان مسابقه (بعد از ۵ ضربه هر نفر)
-    len1 = len(shootout["p1"]["shots"])
-    len2 = len(shootout["p2"]["shots"])
+        p1_name = html.escape(shootout["p1"]["name"])
+        p2_name = html.escape(shootout["p2"]["name"])
+        stake = shootout["stake"]
 
-    if len1 >= 5 and len2 >= 5 and len1 == len2:
-        score1 = shootout["p1"]["shots"].count("⚽️")
-        score2 = shootout["p2"]["shots"].count("⚽️")
-
-        if score1 != score2:
-            stake = shootout["stake"]
-            p1_name = html.escape(shootout["p1"]["name"])
-            p2_name = html.escape(shootout["p2"]["name"])
-
-            final_text = (
-                "🏁 <b>پایان ضیافت پنالتی‌ها!</b> 🏆\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                f"👤 {p1_name}: {' '.join(shootout['p1']['shots'])} (<b>{score1} گل</b>)\n"
-                f"👤 {p2_name}: {' '.join(shootout['p2']['shots'])} (<b>{score2} گل</b>)\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-            )
-
+        if p1_goal and not p2_goal:
             async with aiosqlite.connect(DATABASE_PATH) as db:
-                if score1 > score2:
-                    await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p1"]["id"]))
-                    await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, shootout["p2"]["id"]))
-                    final_text += f"🎉 <b>تبریک به {p1_name}! برنده {stake} امتیاز شرط‌بندی شد!</b> 🔥"
-                else:
-                    await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p2"]["id"]))
-                    await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, shootout["p1"]["id"]))
-                    final_text += f"🎉 <b>تبریک به {p2_name}! برنده {stake} امتیاز شرط‌بندی شد!</b> 🔥"
+                await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p1"]["id"]))
+                await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, shootout["p2"]["id"]))
                 await db.commit()
 
             del ACTIVE_SHOOTOUTS[p_id]
-            await context.bot.send_message(chat_id=chat_id, text=final_text, parse_mode="HTML")
-            return
+            res = (
+                "🏁 <b>پایان دوئل پنالتی!</b> 🏆\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"👤 {p1_name}: ⚽️ گل زد\n"
+                f"👤 {p2_name}: ❌ گل نکرد\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"🎉 <b>تبریک به {p1_name}! برنده {stake} امتیاز شد!</b> 🔥"
+            )
+            await context.bot.send_message(chat_id=chat_id, text=res, parse_mode="HTML")
 
-    # ادامه پنالتی‌کشی
-    text = render_shootout_board(shootout)
-    kick_kb = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ زدن ضربه پنالتی!", callback_data=f"shoot_pen_{p_id}")]])
-    await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=kick_kb, parse_mode="HTML")
+        elif p2_goal and not p1_goal:
+            async with aiosqlite.connect(DATABASE_PATH) as db:
+                await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p2"]["id"]))
+                await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, shootout["p1"]["id"]))
+                await db.commit()
+
+            del ACTIVE_SHOOTOUTS[p_id]
+            res = (
+                "🏁 <b>پایان دوئل پنالتی!</b> 🏆\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"👤 {p1_name}: ❌ گل نکرد\n"
+                f"👤 {p2_name}: ⚽️ گل زد\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"🎉 <b>تبریک به {p2_name}! برنده {stake} امتیاز شد!</b> 🔥"
+            )
+            await context.bot.send_message(chat_id=chat_id, text=res, parse_mode="HTML")
+
+        else:
+            shootout["round"] += 1
+            shootout["p1"]["shot"] = None
+            shootout["p2"]["shot"] = None
+            shootout["current_turn"] = shootout["p1"]["id"]
+
+            draw_msg = (
+                f"🤝 <b>هردو مساوی شدند! بازی وارد راند طلایی {shootout['round']} شد!</b> 🔥\n"
+                "پنالتی‌ها تک‌به‌تک ادامه دارد تا برنده نهایی مشخص شود..."
+            )
+            await context.bot.send_message(chat_id=chat_id, text=draw_msg, parse_mode="HTML")
+
+            text = render_shootout_board(shootout)
+            kick_kb = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ زدن ضربه مرگ ناگهانی!", callback_data=f"shoot_pen_{p_id}")]])
+            await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=kick_kb, parse_mode="HTML")
 
 # -------------------------------------------------------------
-# ۴. سیستم دوئل اطلاعات عمومی فوتبال با JobQueue
+# ۴. سیستم دوئل اطلاعات عمومی با JobQueue
 # -------------------------------------------------------------
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -625,7 +637,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "👥 <b>سیستم دعوت از دوستان و کسب امتیاز رایگان:</b>\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
             f"🔗 لینک اختصاصی شما:\n<code>{ref_link}</code>\n\n"
-            "به ازای هر دوستی که با لینک شما وارد ربات شود:\n"
+            "به ازای هر دوستی که با لینک شما عضو ربات شود:\n"
             "💰 <b>30 امتیاز به شما</b> و <b>20 امتیاز به دوستتان</b> هدیه داده می‌شود!"
         )
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
@@ -634,14 +646,13 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "⚔️ <b>راهنمای بازی‌ها در گروه:</b> ⚽️\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "1️⃣ <b>دوئل اطلاعات عمومی:</b> با ریپلای روی دوستت و نوشتن <code>دوئل</code> یا <code>/duel</code>\n"
-            "2️⃣ <b>پنالتی‌کشی دونفره (جدید):</b> با ریپلای روی دوستت و نوشتن <code>پنالتی</code> یا <code>/penalty</code> (۵ شوت برای هر نفر!)\n"
-            "3️⃣ <b>شوت روزانه:</b> ارسال کلمه <code>شوت</code> هر ۲۴ ساعت با شانس ۱۵ امتیاز!\n"
-            "4️⃣ <b>جایزه روزانه:</b> ارسال کلمه <code>جایزه</code> هر روز با ۲۰ امتیاز رایگان!"
+            "1️⃣ <b>دوئل اطلاعات عمومی:</b> ریپلای روی دوستت و نوشتن <code>دوئل</code> یا <code>/duel</code>\n"
+            "2️⃣ <b>پنالتی تک‌ضرب:</b> ریپلای روی دوستت و نوشتن <code>پنالتی</code> یا <code>/penalty</code> (با مرگ ناگهانی!)\n"
+            "3️⃣ <b>شوت سرعتی:</b> فرستادن کلمه <code>شوت</code> هر ۲۴ ساعت با شانس ۱۵ امتیاز!\n"
+            "4️⃣ <b>جایزه روزانه:</b> فرستادن کلمه <code>جایزه</code> هر ۲۴ ساعت با ۲۰ امتیاز قطعی!"
         )
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
-    # پاسخ پنالتی‌کشی
     elif data.startswith("acp_"):
         p_id = data.replace("acp_", "")
         shootout = ACTIVE_SHOOTOUTS.get(p_id)
@@ -654,7 +665,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         text = render_shootout_board(shootout)
-        kick_kb = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ زدن اولین ضربه پنالتی!", callback_data=f"shoot_pen_{p_id}")]])
+        kick_kb = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ زدن ضربه پنالتی!", callback_data=f"shoot_pen_{p_id}")]])
         await safe_edit_message(query, text, reply_markup=kick_kb)
 
     elif data.startswith("rjp_"):
@@ -668,7 +679,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         p_id = data.replace("shoot_pen_", "")
         await execute_penalty_kick(query, context, p_id)
 
-    # دوئل
     elif data.startswith("acd_"):
         duel_id = data.replace("acd_", "")
         duel = ACTIVE_DUELS.get(duel_id)
@@ -967,7 +977,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot running with Penalty Shootout, Duels and Multi-Reward Systems!")
+    logger.info("Bot running with Sudden Death Penalties, Duels and Multi-Reward Systems!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
