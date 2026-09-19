@@ -58,7 +58,7 @@ def get_user_badge(points: int) -> str:
     else:
         return "🥉"
 
-# سرور سلامت برای پایدار ماندن سرویس در کلود
+# سرور پایداری کلود
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -86,6 +86,7 @@ LEAGUE_TITLES = {
 
 MATCH_CACHE = {}
 ACTIVE_DUELS = {}
+USER_LAST_SHOT = {}  # کش آخرین زمان شوت هر کاربر
 
 async def safe_edit_message(query_or_bot, text, reply_markup=None, chat_id=None, message_id=None):
     try:
@@ -164,6 +165,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "⚡️ نتایج زنده و برنامه لحظه‌ای مسابقات معتبر\n"
         "🎯 بخش پیش‌بینی و رقابت با <b>Escobar AI 🤖</b>\n"
         "⚔️ دوئل‌های دونفره اطلاعات عمومی در گروه‌ها\n"
+        "🥅 شوت و پنالتی روزانه با ارسال کلمه <code>شوت</code>\n"
         "💰 موجودی اولیه شما: <b>100 امتیاز</b> 🪙\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         "👇 <b>یک بخش را جهت شروع انتخاب کنید:</b>"
@@ -200,7 +202,58 @@ async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode="HTML")
 
 # -------------------------------------------------------------
-# سیستم دوئل اطلاعات عمومی با شناسه‌های سبک و تایمر JobQueue
+# قابلیت شوت روزانه و پنالتی (Daily Lucky Shot)
+# -------------------------------------------------------------
+async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await ensure_user(user)
+
+    now = datetime.utcnow()
+    last_shot = USER_LAST_SHOT.get(user.id)
+
+    # بررسی محدودیت ۲۴ ساعت
+    if last_shot and (now - last_shot) < timedelta(hours=24):
+        remaining = timedelta(hours=24) - (now - last_shot)
+        hours = int(remaining.total_seconds() // 3600)
+        minutes = int((remaining.total_seconds() % 3600) // 60)
+        await update.message.reply_text(
+            f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، شما شوت روزانه خود را زده‌اید!\n"
+            f"⏱ فرصت بعدی شما: <b>{hours} ساعت و {minutes} دقیقه</b> دیگر.",
+            parse_mode="HTML"
+        )
+        return
+
+    # ارسال ایموجی تاس فوتبال تلگرام
+    msg = await update.message.reply_dice(emoji="⚽")
+    dice_val = msg.dice.value
+    USER_LAST_SHOT[user.id] = now
+
+    # ۲.۵ ثانیه تا پایان انیمیشن شوت
+    await asyncio.sleep(2.5)
+
+    # در تلگرام مقادیر ۳، ۴، ۵ یعنی توپ گل شده است
+    if dice_val in [3, 4, 5]:
+        reward = 15
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, user.id))
+            await db.commit()
+
+        await update.message.reply_text(
+            f"⚽️🔥 <b>گـُـل شدددد! عجب شوتی!</b>\n"
+            f"👤 بازیکن: <b>{html.escape(user.first_name)}</b>\n"
+            f"💰 پاداش: <b>+{reward} امتیاز</b> به موجودی شما اضافه شد! 🎉",
+            parse_mode="HTML"
+        )
+    else:
+        await update.message.reply_text(
+            f"🧤❌ <b>حیف شد! توپ گل نشد!</b> (برخورد به تیرک یا مهار گلر)\n"
+            f"👤 بازیکن: <b>{html.escape(user.first_name)}</b>\n"
+            "فردا دوباره شانس خودت رو امتحان کن! 😉",
+            parse_mode="HTML"
+        )
+
+# -------------------------------------------------------------
+# سیستم دوئل اطلاعات عمومی فوتبال با JobQueue
 # -------------------------------------------------------------
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -225,7 +278,6 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(challenger)
     await ensure_user(opponent)
 
-    # ساخت یک شناسه کوتاه برای جلوگیری از رد شدن در محدودیت ۶۴ بایتی دکمه‌های شیشه‌ای تلگرام
     duel_id = str(random.randint(10000, 99999))
     ACTIVE_DUELS[duel_id] = {
         "challenger": {"id": challenger.id, "name": challenger.first_name, "score": 0},
@@ -281,7 +333,6 @@ def render_duel_question_text(duel, q_data, q_idx):
     return text
 
 async def question_timeout_job(context: ContextTypes.DEFAULT_TYPE):
-    """تایمر تضمینی ۱۵ ثانیه‌ای تلگرام برای رفتن به سوال بعد"""
     job_data = context.job.data
     duel_id = job_data["duel_id"]
     q_idx = job_data["q_idx"]
@@ -336,7 +387,6 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     q_data = duel["questions"][q_idx]
     duel["answered"] = {}
 
-    # ساخت دکمه‌ها با کدهای کوتاه و استاندارد (ans_duel -> ad)
     buttons = []
     for opt_idx, opt_text in enumerate(q_data["options"]):
         buttons.append([InlineKeyboardButton(f"🔘 {opt_text}", callback_data=f"ad_{duel_id}_{opt_idx}")])
@@ -344,7 +394,6 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     text = render_duel_question_text(duel, q_data, q_idx)
     await safe_edit_message(context.bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=chat_id, message_id=msg_id)
 
-    # ثبت تایمر رسمی ۱۵ ثانیه
     context.job_queue.run_once(
         question_timeout_job,
         15,
@@ -371,7 +420,8 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "1️⃣ داخل گروه روی پیام دوستت ریپلای بزن.\n"
             "2️⃣ کلمه <code>دوئل</code> یا دستور <code>/duel</code> رو بفرست.\n"
             "3️⃣ یک چالش اطلاعات عمومی ۳ سوالی با تایمر ۱۵ ثانیه‌ای شروع میشه!\n"
-            "4️⃣ برنده مسابقه <b>25 امتیاز</b> 🪙 و نشان ارتقا دریافت می‌کنه!"
+            "4️⃣ برنده مسابقه <b>25 امتیاز</b> 🪙 دریافت می‌کنه!\n\n"
+            "🥅 همچنین با فرستادن کلمه <code>شوت</code> هر ۲۴ ساعت می‌تونی شانس گلزنیت رو محک بزنی!"
         )
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
@@ -427,11 +477,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.answer("❌ پاسخ اشتباه ثبت شد!")
 
-        # آپدیت وضعیت پاسخگویی در متن سوال
         q_text = render_duel_question_text(duel, curr_q, duel["current_q"])
         await safe_edit_message(query, q_text, reply_markup=query.message.reply_markup)
 
-        # اگر هر دو نفر پاسخ دادند، لغو تایمر و رفتن فوری به سوال بعد
         if len(duel["answered"]) >= 2:
             current_jobs = context.job_queue.get_jobs_by_name(f"duel_timer_{duel_id}_{duel['current_q']}")
             for j in current_jobs:
@@ -633,6 +681,8 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
         await leaderboard_cmd(update, context)
     elif msg in ["دوئل", "duel", "چالش"]:
         await trigger_duel(update, context)
+    elif msg in ["شوت", "پنالتی", "گل", "shoot"]:
+        await daily_shoot_cmd(update, context)
     elif msg in ["پیشبینی", "پیش بینی"]:
         await update.message.reply_text("🎯 جهت ثبت پیش‌بینی و رقابت با <b>Escobar AI</b>، از دستور /start استفاده کنید.", parse_mode="HTML")
     elif msg in ["بازیها", "بازی ها"]:
@@ -663,10 +713,11 @@ def main():
     app.add_handler(CommandHandler("ranking", leaderboard_cmd))
     app.add_handler(CommandHandler("leaderboard", leaderboard_cmd))
     app.add_handler(CommandHandler("duel", trigger_duel))
+    app.add_handler(CommandHandler("shoot", daily_shoot_cmd))
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot running with precision JobQueue timers and compact callback keys!")
+    logger.info("Bot running with Daily Lucky Shot & Duel Engine!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
