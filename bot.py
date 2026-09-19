@@ -107,12 +107,33 @@ def increment_penalty_count_today(user_id: int):
         data["count"] += 1
 
 async def get_live_chat_id():
+    """واکشی آیدی گروه اختصاصی شما از دیتابیس"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT value FROM bot_settings WHERE key = 'live_chat_id'") as cur:
             row = await cur.fetchone()
             if row and row[0]:
                 return int(row[0])
     return None
+
+async def is_action_allowed_in_chat(update: Update) -> bool:
+    """قفل بخش‌های رقابتی روی گروه اختصاصی شما"""
+    chat = update.effective_chat
+    if chat.type == "private":
+        return True
+        
+    target_chat_id = await get_live_chat_id()
+    if not target_chat_id:
+        return True
+        
+    if chat.id == target_chat_id:
+        return True
+        
+    await update.message.reply_text(
+        "⛔️ <b>بخش‌های مسابقاتی و امتیازی (دوئل، پنالتی، شوت و جایزه) فقط در گروه اصلی فعال است!</b>\n"
+        "▫️ سایر بخش‌ها از جمله جداول رده‌بندی، بازی‌های امروز و نتایج برای همه گروه‌ها در دسترس است.",
+        parse_mode="HTML"
+    )
+    return False
 
 async def safe_edit_message(query_or_bot, text, reply_markup=None, chat_id=None, message_id=None):
     try:
@@ -170,15 +191,14 @@ async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES ('live_chat_id', ?)", (str(chat.id),))
             await db.commit()
         await update.message.reply_text(
-            f"✅ <b>این گروه با موفقیت به عنوان ورزشگاه پخش زنده تنظیم شد!</b> 🏟🔥\n"
-            f"شناسه گروه ثبت شد: <code>{chat.id}</code>\n"
-            "گزارش‌های لحظه‌ای بازی‌های بارسلونا و رئال مادرید در همین گروه فرستاده خواهد شد.",
+            f"✅ <b>این گروه با موفقیت به عنوان گروه اختصاصی مسابقات و گزارش زنده ثبت شد!</b> 🏟🔥\n"
+            f"شناسه اختصاصی: <code>{chat.id}</code>\n"
+            "از این پس تمام مسابقات دوئل، پنالتی‌کشی، شوت‌ها و استخر ۳۰۰ امتیازی انحصاراً در همین گروه اجرا می‌شوند.",
             parse_mode="HTML"
         )
     else:
-        await update.message.reply_text("⚠️ این دستور را باید در گروه یا سوپرگروه مورد نظر ارسال کنید.")
+        await update.message.reply_text("⚠️ این دستور را باید در گروه اصلی ارسال کنید.")
 
-# تابع تولید متن استخر ۳۰۰ امتیازی با ویرایش زنده
 async def generate_pool_message_text(match_data, pool_participants=None):
     h_name = match_data.get("home_team", "")
     a_name = match_data.get("away_team", "")
@@ -207,7 +227,7 @@ async def generate_pool_message_text(match_data, pool_participants=None):
     return text
 
 # -------------------------------------------------------------
-# موتور گزارشگر زنده اصلاح‌شده (با گل‌ها، پایان نیمه اول و شروع نیمه دوم)
+# موتور گزارشگر زنده و رویدادهای بازی
 # -------------------------------------------------------------
 async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
     target_chat_id = await get_live_chat_id()
@@ -248,7 +268,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
         MATCH_CACHE[m_id] = m
         raw_status = str(m.get("status", "UPCOMING")).upper()
         
-        # تبدیل امن گل‌ها به عدد صحیح
         try:
             h_score = int(m.get("home_score")) if m.get("home_score") is not None else None
             a_score = int(m.get("away_score")) if m.get("away_score") is not None else None
@@ -269,7 +288,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             }
             TRACKED_LIVE_MATCHES[m_id] = track
 
-        # محاسبه زمان مانده تا بازی
         match_date_str = m.get("date")
         minutes_to_start = 9999
         if match_date_str:
@@ -280,7 +298,7 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             except Exception:
                 pass
 
-        # ۱. باز کردن استخر ۳۰۰ امتیازی (۱۵ دقیقه قبل بازی)
+        # ۱. باز کردن استخر ۳۰۰ امتیازی بین ۰ تا ۱۵ دقیقه قبل بازی
         if raw_status in ["UPCOMING", "PRE"] and not track["pool_opened"] and (0 <= minutes_to_start <= 20):
             track["pool_opened"] = True
             pool_kb = InlineKeyboardMarkup([
@@ -324,7 +342,7 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             )
             await context.bot.send_message(chat_id=target_chat_id, text=start_msg, parse_mode="HTML")
 
-        # ۳. ثبت و گزارش حماسی گل‌ها (با تبدیل تضمینی اعداد)
+        # ۳. ثبت و گزارش حماسی گل‌ها
         if is_in_play and h_score is not None and a_score is not None:
             if h_score > track["home_score"]:
                 track["home_score"] = h_score
@@ -350,7 +368,7 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                 )
                 await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
 
-        # ۴. اعلام پایان نیمه اول (Halftime)
+        # ۴. اعلام پایان نیمه اول
         if raw_status in ["HT", "HALFTIME"] and not track["ht_announced"]:
             track["ht_announced"] = True
             cur_h = h_score if h_score is not None else track["home_score"]
@@ -473,6 +491,9 @@ async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode="HTML")
 
 async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await is_action_allowed_in_chat(update):
+        return
+
     user = update.effective_user
     await ensure_user(user)
     now = datetime.utcnow()
@@ -503,6 +524,9 @@ async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await is_action_allowed_in_chat(update):
+        return
+
     user = update.effective_user
     await ensure_user(user)
 
@@ -550,6 +574,9 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # پنالتی تک‌ضرب
 # -------------------------------------------------------------
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await is_action_allowed_in_chat(update):
+        return
+
     if not update.message.reply_to_message:
         await update.message.reply_text(
             "🥅 <b>نحوه پنالتی‌کشی:</b>\nروی پیام دوستت در گروه ریپلای کن و بنویس: <code>پنالتی</code> یا <code>/penalty</code>",
@@ -733,6 +760,9 @@ async def execute_penalty_kick(query, context, p_id):
 # دوئل اطلاعات عمومی
 # -------------------------------------------------------------
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await is_action_allowed_in_chat(update):
+        return
+
     if not update.message.reply_to_message:
         await update.message.reply_text(
             "⚔️ <b>نحوه شروع دوئل:</b>\nروی پیام حریفت ریپلای کن و بنویس: <code>دوئل</code> یا <code>/duel</code> 🎯",
@@ -1230,24 +1260,34 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = await show_leaderboard_text()
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
-# هندلر پیام‌های متنی در گروه
+# هندلر تفکیک دستورات بر اساس گروه مجاز
 async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message.text.strip() if update.message and update.message.text else ""
     if not msg:
         return
 
-    if msg in ["شروع", "منو", "فوتبال"]:
+    # ۱. دستورات امتیازی (فقط در گروه اصلی شما و پی‌وی)
+    if msg in ["دوئل", "duel", "چالش"]:
+        if await is_action_allowed_in_chat(update):
+            await trigger_duel(update, context)
+            
+    elif msg in ["پنالتی", "پنالتی کشی", "penalty"]:
+        if await is_action_allowed_in_chat(update):
+            await trigger_penalty_shootout(update, context)
+            
+    elif msg in ["شوت", "گل", "shoot"]:
+        if await is_action_allowed_in_chat(update):
+            await daily_shoot_cmd(update, context)
+            
+    elif msg in ["جایزه", "روزانه", "daily"]:
+        if await is_action_allowed_in_chat(update):
+            await daily_reward_cmd(update, context)
+
+    # ۲. دستورات عمومی و آماری (مجاز در تمام گروه‌ها)
+    elif msg in ["شروع", "منو", "فوتبال"]:
         await start(update, context)
     elif msg in ["جدول", "رنکینگ", "امتیازات"]:
         await leaderboard_cmd(update, context)
-    elif msg in ["دوئل", "duel", "چالش"]:
-        await trigger_duel(update, context)
-    elif msg in ["پنالتی", "پنالتی کشی", "penalty"]:
-        await trigger_penalty_shootout(update, context)
-    elif msg in ["شوت", "گل", "shoot"]:
-        await daily_shoot_cmd(update, context)
-    elif msg in ["جایزه", "روزانه", "daily"]:
-        await daily_reward_cmd(update, context)
     elif msg in ["پیشبینی", "پیش بینی"]:
         await update.message.reply_text("🎯 جهت ثبت پیش‌بینی مسابقات و دریافت ۱۰ امتیاز قطعی، دستور /start را لمس کنید.", parse_mode="HTML")
     elif msg in ["بازیها", "بازی ها"]:
@@ -1267,7 +1307,6 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
-    # مانیتورینگ زنده مسابقات رئال و بارسا هر ۳۰ ثانیه برای سرعت بالاتر
     application.job_queue.run_repeating(monitor_real_barca_live_job, interval=30, first=5)
 
 def main():
@@ -1287,7 +1326,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot online with complete live events (Goals, Halftime, Second Half, FT)!")
+    logger.info("Bot running with Group Restriction and Full Match Center!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
