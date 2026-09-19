@@ -3,6 +3,7 @@ import threading
 import logging
 import random
 import asyncio
+import html
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime, timedelta, timezone
 
@@ -57,7 +58,7 @@ def get_user_badge(points: int) -> str:
     else:
         return "🥉"
 
-# مینی سرور پایداری
+# سرور سلامت برای پایدار ماندن سرویس در کلود
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -75,31 +76,33 @@ def start_health_server():
     server.serve_forever()
 
 LEAGUE_TITLES = {
-    "eng.1": "Premier League",
-    "esp.1": "La Liga",
-    "ita.1": "Serie A",
-    "ger.1": "Bundesliga",
-    "fra.1": "Ligue 1",
-    "all": "Top European Matches"
+    "eng.1": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",
+    "esp.1": "🇪🇸 La Liga",
+    "ita.1": "🇮🇹 Serie A",
+    "ger.1": "🇩🇪 Bundesliga",
+    "fra.1": "🇫🇷 Ligue 1",
+    "all": "🌍 Top European Matches"
 }
 
 MATCH_CACHE = {}
 ACTIVE_DUELS = {}
 
 async def safe_edit_message(query_or_bot, text, reply_markup=None, chat_id=None, message_id=None):
-    """ویرایش کاملاً امن پیام بدون کرش"""
+    """ویرایش امن با پشتیبانی کامل از HTML"""
     try:
         if chat_id and message_id:
             await query_or_bot.edit_message_text(
                 chat_id=chat_id,
                 message_id=message_id,
                 text=text,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
+                parse_mode="HTML"
             )
         else:
             await query_or_bot.message.edit_text(
                 text=text,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
+                parse_mode="HTML"
             )
     except BadRequest as e:
         if "Message is not modified" in str(e):
@@ -154,21 +157,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
 
+    safe_name = html.escape(user.first_name)
     text = (
-        f"⚽ FOOTBALL HUB | PRO EDITION\n"
-        "────────────────────────────\n"
-        f"درود {user.first_name}، به مرکز هوشمند فوتبال خوش آمدید.\n\n"
-        "▫️ نتایج زنده و برنامه مسابقات معتبر\n"
-        "▫️ پیش‌بینی مسابقات و رقابت با Escobar AI\n"
-        "▫️ دوئل اطلاعات عمومی فوتبال در گروه‌ها\n"
-        "────────────────────────────\n"
-        "یک بخش را جهت شروع انتخاب کنید:"
+        f"⚽ <b>FOOTBALL HUB</b> | <i>PRO EDITION</i> ✨\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"سلام <b>{safe_name}</b> عزیز، خوش اومدی به هاب فوتبالی! 🔥\n\n"
+        "⚡️ نتایج زنده و برنامه لحظه‌ای مسابقات معتبر\n"
+        "🎯 بخش پیش‌بینی و رقابت با <b>Escobar AI 🤖</b>\n"
+        "⚔️ دوئل‌های دونفره اطلاعات عمومی در گروه‌ها\n"
+        "💰 موجودی اولیه شما: <b>100 امتیاز</b> 🪙\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "👇 <b>یک بخش را جهت شروع انتخاب کنید:</b>"
     )
     try:
         if update.callback_query:
             await safe_edit_message(update.callback_query, text, reply_markup=kb.get_main_menu())
         else:
-            await update.message.reply_text(text, reply_markup=kb.get_main_menu())
+            await update.message.reply_text(text, reply_markup=kb.get_main_menu(), parse_mode="HTML")
     except Exception as e:
         logger.error(f"Error sending start message: {e}")
 
@@ -177,28 +182,33 @@ async def show_leaderboard_text():
         async with db.execute("SELECT first_name, points, duel_wins FROM users ORDER BY points DESC, duel_wins DESC") as cur:
             all_users = await cur.fetchall()
 
-    text = "🎖 رتبه‌بندی قهرمانان فوتبال هاب\n"
-    text += "────────────────────────────\n\n"
+    text = "🏆 <b>جدول رنکینگ و رقابت اعضا</b> 🔥\n"
+    text += "━━━━━━━━━━━━━━━━━━━━\n\n"
     if not all_users:
         text += "▫️ هنوز کاربری ثبت نشده است.\n"
     else:
         for idx, u in enumerate(all_users, 1):
             name, pts, wins = u[0], u[1], u[2]
             badge = get_user_badge(pts)
-            pos = "🥇" if idx == 1 else ("🥈" if idx == 2 else ("🥉" if idx == 3 else f"{idx:02d}"))
-            text += f"{pos} {badge} {name}\n   └ ⚡ {pts} PTS  ▫️  ⚔️ {wins} W\n"
-    text += "\n────────────────────────────"
+            pos = "🥇" if idx == 1 else ("🥈" if idx == 2 else ("🥉" if idx == 3 else f"<b>{idx:02d}.</b>"))
+            safe_name = html.escape(str(name))
+            text += f"{pos} {badge} <b>{safe_name}</b>\n   └ ⚡️ <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins} برد</code>\n"
+    text += "\n━━━━━━━━━━━━━━━━━━━━"
     return text
 
 async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = await show_leaderboard_text()
-    await update.message.reply_text(text)
+    await update.message.reply_text(text, parse_mode="HTML")
 
-# دوئل اطلاعات عمومی
+# -------------------------------------------------------------
+# سیستم دوئل اطلاعات عمومی فوتبال
+# -------------------------------------------------------------
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
         await update.message.reply_text(
-            "⚔️ نحوه شروع دوئل:\nروی پیام حریفتان ریپلای کرده و دستور 'دوئل' یا /duel را بفرستید."
+            "⚔️ <b>نحوه شروع دوئل:</b>\n"
+            "روی پیام حریفت ریپلای کن و بنویس: <code>دوئل</code> یا <code>/duel</code> 🎯",
+            parse_mode="HTML"
         )
         return
 
@@ -206,11 +216,11 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     opponent = update.message.reply_to_message.from_user
 
     if opponent.is_bot:
-        await update.message.reply_text("🤖 امکان دوئل با ربات وجود ندارد.")
+        await update.message.reply_text("🤖 نمی‌تونی با ربات دوئل کنی!")
         return
 
     if challenger.id == opponent.id:
-        await update.message.reply_text("⚠️ امکان مسابقه با خودتان وجود ندارد.")
+        await update.message.reply_text("⚠️ نمی‌تونی با خودت دوئل کنی!")
         return
 
     await ensure_user(challenger)
@@ -230,40 +240,45 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
 
     duel_kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚔️ پذیرش چالش", callback_data=f"accept_duel_{duel_id}"),
-         InlineKeyboardButton("✕ انصراف", callback_data=f"reject_duel_{duel_id}")]
+        [InlineKeyboardButton("⚔️ قبول چالش دوئل", callback_data=f"accept_duel_{duel_id}"),
+         InlineKeyboardButton("❌ رد چالش", callback_data=f"reject_duel_{duel_id}")]
     ])
 
+    c_name = html.escape(challenger.first_name)
+    o_name = html.escape(opponent.first_name)
+
     text = (
-        "⚔️ میدان دوئل اطلاعات عمومی فوتبال\n"
-        "────────────────────────────\n"
-        f"▫️ چلنجر: {challenger.first_name}\n"
-        f"▫️ هماورد: {opponent.first_name}\n"
-        f"▫️ جایزه رقابت: +25 PTS\n"
-        f"▫️ زمان هر سوال: 15 ثانیه\n"
-        "────────────────────────────\n"
-        f"آیا {opponent.first_name} چالش را می‌پذیرد؟"
+        "⚔️ <b>میدان دوئل اطلاعات عمومی فوتبال!</b> 🔥\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 چلنجر: <b>{c_name}</b>\n"
+        f"🎯 هماورد: <b>{o_name}</b>\n"
+        "💰 جایزه رقابت: <b>+25 امتیاز</b> 🪙\n"
+        "⏱ زمان هر سوال: <b>15 ثانیه</b> ⏳\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"آیا <b>{o_name}</b> چالش رو می‌پذیره؟"
     )
-    sent_msg = await update.message.reply_text(text, reply_markup=duel_kb)
+    sent_msg = await update.message.reply_text(text, reply_markup=duel_kb, parse_mode="HTML")
     ACTIVE_DUELS[duel_id]["message_id"] = sent_msg.message_id
 
 def render_duel_question_text(duel, q_data, q_idx):
-    c_name = duel["challenger"]["name"]
-    o_name = duel["opponent"]["name"]
+    c_name = html.escape(duel["challenger"]["name"])
+    o_name = html.escape(duel["opponent"]["name"])
     c_id = duel["challenger"]["id"]
     o_id = duel["opponent"]["id"]
 
-    c_status = "✅ ثبت شد" if c_id in duel["answered"] else "⏳ در حال بررسی..."
-    o_status = "✅ ثبت شد" if o_id in duel["answered"] else "⏳ در حال بررسی..."
+    c_status = "✅ پاسخ داد" if c_id in duel["answered"] else "⏳ در حال فکر کردن..."
+    o_status = "✅ پاسخ داد" if o_id in duel["answered"] else "⏳ در حال فکر کردن..."
+
+    safe_q = html.escape(q_data['question'])
 
     text = (
-        f"❓ سوال {q_idx + 1} از 3\n"
-        "────────────────────────────\n"
-        f"📌 {q_data['question']}\n\n"
-        f"⏱ مهلت پاسخگویی: 15 ثانیه\n"
-        "────────────────────────────\n"
-        f"▫️ {c_name}: {c_status}\n"
-        f"▫️ {o_name}: {o_status}\n"
+        f"❓ <b>سوال {q_idx + 1} از 3:</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"📌 <b>{safe_q}</b>\n\n"
+        "⏱ مهلت پاسخ: <b>15 ثانیه</b> ⏳\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 {c_name}: {c_status}\n"
+        f"👤 {o_name}: {o_status}\n"
     )
     return text
 
@@ -291,28 +306,28 @@ async def proceed_duel(bot, duel_id):
         o_score = duel["opponent"]["score"]
         stake = duel["stake"]
 
-        c_id, c_name = duel["challenger"]["id"], duel["challenger"]["name"]
-        o_id, o_name = duel["opponent"]["id"], duel["opponent"]["name"]
+        c_id, c_name = duel["challenger"]["id"], html.escape(duel["challenger"]["name"])
+        o_id, o_name = duel["opponent"]["id"], html.escape(duel["opponent"]["name"])
 
         res_text = (
-            "🏁 پایان دوئل اطلاعات عمومی\n"
-            "────────────────────────────\n"
-            f"▫️ {c_name}: {c_score}/3 امتیاز\n"
-            f"▫️ {o_name}: {o_score}/3 امتیاز\n"
-            "────────────────────────────\n"
+            "🏁 <b>پایان دوئل اطلاعات عمومی فوتبال!</b> 🏆\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 {c_name}: <code>{c_score}/3</code> پاسخ درست\n"
+            f"👤 {o_name}: <code>{o_score}/3</code> پاسخ درست\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
         )
 
         async with aiosqlite.connect(DATABASE_PATH) as db:
             if c_score > o_score:
                 await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, c_id))
                 await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, o_id))
-                res_text += f"🏆 پیروز مسابقه: {c_name} (+{stake} PTS)"
+                res_text += f"🎉 <b>تبریک به {c_name}! برنده {stake} امتیاز شد!</b> 🔥"
             elif o_score > c_score:
                 await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, o_id))
                 await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, c_id))
-                res_text += f"🏆 پیروز مسابقه: {o_name} (+{stake} PTS)"
+                res_text += f"🎉 <b>تبریک به {o_name}! برنده {stake} امتیاز شد!</b> 🔥"
             else:
-                res_text += "🤝 نتیجه مساوی شد و تغییری در امتیازات صورت نگرفت."
+                res_text += "🤝 <b>نتیجه مساوی شد! هیچ امتیازی کسر نگردید.</b>"
             await db.commit()
 
         del ACTIVE_DUELS[duel_id]
@@ -324,7 +339,7 @@ async def proceed_duel(bot, duel_id):
 
     buttons = []
     for opt_idx, opt_text in enumerate(q_data["options"]):
-        buttons.append([InlineKeyboardButton(f"▫️ {opt_text}", callback_data=f"ans_duel_{duel_id}_{opt_idx}")])
+        buttons.append([InlineKeyboardButton(f"🔘 {opt_text}", callback_data=f"ans_duel_{duel_id}_{opt_idx}")])
 
     text = render_duel_question_text(duel, q_data, q_idx)
     await safe_edit_message(bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=chat_id, message_id=msg_id)
@@ -332,7 +347,9 @@ async def proceed_duel(bot, duel_id):
     loop = asyncio.get_event_loop()
     duel["timer_task"] = loop.create_task(question_timeout_worker(bot, duel_id, q_idx))
 
-# Router
+# -------------------------------------------------------------
+# Callback Router
+# -------------------------------------------------------------
 async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -344,12 +361,12 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "duel_help":
         text = (
-            "⚔️ راهنمای دوئل دونفره در گروه:\n"
-            "────────────────────────────\n"
-            "1. در گروه روی پیام شخص مورد نظر ریپلای بزنید.\n"
-            "2. کلمه 'دوئل' یا دستور /duel را بفرستید.\n"
-            "3. یک رقابت اطلاعات عمومی ۳ سوالی آغاز می‌شود.\n"
-            "4. برنده رقابت 25 امتیاز به همراه نشان کاربری دریافت می‌کند!"
+            "⚔️ <b>راهنمای دوئل دونفره در گروه:</b> ⚽️\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "1️⃣ داخل گروه روی پیام دوستت ریپلای بزن.\n"
+            "2️⃣ کلمه <code>دوئل</code> یا دستور <code>/duel</code> رو بفرست.\n"
+            "3️⃣ یک چالش اطلاعات عمومی ۳ سوالی با تایمر ۱۵ ثانیه‌ای شروع میشه!\n"
+            "4️⃣ برنده مسابقه <b>25 امتیاز</b> 🪙 و نشان ارتقا دریافت می‌کنه!"
         )
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
@@ -357,11 +374,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         duel_id = data.replace("accept_duel_", "")
         duel = ACTIVE_DUELS.get(duel_id)
         if not duel:
-            await query.answer("این مسابقه منقضی شده است.", show_alert=True)
+            await query.answer("⚠️ این دوئل منقضی شده است.", show_alert=True)
             return
 
         if query.from_user.id != duel["opponent"]["id"]:
-            await query.answer("تنها هماورد دعوت‌شده مجاز به پذیرش چالش است.", show_alert=True)
+            await query.answer("⛔ فقط حریف دعوت‌شده می‌تواند چالش را قبول کند!", show_alert=True)
             return
 
         await proceed_duel(context.bot, duel_id)
@@ -371,7 +388,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         duel = ACTIVE_DUELS.get(duel_id)
         if duel and query.from_user.id in [duel["opponent"]["id"], duel["challenger"]["id"]]:
             del ACTIVE_DUELS[duel_id]
-            await safe_edit_message(query, "✕ رقابت لغو گردید.")
+            await safe_edit_message(query, "❌ رقابت دوئل لغو گردید.")
 
     elif data.startswith("ans_duel_"):
         parts = data.split("_")
@@ -380,16 +397,16 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         duel = ACTIVE_DUELS.get(duel_id)
 
         if not duel:
-            await query.answer("این مسابقه به پایان رسیده است.", show_alert=True)
+            await query.answer("⚠️ این دوئل به پایان رسیده است.", show_alert=True)
             return
 
         user_id = query.from_user.id
         if user_id not in [duel["challenger"]["id"], duel["opponent"]["id"]]:
-            await query.answer("شما در این رقابت حضور ندارید.", show_alert=True)
+            await query.answer("⛔ شما بازیکن این مسابقه نیستید!", show_alert=True)
             return
 
         if user_id in duel["answered"]:
-            await query.answer("پاسخ شما پیش‌تر ثبت گردیده است.", show_alert=True)
+            await query.answer("⚠️ شما قبلاً پاسخ خود را ثبت کرده‌اید!", show_alert=True)
             return
 
         curr_q = duel["questions"][duel["current_q"]]
@@ -401,9 +418,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 duel["challenger"]["score"] += 1
             else:
                 duel["opponent"]["score"] += 1
-            await query.answer("✅ پاسخ صحیح ثبت شد.")
+            await query.answer("✅ پاسخ درست ثبت شد!")
         else:
-            await query.answer("❌ پاسخ ثبت شد.")
+            await query.answer("❌ پاسخ اشتباه ثبت شد!")
 
         q_text = render_duel_question_text(duel, curr_q, duel["current_q"])
         await safe_edit_message(query, q_text, reply_markup=query.message.reply_markup)
@@ -416,21 +433,21 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "select_matches_today":
         await safe_edit_message(
             query,
-            "⚡ مسابقات امروز (به وقت تهران)\n────────────────────────────\nلیگ مورد نظر را انتخاب فرمایید:",
+            "🔥 <b>مسابقات امروز (به وقت تهران):</b>\n━━━━━━━━━━━━━━━━━━━━\n👇 لیگ مورد نظر را انتخاب کنید:",
             reply_markup=kb.get_matches_leagues_keyboard("today")
         )
 
     elif data == "select_matches_tomorrow":
         await safe_edit_message(
             query,
-            "📅 مسابقات فردا (به وقت تهران)\n────────────────────────────\nلیگ مورد نظر را انتخاب فرمایید:",
+            "📅 <b>مسابقات فردا (به وقت تهران):</b>\n━━━━━━━━━━━━━━━━━━━━\n👇 لیگ مورد نظر را انتخاب کنید:",
             reply_markup=kb.get_matches_leagues_keyboard("tmrw")
         )
 
     elif data == "select_standings_league":
         await safe_edit_message(
             query,
-            "🏆 جداول رده‌بندی لیگ‌های معتبر\n────────────────────────────\nلیگ مورد نظر را انتخاب فرمایید:",
+            "🏆 <b>مشاهده جداول معتبر فوتبال:</b>\n━━━━━━━━━━━━━━━━━━━━\n👇 جدول کدام لیگ را می‌خواهید؟",
             reply_markup=kb.get_standings_leagues_keyboard()
         )
 
@@ -448,31 +465,35 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             matches = await provider.get_matches(date_str, league_code=league_code)
 
-        league_title = LEAGUE_TITLES.get(league_code, "Football")
+        league_title = LEAGUE_TITLES.get(league_code, "فوتبال")
         day_title = "امروز" if is_today else "فردا"
 
         if not matches:
-            await safe_edit_message(query, f"⏳ در تاریخ {day_title} برای {league_title} مسابقه‌ای ثبت نشده است.", reply_markup=kb.get_back_button())
+            await safe_edit_message(query, f"⏳ برای {league_title} در تاریخ {day_title} مسابقه‌ای ثبت نشده است.", reply_markup=kb.get_back_button())
             return
 
-        text = f"⚡ برنامه مسابقات {league_title} ({day_title})\n"
-        text += "────────────────────────────\n\n"
+        text = f"🔥 <b>برنامه مسابقات {league_title} ({day_title}):</b>\n"
+        text += "━━━━━━━━━━━━━━━━━━━━\n\n"
         for m in matches[:8]:
             match_time = format_iran_time(m.get("date"))
             if m['status'] == "LIVE":
-                status_badge = "🔴 در جریان"
+                status_badge = "🔴 <b>LIVE (در حال بازی)</b>"
             elif m['status'] == "FINISHED":
-                status_badge = "🏁 پایان یافته"
+                status_badge = "🏁 <b>FT (پایان مسابقه)</b>"
             else:
-                status_badge = f"⏰ {match_time}"
+                status_badge = f"⏰ ساعت: <code>{match_time}</code>"
 
-            score = f" [{m['home_score']} - {m['away_score']}]" if m['home_score'] is not None else ""
+            score = f"\n⚽️ نتیجه: <b>{m['home_score']} - {m['away_score']}</b>" if m['home_score'] is not None else ""
+            h_team = html.escape(str(m['home_team']))
+            a_team = html.escape(str(m['away_team']))
+            venue = html.escape(str(m['venue']))
+
             text += (
-                f"▫️ {m['home_team']} ✕ {m['away_team']}\n"
-                f"   └ وضعیت: {status_badge}{score}\n"
-                f"   └ ورزشگاه: {m['venue']}\n\n"
+                f"⚪️ <b>{h_team}</b> 🆚 <b>{a_team}</b> 🔴\n"
+                f"وضعیت: {status_badge}{score}\n"
+                f"🏟 استادیوم: <code>{venue}</code>\n"
+                "────────────────────\n"
             )
-        text += "────────────────────────────"
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
     elif data.startswith("table_"):
@@ -484,12 +505,15 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await safe_edit_message(query, f"⏳ جدول {league_title} در دسترس نیست.", reply_markup=kb.get_back_button())
             return
             
-        text = f"🏆 {league_title} Standings\n\n"
-        text += "POS  TEAM           P   PTS\n"
-        text += "───────────────────────────\n"
+        # ساخت جدول دقیق، تراز و کلاسیک با تگ pre
+        text = f"🏆 <b>{league_title} Standings (Top 10)</b>\n\n"
+        text += "<pre>"
+        text += "#  | Team          | P  | Pts\n"
+        text += "---+---------------+----+----\n"
         for idx, s in enumerate(standings, 1):
             t_name = s['team'][:13]
-            text += f"{idx:02d}   {t_name:<13}  {s['p']:<2}  {s['pts']:<3}\n"
+            text += f"{idx:<2} | {t_name:<13} | {s['p']:<2} | {s['pts']:<3}\n"
+        text += "</pre>"
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
     elif data == "predictions_hub":
@@ -504,7 +528,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         upcoming_matches = [m for m in candidate_matches if m.get("status") == "UPCOMING"]
 
         if not upcoming_matches:
-            await safe_edit_message(query, "⏳ مسابقه پیش‌رویی در حال حاضر جهت پیش‌بینی یافت نشد.", reply_markup=kb.get_back_button())
+            await safe_edit_message(query, "⏳ در حال حاضر مسابقه شروع‌نشده‌ای برای پیش‌بینی موجود نیست.", reply_markup=kb.get_back_button())
             return
 
         for m in upcoming_matches:
@@ -512,11 +536,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await record_ai_prediction_if_needed(m["id"])
 
         text = (
-            "🎯 تالار پیش‌بینی مسابقات آینده\n"
-            "────────────────────────────\n"
-            "یکی از مسابقات زیر را جهت پیش‌بینی انتخاب کنید:\n"
-            "(Escobar AI همگام با شما پیش‌بینی ثبت می‌کند)\n"
-            "────────────────────────────"
+            "🎯 <b>تالار پیش‌بینی مسابقات آینده:</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "یکی از مسابقات زیر را انتخاب کرده و نتیجه را حدس بزنید:\n"
+            "<i>(Escobar AI 🤖 نیز همگام با شما پیش‌بینی ثبت می‌کند)</i>\n"
+            "━━━━━━━━━━━━━━━━━━━━"
         )
         await safe_edit_message(query, text, reply_markup=kb.get_upcoming_matches_keyboard(upcoming_matches))
 
@@ -524,17 +548,21 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         match_id = data.replace("select_pred_", "")
         m = MATCH_CACHE.get(match_id)
         if not m:
-            await safe_edit_message(query, "⚠️ زمان پیش‌بینی این مسابقه به پایان رسیده است.", reply_markup=kb.get_back_button())
+            await safe_edit_message(query, "⚠️ مهلت پیش‌بینی این مسابقه به پایان رسیده است.", reply_markup=kb.get_back_button())
             return
 
         match_time = format_iran_time(m.get("date"))
+        h_team = html.escape(str(m['home_team']))
+        a_team = html.escape(str(m['away_team']))
+        league = html.escape(str(m['league']))
+        
         text = (
-            f"🎯 فرم پیش‌بینی مسابقه\n"
-            "────────────────────────────\n"
-            f"🏆 {m['league']}\n"
-            f"▫️ {m['home_team']} ✕ {m['away_team']}\n"
-            f"⏰ زمان مسابقه: {match_time} (به وقت تهران)\n"
-            "────────────────────────────\n"
+            "🎯 <b>فرم پیش‌بینی مسابقه:</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏆 {league}\n"
+            f"⚪️ <b>{h_team}</b> 🆚 <b>{a_team}</b> 🔴\n"
+            f"⏰ شروع: <code>{match_time}</code> (به وقت تهران)\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
             "پیش‌بینی شما برای نتیجه مسابقه چیست؟"
         )
         await safe_edit_message(query, text, reply_markup=kb.get_prediction_keyboard(m['id']))
@@ -552,7 +580,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 """, (user_id, match_id, choice))
                 await db.execute("UPDATE users SET total_predictions = total_predictions + 1 WHERE user_id = ?", (user_id,))
                 await db.commit()
-                await safe_edit_message(query, "✅ پیش‌بینی شما با موفقیت قفل و ثبت شد.", reply_markup=kb.get_back_button())
+                await safe_edit_message(query, "✅ <b>پیش‌بینی شما با موفقیت قفل و ثبت شد!</b> 🔥", reply_markup=kb.get_back_button())
             except Exception:
                 await safe_edit_message(query, "⚠️ پیش‌بینی شما برای این مسابقه قبلاً ثبت شده است.", reply_markup=kb.get_back_button())
 
@@ -565,17 +593,17 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if u:
             pts, exact, correct, total, dw = u
             badge = get_user_badge(pts)
+            safe_name = html.escape(str(query.from_user.first_name))
             text = (
-                f"👤 کارت رسمی بازیکنی\n"
-                "────────────────────────────\n"
-                f"▫️ بازیکن: {query.from_user.first_name}\n"
-                f"▫️ نشان کاربری: {badge} Level PRO\n"
-                f"▫️ موجودی امتیاز: {pts} PTS\n"
-                "────────────────────────────\n"
-                f"▫️ پیروزی در دوئل‌ها: {dw} برد\n"
-                f"▫️ کل پیش‌بینی‌ها: {total}\n"
-                f"▫️ حدس دقیق نتیجه: {exact}\n"
-                "────────────────────────────"
+                f"👤 <b>کارت رسمی بازیکن | {safe_name}</b> ✨\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"🌟 سطح بازیکن: {badge} <b>Level PRO</b>\n"
+                f"💰 موجودی امتیاز: <code>{pts} PTS</code>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚔️ پیروزی در دوئل‌ها: <code>{dw} برد</code>\n"
+                f"🎯 پیش‌بینی‌های ثبت‌شده: <code>{total}</code>\n"
+                f"🏅 حدس دقیق نتیجه: <code>{exact}</code>\n"
+                "━━━━━━━━━━━━━━━━━━━━"
             )
             await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
@@ -583,7 +611,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = await show_leaderboard_text()
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
-# Group Messages
+# هندلر پیام‌های متنی در گروه
 async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message.text.strip() if update.message and update.message.text else ""
     if not msg:
@@ -596,16 +624,18 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
     elif msg in ["دوئل", "duel", "چالش"]:
         await trigger_duel(update, context)
     elif msg in ["پیشبینی", "پیش بینی"]:
-        await update.message.reply_text("🎯 جهت ثبت پیش‌بینی و رقابت با Escobar AI، از دستور /start استفاده فرمایید.")
+        await update.message.reply_text("🎯 جهت ثبت پیش‌بینی و رقابت با <b>Escobar AI</b>، از دستور /start استفاده کنید.", parse_mode="HTML")
     elif msg in ["بازیها", "بازی ها"]:
         iran_now = get_iran_now()
         matches = await provider.get_matches(iran_now.strftime("%Y%m%d"), league_code="eng.1")
         if matches:
-            t = "⚡ مسابقات منتخب امروز (به وقت تهران):\n────────────────────────────\n\n"
+            t = "🔥 <b>مسابقات منتخب امروز (به وقت تهران):</b>\n━━━━━━━━━━━━━━━━━━━━\n\n"
             for m in matches[:4]:
                 tm = format_iran_time(m.get("date"))
-                t += f"▫️ {m['home_team']} ✕ {m['away_team']} ({tm})\n"
-            await update.message.reply_text(t)
+                h_team = html.escape(str(m['home_team']))
+                a_team = html.escape(str(m['away_team']))
+                t += f"▫️ <b>{h_team}</b> 🆚 <b>{a_team}</b> (⏰ <code>{tm}</code>)\n"
+            await update.message.reply_text(t, parse_mode="HTML")
         else:
             await update.message.reply_text("⏳ مسابقه‌ای برای امروز یافت نشد.")
 
@@ -626,7 +656,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully online with crash-proof telegram handlers!")
+    logger.info("Bot running with HTML Formatting and Beautiful Tables!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
