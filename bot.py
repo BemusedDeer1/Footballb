@@ -107,7 +107,6 @@ def increment_penalty_count_today(user_id: int):
         data["count"] += 1
 
 async def get_live_chat_id():
-    """واکشی آیدی گروه اختصاصی شما از دیتابیس"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT value FROM bot_settings WHERE key = 'live_chat_id'") as cur:
             row = await cur.fetchone()
@@ -116,7 +115,6 @@ async def get_live_chat_id():
     return None
 
 async def is_action_allowed_in_chat(update: Update) -> bool:
-    """قفل بخش‌های رقابتی روی گروه اختصاصی شما"""
     chat = update.effective_chat
     if chat.type == "private":
         return True
@@ -178,11 +176,37 @@ async def ensure_escobar_ai():
         async with aiosqlite.connect(DATABASE_PATH) as db:
             await db.execute("""
                 INSERT OR IGNORE INTO users (user_id, first_name, username, points)
-                VALUES (?, ?, ?, 150)
+                VALUES (?, ?, ?, 100)
             """, (ESCOBAR_AI_ID, "Escobar AI 🤖", "escobar_ai"))
             await db.commit()
     except Exception as e:
         logger.error(f"Error in ensure_escobar_ai: {e}")
+
+# حذف شنتیا از دیتابیس
+async def remove_unwanted_users():
+    try:
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute("DELETE FROM users WHERE first_name LIKE '%ՏᎻᎪΝͲᏆᎪ%' OR first_name LIKE '%شنتیا%'")
+            await db.commit()
+            logger.info("Unwanted user removed successfully.")
+    except Exception as e:
+        logger.error(f"Error removing user: {e}")
+
+# تابع ریست امتیازات فقط با دستور دستی خودت
+async def reset_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if str(user.id) != str(ADMIN_ID):
+        await update.message.reply_text("⛔️ دسترسی غیرمجاز! فقط ادمین اصلی ربات می‌تواند این دستور را اجرا کند.")
+        return
+    
+    try:
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute("UPDATE users SET points = 100")
+            await db.commit()
+        await update.message.reply_text("✅ <b>امتیاز تمامی کاربران با موفقیت روی ۱۰۰ ریست شد!</b>\nآمار بردها و دوئل‌ها دست‌نخورده باقی ماندند.", parse_mode="HTML")
+    except Exception as e:
+        logger.error(f"Error resetting points: {e}")
+        await update.message.reply_text("❌ خطایی در بازنشانی امتیازات رخ داد.")
 
 async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
@@ -1307,6 +1331,8 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
+    # حذف قطعی شنتیا از دیتابیس
+    await remove_unwanted_users()
     application.job_queue.run_repeating(monitor_real_barca_live_job, interval=30, first=5)
 
 def main():
@@ -1323,10 +1349,11 @@ def main():
     app.add_handler(CommandHandler("shoot", daily_shoot_cmd))
     app.add_handler(CommandHandler("daily", daily_reward_cmd))
     app.add_handler(CommandHandler("set_live", set_live_group))
+    app.add_handler(CommandHandler("reset_points", reset_points_cmd))
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot running with Group Restriction and Full Match Center!")
+    logger.info("Bot running with manual reset command and cleaned database!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
