@@ -1,13 +1,12 @@
 import aiosqlite
+import logging
 from config import DATABASE_PATH
-import os
+
+logger = logging.getLogger(__name__)
 
 async def init_db():
-    # اطمینان از وجود پوشه data
-    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-    
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        # جدول کاربران با ۱۰۰ امتیاز پیش‌فرض
+        # جدول کاربران
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
@@ -17,15 +16,11 @@ async def init_db():
                 exact_predictions INTEGER DEFAULT 0,
                 correct_results INTEGER DEFAULT 0,
                 total_predictions INTEGER DEFAULT 0,
-                duel_wins INTEGER DEFAULT 0,
-                streak INTEGER DEFAULT 0,
-                xp INTEGER DEFAULT 0,
-                level INTEGER DEFAULT 1,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                duel_wins INTEGER DEFAULT 0
             )
         """)
-
-        # جدول پیش‌بینی‌ها
+        
+        # جدول پیش‌بینی‌های عادی
         await db.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,4 +34,27 @@ async def init_db():
                 UNIQUE(user_id, match_id)
             )
         """)
+
+        # جدول تنظیمات سیستم (مانند شناسه گروه پخش زنده)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS bot_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        """)
+
+        # جدول استخر پیش‌بینی ویژه ۳۰۰ امتیازی بازی‌های رئال و بارسا
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS special_pool_predictions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                match_id TEXT,
+                user_id INTEGER,
+                user_name TEXT,
+                choice TEXT,
+                settled INTEGER DEFAULT 0,
+                UNIQUE(match_id, user_id)
+            )
+        """)
+
         await db.commit()
+        logger.info("Database initialized successfully with Live & Pool tables!")
