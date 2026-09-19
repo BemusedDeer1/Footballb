@@ -89,9 +89,7 @@ ACTIVE_SHOOTOUTS = {}
 USER_LAST_SHOT = {}
 USER_LAST_DAILY = {}
 USER_DAILY_PENALTIES = {}
-
-# کش وضعیت مانیتورینگ بازی‌های زنده رئال و بارسا
-TRACKED_LIVE_MATCHES = {} # {match_id: {"last_status": "", "home_score": 0, "away_score": 0, "pool_opened": bool}}
+TRACKED_LIVE_MATCHES = {}
 
 def get_penalty_count_today(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
@@ -173,14 +171,14 @@ async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.commit()
         await update.message.reply_text(
             f"✅ <b>این گروه با موفقیت به عنوان ورزشگاه پخش زنده مسابقات رئال مادرید و بارسلونا تنظیم شد!</b> 🏟🔥\n"
-            "از این پس گزارش‌های لحظه‌ای، گل‌ها و پیش‌بینی استخر ۳۰۰ امتیازی در این گروه ارسال می‌شود.",
+            "از این پس دقیقاً ۱۵ دقیقه قبل بازی‌ها استخر ۳۰۰ امتیازی و در جریان بازی گزارش لحظه‌ای ارسال می‌شود.",
             parse_mode="HTML"
         )
     else:
         await update.message.reply_text("⚠️ این دستور را باید در گروه یا سوپرگروه مورد نظر ارسال کنید.")
 
 # -------------------------------------------------------------
-# موتور گزارشگر زنده و استخر ۳۰۰ امتیازی پیش‌بینی (Live Poller)
+# موتور گزارشگر زنده و استخر ۳۰۰ امتیازی با زمان‌بندی دقیق ۱۵ دقیقه
 # -------------------------------------------------------------
 async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
     target_chat_id = await get_live_chat_id()
@@ -189,9 +187,10 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
 
     today_str = get_iran_now().strftime("%Y%m%d")
     matches = await provider.get_matches(today_str, league_code="esp.1")
-    # بررسی UCL در صورت وجود
     ucl_matches = await provider.get_matches(today_str, league_code="uefa.champions")
     matches.extend(ucl_matches)
+
+    utc_now = datetime.now(timezone.utc)
 
     for m in matches:
         h_name = m.get("home_team", "")
@@ -218,11 +217,21 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             }
             TRACKED_LIVE_MATCHES[m_id] = track
 
-        # ۱. باز کردن استخر ۳۰۰ امتیازی ۱۵ دقیقه قبل از بازی
-        if status == "UPCOMING" and not track["pool_opened"]:
-            # ارسال فرم ویژه پیش‌بینی ۳۰۰ امتیازی در گروه
+        # محاسبه فاصله زمانی دقیق تا شروع بازی بر حسب دقیقه
+        match_date_str = m.get("date")
+        minutes_to_start = 9999
+        if match_date_str:
+            try:
+                dt_match = datetime.fromisoformat(match_date_str.replace("Z", "+00:00"))
+                diff_sec = (dt_match - utc_now).total_seconds()
+                minutes_to_start = int(diff_sec // 60)
+            except Exception:
+                minutes_to_start = 9999
+
+        # ۱. باز کردن استخر ۳۰۰ امتیازی فقط زمانی که دقیقاً بین ۰ تا ۱۵ دقیقه به شروع بازی مانده باشد
+        if status == "UPCOMING" and not track["pool_opened"] and (0 <= minutes_to_start <= 15):
             track["pool_opened"] = True
-            time_str = format_iran_time(m.get("date"))
+            time_str = format_iran_time(match_date_str)
             pool_kb = InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton(f"⚪️ برد {h_name[:10]}", callback_data=f"pool_{m_id}_HOME"),
@@ -234,7 +243,7 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                 f"🚨🔥 <b>۱۵ دقیقه تا آغاز نبرد حساس! پیش‌بینی ویژه استخر ۳۰۰ امتیازی</b> 🏆\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 f"⚽️ <b>{h_name}</b> 🆚 <b>{a_name}</b>\n"
-                f"⏰ شروع بازی: <code>{time_str}</code> به وقت تهران\n"
+                f"⏰ شروع بازی: <code>{time_str}</code> (به وقت تهران)\n"
                 "💰 <b>استخر جایزه: ۳۰۰ امتیاز</b> 🪙\n"
                 "⚡️ جایزه ۳۰۰ امتیازی بین تمام کسانی که برنده را درست حدس بزنند مساوی تقسیم خواهد شد!\n"
                 "⏱ مهلت ثبت: تا سوت شروع بازی!\n"
@@ -252,14 +261,13 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             start_msg = (
                 f"📢 <b>سوت آغاز بازی به صدا درآمد!</b> 🔥⚽️\n"
                 f"▫️ <b>{h_name}</b> 🆚 <b>{a_name}</b>\n"
-                "دکمه‌های پیش‌بینی قفل شدند! گزارش زنده بازی آغاز شد."
+                "دکمه‌های پیش‌بینی قفل شدند! گزارش لحظه‌ای بازی آغاز شد."
             )
             await context.bot.send_message(chat_id=target_chat_id, text=start_msg, parse_mode="HTML")
 
-        # ۳. ثبت و اعلام گل‌ها با لحن حماسی
+        # ۳. ثبت و اعلام گل‌ها با متن حماسی
         if status == "LIVE" and h_score is not None and a_score is not None:
             if h_score > track["home_score"]:
-                diff = h_score - track["home_score"]
                 track["home_score"] = h_score
                 goal_team = h_name
                 hype = "توووووپ توی دروازهههههه! گلللل برای " if ("Barcelona" in h_name or "Real" in h_name) else "گللللل برای "
@@ -272,7 +280,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
 
             elif a_score > track["away_score"]:
-                diff = a_score - track["away_score"]
                 track["away_score"] = a_score
                 goal_team = a_name
                 hype = "توووووپ توی دروازهههههه! گلللل برای " if ("Barcelona" in a_name or "Real" in a_name) else "گللللل برای "
@@ -291,7 +298,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             final_a = a_score if a_score is not None else 0
             actual_outcome = "HOME" if final_h > final_a else ("AWAY" if final_a > final_h else "DRAW")
 
-            # تسویه استخر ۳۰۰ امتیازی
             async with aiosqlite.connect(DATABASE_PATH) as db:
                 async with db.execute("SELECT user_id, user_name FROM special_pool_predictions WHERE match_id = ? AND choice = ?", (m_id, actual_outcome)) as cur:
                     winners = await cur.fetchall()
@@ -304,16 +310,16 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                         await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (share, w_id))
                         winners_text += f"▫️ <b>{html.escape(w_name)}</b> (+{share} PTS)\n"
                 else:
-                    winners_text = "\n\nهیچ کاربری برنده نهایی را درست حدس نزد و استخر به بازی بعد منتقل شد!"
+                    winners_text = "\n\nهیچ کاربری برنده نهایی را درست حدس نزد!"
 
                 await db.execute("UPDATE special_pool_predictions SET settled = 1 WHERE match_id = ?", (m_id,))
                 await db.commit()
 
             ft_msg = (
-                f"🏁 <b>سوت پایان بازی به صدا درآمد!</b> 🏆\n"
+                f"🏁 <b>سوت پایان مسابقه به صدا درآمد!</b> 🏆\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 f"⚪️ <b>{h_name}</b> {final_h} - {final_a} <b>{a_name}</b> 🔴\n"
-                f"نتیجه نهایی بازی ثبت شد.{winners_text}"
+                f"نتیجه قطعی بازی ثبت شد.{winners_text}"
             )
             await context.bot.send_message(chat_id=target_chat_id, text=ft_msg, parse_mode="HTML")
 
@@ -822,7 +828,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "⚔️ <b>راهنمای بازی‌ها و کسب امتیاز:</b> ⚽️\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "1️⃣ <b>پیش‌بینی ویژه استخر ۳۰۰ امتیازی:</b> ۱۵ دقیقه قبل بازی‌های رئال و بارسا!\n"
+            "1️⃣ <b>پیش‌بینی ویژه استخر ۳۰۰ امتیازی:</b> دقیقاً ۱۵ دقیقه قبل بازی‌های رئال و بارسا!\n"
             "2️⃣ <b>دوئل اطلاعات عمومی:</b> ریپلای روی دوستت و نوشتن <code>دوئل</code> یا <code>/duel</code>\n"
             "3️⃣ <b>پنالتی تک‌ضرب:</b> ریپلای روی دوستت و نوشتن <code>پنالتی</code> (سقف ۲ بار در روز برای هر نفر)\n"
             "4️⃣ <b>شوت سرعتی:</b> فرستادن کلمه <code>شوت</code> هر ۲۴ ساعت با شانس ۱۵ امتیاز!\n"
@@ -836,6 +842,8 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         choice = parts[2]
         user = query.from_user
 
+        choice_label = "برد میزبان" if choice == "HOME" else ("مساوی" if choice == "DRAW" else "برد میهمان")
+
         async with aiosqlite.connect(DATABASE_PATH) as db:
             try:
                 await db.execute("""
@@ -843,7 +851,15 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     VALUES (?, ?, ?, ?)
                 """, (match_id, user.id, user.first_name, choice))
                 await db.commit()
-                await query.answer("✅ پیش‌بینی شما برای استخر ۳۰۰ امتیازی با موفقیت ثبت شد!", show_alert=True)
+                await query.answer("✅ پیش‌بینی شما با موفقیت ثبت شد!", show_alert=False)
+
+                # ارسال پیام در گروه که شخص در پیش‌بینی شرکت کرد
+                safe_name = html.escape(user.first_name)
+                alert_text = (
+                    f"🎯 <b>{safe_name}</b> در پیش‌بینی ویژه استخر ۳۰۰ امتیازی شرکت کرد!\n"
+                    f"▫️ انتخاب: <b>{choice_label}</b>"
+                )
+                await query.message.reply_text(alert_text, parse_mode="HTML")
             except Exception:
                 await query.answer("⚠️ شما قبلاً در استخر پیش‌بینی این مسابقه شرکت کرده‌اید!", show_alert=True)
 
@@ -1189,7 +1205,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully running with Live Real/Barca Reporter & 300 PTS Pools!")
+    logger.info("Bot fully online with accurate 15-min Live Pool & Public Alerts!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
