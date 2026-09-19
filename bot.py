@@ -170,14 +170,15 @@ async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES ('live_chat_id', ?)", (str(chat.id),))
             await db.commit()
         await update.message.reply_text(
-            f"✅ <b>این گروه با موفقیت به عنوان ورزشگاه پخش زنده مسابقات رئال مادرید و بارسلونا تنظیم شد!</b> 🏟🔥\n"
-            "از این پس دقیقاً ۱۵ دقیقه قبل بازی‌ها استخر ۳۰۰ امتیازی و در جریان بازی گزارش لحظه‌ای ارسال می‌شود.",
+            f"✅ <b>این گروه با موفقیت به عنوان ورزشگاه پخش زنده تنظیم شد!</b> 🏟🔥\n"
+            f"شناسه گروه ثبت شد: <code>{chat.id}</code>\n"
+            "گزارش‌های لحظه‌ای بازی‌های بارسلونا و رئال مادرید در همین گروه فرستاده خواهد شد.",
             parse_mode="HTML"
         )
     else:
         await update.message.reply_text("⚠️ این دستور را باید در گروه یا سوپرگروه مورد نظر ارسال کنید.")
 
-# تابع تولید متن استخر ۳۰۰ امتیازی به همراه لیست زنده تمام شرکت‌کنندگان
+# تابع تولید متن استخر ۳۰۰ امتیازی با ویرایش زنده
 async def generate_pool_message_text(match_data, pool_participants=None):
     h_name = match_data.get("home_team", "")
     a_name = match_data.get("away_team", "")
@@ -206,47 +207,69 @@ async def generate_pool_message_text(match_data, pool_participants=None):
     return text
 
 # -------------------------------------------------------------
-# موتور گزارشگر زنده و استخر ۳۰۰ امتیازی
+# موتور گزارشگر زنده اصلاح‌شده (با گل‌ها، پایان نیمه اول و شروع نیمه دوم)
 # -------------------------------------------------------------
 async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
     target_chat_id = await get_live_chat_id()
     if not target_chat_id:
         return
 
-    today_str = get_iran_now().strftime("%Y%m%d")
-    matches = await provider.get_matches(today_str, league_code="esp.1")
-    ucl_matches = await provider.get_matches(today_str, league_code="uefa.champions")
-    matches.extend(ucl_matches)
+    iran_now = get_iran_now()
+    today_str = iran_now.strftime("%Y%m%d")
+    yesterday_str = (iran_now - timedelta(days=1)).strftime("%Y%m%d")
+    tomorrow_str = (iran_now + timedelta(days=1)).strftime("%Y%m%d")
+
+    matches = []
+    for d in [today_str, yesterday_str, tomorrow_str]:
+        for l_code in ["esp.1", "uefa.champions"]:
+            try:
+                m_list = await provider.get_matches(d, league_code=l_code)
+                matches.extend(m_list)
+            except Exception as e:
+                logger.error(f"Error getting matches: {e}")
+
+    unique_matches = {}
+    for m in matches:
+        unique_matches[m["id"]] = m
 
     utc_now = datetime.now(timezone.utc)
 
-    for m in matches:
-        h_name = m.get("home_team", "")
-        a_name = m.get("away_team", "")
+    for m_id, m in unique_matches.items():
+        h_name = str(m.get("home_team", ""))
+        a_name = str(m.get("away_team", ""))
+        combined_names = (h_name + " " + a_name).lower()
 
-        is_barca = ("Barcelona" in h_name or "Barcelona" in a_name or "بارسلونا" in h_name or "بارسلونا" in a_name)
-        is_real = ("Real Madrid" in h_name or "Real Madrid" in a_name or "رئال مادرید" in h_name or "رئال مادرید" in a_name)
+        is_barca = any(x in combined_names for x in ["barcelona", "barca", "بارسلونا", "بارسا"])
+        is_real = any(x in combined_names for x in ["real madrid", "madrid", "رئال", "مادرید"])
 
         if not (is_barca or is_real):
             continue
 
-        m_id = m["id"]
         MATCH_CACHE[m_id] = m
-        status = m.get("status", "UPCOMING")
-        h_score = m.get("home_score")
-        a_score = m.get("away_score")
+        raw_status = str(m.get("status", "UPCOMING")).upper()
+        
+        # تبدیل امن گل‌ها به عدد صحیح
+        try:
+            h_score = int(m.get("home_score")) if m.get("home_score") is not None else None
+            a_score = int(m.get("away_score")) if m.get("away_score") is not None else None
+        except Exception:
+            h_score, a_score = None, None
 
         track = TRACKED_LIVE_MATCHES.get(m_id)
         if not track:
             track = {
-                "last_status": status,
+                "last_status": raw_status,
                 "home_score": h_score if h_score is not None else 0,
                 "away_score": a_score if a_score is not None else 0,
+                "started_announced": False,
+                "ht_announced": False,
+                "second_half_announced": False,
                 "pool_opened": False,
                 "pool_msg_id": None
             }
             TRACKED_LIVE_MATCHES[m_id] = track
 
+        # محاسبه زمان مانده تا بازی
         match_date_str = m.get("date")
         minutes_to_start = 9999
         if match_date_str:
@@ -255,10 +278,10 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                 diff_sec = (dt_match - utc_now).total_seconds()
                 minutes_to_start = int(diff_sec // 60)
             except Exception:
-                minutes_to_start = 9999
+                pass
 
-        # ۱. باز کردن استخر ۳۰۰ امتیازی دقیقاً بین ۰ تا ۱۵ دقیقه قبل از بازی
-        if status == "UPCOMING" and not track["pool_opened"] and (0 <= minutes_to_start <= 15):
+        # ۱. باز کردن استخر ۳۰۰ امتیازی (۱۵ دقیقه قبل بازی)
+        if raw_status in ["UPCOMING", "PRE"] and not track["pool_opened"] and (0 <= minutes_to_start <= 20):
             track["pool_opened"] = True
             pool_kb = InlineKeyboardMarkup([
                 [
@@ -274,9 +297,14 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             except Exception as e:
                 logger.error(f"Error sending pool alert: {e}")
 
-        # ۲. سوت شروع بازی و قفل دکمه‌های پیش‌بینی
-        if status == "LIVE" and track["last_status"] == "UPCOMING":
+        # ۲. سوت شروع بازی
+        is_finished = raw_status in ["FINISHED", "FT", "POST"]
+        is_in_play = (raw_status in ["LIVE", "IN_PLAY", "1H", "2H", "HT", "HALFTIME"]) or (h_score is not None and not is_finished)
+
+        if is_in_play and not track["started_announced"]:
+            track["started_announced"] = True
             track["last_status"] = "LIVE"
+
             if track.get("pool_msg_id"):
                 try:
                     await context.bot.edit_message_reply_markup(
@@ -288,18 +316,20 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                     pass
 
             start_msg = (
-                f"📢 <b>سوت آغاز بازی به صدا درآمد!</b> 🔥⚽️\n"
-                f"▫️ <b>{h_name}</b> 🆚 <b>{a_name}</b>\n"
-                "دکمه‌های پیش‌بینی قفل شدند! گزارش لحظه‌ای بازی آغاز شد."
+                f"📢🔥 <b>سوت آغاز مسابقه به صدا درآمد!</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚪️ <b>{h_name}</b> 🆚 <b>{a_name}</b> 🔴\n\n"
+                "⚡️ دکمه‌های پیش‌بینی قفل شدند!\n"
+                "🎙 گزارش لحظه‌ای بازی و گل‌ها آغاز شد."
             )
             await context.bot.send_message(chat_id=target_chat_id, text=start_msg, parse_mode="HTML")
 
-        # ۳. ثبت و اعلام گل‌ها با متن حماسی
-        if status == "LIVE" and h_score is not None and a_score is not None:
+        # ۳. ثبت و گزارش حماسی گل‌ها (با تبدیل تضمینی اعداد)
+        if is_in_play and h_score is not None and a_score is not None:
             if h_score > track["home_score"]:
                 track["home_score"] = h_score
                 goal_team = h_name
-                hype = "توووووپ توی دروازهههههه! گلللل برای " if ("Barcelona" in h_name or "Real" in h_name) else "گللللل برای "
+                hype = "توووووپ توی دروازهههههه! گلللل برای " if any(x in goal_team.lower() for x in ["barca", "real", "بارسلونا", "رئال"]) else "⚽️ گللللل برای "
                 goal_msg = (
                     f"⚽️🔥 <b>{hype}{goal_team}!</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━\n"
@@ -311,7 +341,7 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             elif a_score > track["away_score"]:
                 track["away_score"] = a_score
                 goal_team = a_name
-                hype = "توووووپ توی دروازهههههه! گلللل برای " if ("Barcelona" in a_name or "Real" in a_name) else "گللللل برای "
+                hype = "توووووپ توی دروازهههههه! گلللل برای " if any(x in goal_team.lower() for x in ["barca", "real", "بارسلونا", "رئال"]) else "⚽️ گللللل برای "
                 goal_msg = (
                     f"⚽️🔥 <b>{hype}{goal_team}!</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━\n"
@@ -320,11 +350,35 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                 )
                 await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
 
-        # ۴. سوت پایان بازی و تقسیم استخر ۳۰۰ امتیازی بین برندگان
-        if status == "FINISHED" and track["last_status"] != "FINISHED":
+        # ۴. اعلام پایان نیمه اول (Halftime)
+        if raw_status in ["HT", "HALFTIME"] and not track["ht_announced"]:
+            track["ht_announced"] = True
+            cur_h = h_score if h_score is not None else track["home_score"]
+            cur_a = a_score if a_score is not None else track["away_score"]
+            ht_msg = (
+                f"⏸ <b>سوت پایان نیمه اول به صدا درآمد!</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚪️ <b>{h_name}</b> [{cur_h}] - [{cur_a}] <b>{a_name}</b> 🔴\n\n"
+                "بازیکنان راهی رختکن شدند. با شروع نیمه دوم همراه ما باشید!"
+            )
+            await context.bot.send_message(chat_id=target_chat_id, text=ht_msg, parse_mode="HTML")
+
+        # ۵. اعلام شروع نیمه دوم
+        if raw_status in ["2H", "LIVE"] and track["ht_announced"] and not track["second_half_announced"]:
+            track["second_half_announced"] = True
+            sh_msg = (
+                f"▶️🔥 <b>نیمه دوم مسابقه آغاز شد!</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚪️ <b>{h_name}</b> 🆚 <b>{a_name}</b> 🔴\n"
+                "۴۵ دقیقه سرنوشت‌ساز پیش رو است!"
+            )
+            await context.bot.send_message(chat_id=target_chat_id, text=sh_msg, parse_mode="HTML")
+
+        # ۶. پایان بازی و تقسیم استخر ۳۰۰ امتیازی
+        if is_finished and track["last_status"] != "FINISHED":
             track["last_status"] = "FINISHED"
-            final_h = h_score if h_score is not None else 0
-            final_a = a_score if a_score is not None else 0
+            final_h = h_score if h_score is not None else track["home_score"]
+            final_a = a_score if a_score is not None else track["away_score"]
             actual_outcome = "HOME" if final_h > final_a else ("AWAY" if final_a > final_h else "DRAW")
 
             async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -493,7 +547,7 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 # -------------------------------------------------------------
-# پنالتی تک‌ضرب با سقف ۲ بار در روز
+# پنالتی تک‌ضرب
 # -------------------------------------------------------------
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -865,7 +919,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
-    # پیش‌بینی استخر ۳۰۰ امتیازی و ویرایش زنده همان پیام
     elif data.startswith("pool_"):
         parts = data.split("_")
         match_id = parts[1]
@@ -873,7 +926,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = query.from_user
 
         async with aiosqlite.connect(DATABASE_PATH) as db:
-            # ثبت یا به‌روزرسانی انتخاب کاربر
             await db.execute("""
                 INSERT INTO special_pool_predictions (match_id, user_id, user_name, choice)
                 VALUES (?, ?, ?, ?)
@@ -881,13 +933,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             """, (match_id, user.id, user.first_name, choice))
             await db.commit()
 
-            # دریافت لیست کامل تمام شرکت‌کنندگان این بازی
             async with db.execute("SELECT user_name, choice FROM special_pool_predictions WHERE match_id = ?", (match_id,)) as cur:
                 participants = await cur.fetchall()
 
-        await query.answer("✅ پیش‌بینی شما ثبت و روی پیام آپدیت شد!", show_alert=False)
+        await query.answer("✅ پیش‌بینی شما ثبت و لیست آپدیت شد!", show_alert=False)
 
-        # بازیابی اطلاعات مسابقه و ویرایش همان پیام اصلی بدون ارسال پیام اضافه
         m = MATCH_CACHE.get(match_id)
         if not m:
             m = {"home_team": "میزبان", "away_team": "میهمان", "date": None}
@@ -1217,7 +1267,8 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
-    application.job_queue.run_repeating(monitor_real_barca_live_job, interval=60, first=10)
+    # مانیتورینگ زنده مسابقات رئال و بارسا هر ۳۰ ثانیه برای سرعت بالاتر
+    application.job_queue.run_repeating(monitor_real_barca_live_job, interval=30, first=5)
 
 def main():
     t = threading.Thread(target=start_health_server, daemon=True)
@@ -1236,7 +1287,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully running with Live Editing Pool & All Participants Tracking!")
+    logger.info("Bot online with complete live events (Goals, Halftime, Second Half, FT)!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
