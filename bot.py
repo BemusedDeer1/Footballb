@@ -89,6 +89,23 @@ ACTIVE_DUELS = {}
 ACTIVE_SHOOTOUTS = {}
 USER_LAST_SHOT = {}
 USER_LAST_DAILY = {}
+# ساختار ثبت تعداد پنالتی‌های روزانه هر کاربر: {user_id: {"date": "YYYY-MM-DD", "count": N}}
+USER_DAILY_PENALTIES = {}
+
+def get_penalty_count_today(user_id: int) -> int:
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+    data = USER_DAILY_PENALTIES.get(user_id)
+    if not data or data["date"] != today_str:
+        return 0
+    return data["count"]
+
+def increment_penalty_count_today(user_id: int):
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+    data = USER_DAILY_PENALTIES.get(user_id)
+    if not data or data["date"] != today_str:
+        USER_DAILY_PENALTIES[user_id] = {"date": today_str, "count": 1}
+    else:
+        data["count"] += 1
 
 async def safe_edit_message(query_or_bot, text, reply_markup=None, chat_id=None, message_id=None):
     try:
@@ -139,6 +156,16 @@ async def ensure_escobar_ai():
     except Exception as e:
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
+async def fix_min_points():
+    """کف امتیاز ۱۰۰ برای تمام کاربران (کسانی که زیر ۱۰۰ بودن روی ۱۰۰ فیکس میشن)"""
+    try:
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute("UPDATE users SET points = 100 WHERE points < 100")
+            await db.commit()
+            logger.info("Min 100 points enforced for all users!")
+    except Exception as e:
+        logger.error(f"Error in fix_min_points: {e}")
+
 async def record_ai_prediction_if_needed(match_id: str):
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -185,9 +212,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"سلام <b>{safe_name}</b> عزیز، خوش اومدی به هاب فوتبالی! 🔥\n\n"
         "⚡️ نتایج زنده و برنامه لحظه‌ای مسابقات معتبر\n"
         "🎯 پیش‌بینی بازی‌ها و رقابت با <b>Escobar AI 🤖</b>\n"
-        "⚔️ دوئل اطلاعات عمومی و <b>پنالتی تک‌ضرب</b> در گروه!\n"
+        "⚔️ دوئل اطلاعات عمومی و <b>پنالتی تک‌ضرب (۲ بار در روز)</b> در گروه!\n"
         "🎁 پاداش روزانه و شوت‌های سرعتی\n"
-        "💰 موجودی شما: <b>100 امتیاز</b> 🪙\n"
+        "💰 حداقل موجودی: <b>100 امتیاز</b> 🪙\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         "👇 <b>یک بخش را جهت شروع انتخاب کنید:</b>"
     )
@@ -200,6 +227,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Error sending start message: {e}")
 
 async def show_leaderboard_text():
+    # تضمین اینکه قبل از نمایش جدول هم کفی زیر ۱۰۰ نباشد
+    await fix_min_points()
+
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT first_name, points, duel_wins FROM users ORDER BY points DESC, duel_wins DESC") as cur:
             all_users = await cur.fetchall()
@@ -210,7 +240,7 @@ async def show_leaderboard_text():
         text += "▫️ هنوز کاربری ثبت نشده است.\n"
     else:
         for idx, u in enumerate(all_users, 1):
-            name, pts, wins = u[0], u[1], u[2]
+            name, pts, wins = u[0], max(100, u[1]), u[2]
             badge = get_user_badge(pts)
             pos = "🥇" if idx == 1 else ("🥈" if idx == 2 else ("🥉" if idx == 3 else f"<b>{idx:02d}.</b>"))
             safe_name = html.escape(str(name))
@@ -303,7 +333,7 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 # -------------------------------------------------------------
-# ۳. سیستم پنالتی تک‌ضرب تا برنده قطعی (Sudden Death)
+# ۳. سیستم پنالتی تک‌ضرب با سقف ۲ بار در روز برای هر نفر
 # -------------------------------------------------------------
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -322,6 +352,25 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
 
     if challenger.id == opponent.id:
         await update.message.reply_text("⚠️ نمی‌تونی با خودت پنالتی بزنی!")
+        return
+
+    # بررسی سقف ۲ پنالتی در روز برای چلنجر
+    c_count = get_penalty_count_today(challenger.id)
+    if c_count >= 2:
+        await update.message.reply_text(
+            f"⛔️ <b>{html.escape(challenger.first_name)}</b> عزیز، شما سقف مجاز ۲ پنالتی در روز خود را مصرف کرده‌اید!\n"
+            "فردا دوباره می‌توانید پنالتی بزنید.",
+            parse_mode="HTML"
+        )
+        return
+
+    # بررسی سقف ۲ پنالتی در روز برای حریف
+    o_count = get_penalty_count_today(opponent.id)
+    if o_count >= 2:
+        await update.message.reply_text(
+            f"⛔️ حریف شما <b>{html.escape(opponent.first_name)}</b> امروز ۲ پنالتی خود را بازی کرده و فرصت امروزش تمام شده است!",
+            parse_mode="HTML"
+        )
         return
 
     await ensure_user(challenger)
@@ -349,10 +398,10 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
     text = (
         "🥅 <b>دوئل تک‌ضرب پنالتی (مرگ ناگهانی)!</b> ⚽️\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 شوت‌زن اول: <b>{c_name}</b>\n"
-        f"👤 شوت‌زن دوم: <b>{o_name}</b>\n"
+        f"👤 شوت‌زن اول: <b>{c_name}</b> (پنالتی امروز: {c_count + 1}/2)\n"
+        f"👤 شوت‌زن دوم: <b>{o_name}</b> (پنالتی امروز: {o_count + 1}/2)\n"
         "💰 شرط مسابقه: <b>25 امتیاز</b> 🪙\n"
-        "⚡️ قانون: هر نفر ۱ شوت می‌زند؛ در صورت تساوی، ضربات تا تعیین برنده قطعی ادامه پیدا می‌کند!\n"
+        "⚡️ در صورت تساوی، ضربات تا تعیین برنده ادامه پیدا می‌کند!\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         f"آیا <b>{o_name}</b> چالش را می‌پذیرد؟"
     )
@@ -415,9 +464,14 @@ async def execute_penalty_kick(query, context, p_id):
         stake = shootout["stake"]
 
         if p1_goal and not p2_goal:
+            # ثبت قطعی یک دست پنالتی مصرف شده برای هر دو نفر
+            increment_penalty_count_today(shootout["p1"]["id"])
+            increment_penalty_count_today(shootout["p2"]["id"])
+
             async with aiosqlite.connect(DATABASE_PATH) as db:
                 await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p1"]["id"]))
-                await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, shootout["p2"]["id"]))
+                # کسر با حفظ حداقل ۱۰۰ امتیاز
+                await db.execute("UPDATE users SET points = MAX(100, points - ?) WHERE user_id = ?", (stake, shootout["p2"]["id"]))
                 await db.commit()
 
             del ACTIVE_SHOOTOUTS[p_id]
@@ -432,9 +486,14 @@ async def execute_penalty_kick(query, context, p_id):
             await context.bot.send_message(chat_id=chat_id, text=res, parse_mode="HTML")
 
         elif p2_goal and not p1_goal:
+            # ثبت قطعی یک دست پنالتی مصرف شده برای هر دو نفر
+            increment_penalty_count_today(shootout["p1"]["id"])
+            increment_penalty_count_today(shootout["p2"]["id"])
+
             async with aiosqlite.connect(DATABASE_PATH) as db:
                 await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p2"]["id"]))
-                await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, shootout["p1"]["id"]))
+                # کسر با حفظ حداقل ۱۰۰ امتیاز
+                await db.execute("UPDATE users SET points = MAX(100, points - ?) WHERE user_id = ?", (stake, shootout["p1"]["id"]))
                 await db.commit()
 
             del ACTIVE_SHOOTOUTS[p_id]
@@ -465,7 +524,7 @@ async def execute_penalty_kick(query, context, p_id):
             await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=kick_kb, parse_mode="HTML")
 
 # -------------------------------------------------------------
-# ۴. سیستم دوئل اطلاعات عمومی با JobQueue
+# ۴. سیستم دوئل اطلاعات عمومی با JobQueue و کف ۱۰۰ امتیاز
 # -------------------------------------------------------------
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -581,11 +640,11 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
         async with aiosqlite.connect(DATABASE_PATH) as db:
             if c_score > o_score:
                 await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, c_id))
-                await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, o_id))
+                await db.execute("UPDATE users SET points = MAX(100, points - ?) WHERE user_id = ?", (stake, o_id))
                 res_text += f"🎉 <b>تبریک به {c_name}! برنده {stake} امتیاز شد!</b> 🔥"
             elif o_score > c_score:
                 await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, o_id))
-                await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (stake, c_id))
+                await db.execute("UPDATE users SET points = MAX(100, points - ?) WHERE user_id = ?", (stake, c_id))
                 res_text += f"🎉 <b>تبریک به {o_name}! برنده {stake} امتیاز شد!</b> 🔥"
             else:
                 res_text += "🤝 <b>نتیجه مساوی شد! هیچ امتیازی کسر نگردید.</b>"
@@ -647,7 +706,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "⚔️ <b>راهنمای بازی‌ها در گروه:</b> ⚽️\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
             "1️⃣ <b>دوئل اطلاعات عمومی:</b> ریپلای روی دوستت و نوشتن <code>دوئل</code> یا <code>/duel</code>\n"
-            "2️⃣ <b>پنالتی تک‌ضرب:</b> ریپلای روی دوستت و نوشتن <code>پنالتی</code> یا <code>/penalty</code> (با مرگ ناگهانی!)\n"
+            "2️⃣ <b>پنالتی تک‌ضرب:</b> ریپلای روی دوستت و نوشتن <code>پنالتی</code> (سقف ۲ بار در روز برای هر نفر)\n"
             "3️⃣ <b>شوت سرعتی:</b> فرستادن کلمه <code>شوت</code> هر ۲۴ ساعت با شانس ۱۵ امتیاز!\n"
             "4️⃣ <b>جایزه روزانه:</b> فرستادن کلمه <code>جایزه</code> هر ۲۴ ساعت با ۲۰ امتیاز قطعی!"
         )
@@ -662,6 +721,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if query.from_user.id != shootout["p2"]["id"]:
             await query.answer("⛔ فقط حریف دعوت‌شده می‌تواند چالش را قبول کند!", show_alert=True)
+            return
+
+        # بررسی مجدد سقف ۲ بازی حریف هنگام قبول چالش
+        if get_penalty_count_today(query.from_user.id) >= 2:
+            await query.answer("⛔ شما امروز سقف ۲ پنالتی خود را بازی کرده‌اید!", show_alert=True)
             return
 
         text = render_shootout_board(shootout)
@@ -898,19 +962,22 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "user_profile":
         user_id = query.from_user.id
+        await fix_min_points()
         async with aiosqlite.connect(DATABASE_PATH) as db:
             async with db.execute("SELECT points, exact_predictions, correct_results, total_predictions, duel_wins FROM users WHERE user_id = ?", (user_id,)) as cur:
                 u = await cur.fetchone()
 
         if u:
-            pts, exact, correct, total, dw = u
+            pts, exact, correct, total, dw = max(100, u[0]), u[1], u[2], u[3], u[4]
             badge = get_user_badge(pts)
             safe_name = html.escape(str(query.from_user.first_name))
+            p_today = get_penalty_count_today(user_id)
             text = (
                 f"👤 <b>کارت رسمی بازیکن | {safe_name}</b> ✨\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 f"🌟 سطح بازیکن: {badge} <b>Level PRO</b>\n"
                 f"💰 موجودی امتیاز: <code>{pts} PTS</code>\n"
+                f"🥅 پنالتی‌های بازی‌شده امروز: <code>{p_today}/2</code>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 f"⚔️ پیروزی در دوئل‌ها: <code>{dw} برد</code>\n"
                 f"🎯 پیش‌بینی‌های ثبت‌شده: <code>{total}</code>\n"
@@ -960,6 +1027,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
+    await fix_min_points()
 
 def main():
     t = threading.Thread(target=start_health_server, daemon=True)
@@ -977,7 +1045,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot running with Sudden Death Penalties, Duels and Multi-Reward Systems!")
+    logger.info("Bot online with min 100 PTS and 2 Penalties/day limit!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
