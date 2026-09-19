@@ -88,7 +88,6 @@ MATCH_CACHE = {}
 ACTIVE_DUELS = {}
 
 async def safe_edit_message(query_or_bot, text, reply_markup=None, chat_id=None, message_id=None):
-    """ویرایش امن با پشتیبانی کامل از HTML"""
     try:
         if chat_id and message_id:
             await query_or_bot.edit_message_text(
@@ -201,7 +200,7 @@ async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode="HTML")
 
 # -------------------------------------------------------------
-# سیستم دوئل اطلاعات عمومی فوتبال
+# سیستم دوئل اطلاعات عمومی با شناسه‌های سبک و تایمر JobQueue
 # -------------------------------------------------------------
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -226,7 +225,8 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(challenger)
     await ensure_user(opponent)
 
-    duel_id = f"{challenger.id}_{opponent.id}_{int(datetime.utcnow().timestamp())}"
+    # ساخت یک شناسه کوتاه برای جلوگیری از رد شدن در محدودیت ۶۴ بایتی دکمه‌های شیشه‌ای تلگرام
+    duel_id = str(random.randint(10000, 99999))
     ACTIVE_DUELS[duel_id] = {
         "challenger": {"id": challenger.id, "name": challenger.first_name, "score": 0},
         "opponent": {"id": opponent.id, "name": opponent.first_name, "score": 0},
@@ -234,14 +234,13 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "current_q": 0,
         "stake": 25,
         "answered": {},
-        "timer_task": None,
         "chat_id": update.effective_chat.id,
         "message_id": None
     }
 
     duel_kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚔️ قبول چالش دوئل", callback_data=f"accept_duel_{duel_id}"),
-         InlineKeyboardButton("❌ رد چالش", callback_data=f"reject_duel_{duel_id}")]
+        [InlineKeyboardButton("⚔️ قبول چالش دوئل", callback_data=f"acd_{duel_id}"),
+         InlineKeyboardButton("❌ رد چالش", callback_data=f"rjd_{duel_id}")]
     ])
 
     c_name = html.escape(challenger.first_name)
@@ -268,7 +267,6 @@ def render_duel_question_text(duel, q_data, q_idx):
 
     c_status = "✅ پاسخ داد" if c_id in duel["answered"] else "⏳ در حال فکر کردن..."
     o_status = "✅ پاسخ داد" if o_id in duel["answered"] else "⏳ در حال فکر کردن..."
-
     safe_q = html.escape(q_data['question'])
 
     text = (
@@ -282,20 +280,21 @@ def render_duel_question_text(duel, q_data, q_idx):
     )
     return text
 
-async def question_timeout_worker(bot, duel_id: str, q_idx: int):
-    await asyncio.sleep(15)
+async def question_timeout_job(context: ContextTypes.DEFAULT_TYPE):
+    """تایمر تضمینی ۱۵ ثانیه‌ای تلگرام برای رفتن به سوال بعد"""
+    job_data = context.job.data
+    duel_id = job_data["duel_id"]
+    q_idx = job_data["q_idx"]
+
     duel = ACTIVE_DUELS.get(duel_id)
     if duel and duel["current_q"] == q_idx:
         duel["current_q"] += 1
-        await proceed_duel(bot, duel_id)
+        await proceed_duel(context, duel_id)
 
-async def proceed_duel(bot, duel_id):
+async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     duel = ACTIVE_DUELS.get(duel_id)
     if not duel:
         return
-
-    if duel["timer_task"] and not duel["timer_task"].done():
-        duel["timer_task"].cancel()
 
     q_idx = duel["current_q"]
     chat_id = duel["chat_id"]
@@ -331,21 +330,27 @@ async def proceed_duel(bot, duel_id):
             await db.commit()
 
         del ACTIVE_DUELS[duel_id]
-        await safe_edit_message(bot, res_text, chat_id=chat_id, message_id=msg_id)
+        await safe_edit_message(context.bot, res_text, chat_id=chat_id, message_id=msg_id)
         return
 
     q_data = duel["questions"][q_idx]
     duel["answered"] = {}
 
+    # ساخت دکمه‌ها با کدهای کوتاه و استاندارد (ans_duel -> ad)
     buttons = []
     for opt_idx, opt_text in enumerate(q_data["options"]):
-        buttons.append([InlineKeyboardButton(f"🔘 {opt_text}", callback_data=f"ans_duel_{duel_id}_{opt_idx}")])
+        buttons.append([InlineKeyboardButton(f"🔘 {opt_text}", callback_data=f"ad_{duel_id}_{opt_idx}")])
 
     text = render_duel_question_text(duel, q_data, q_idx)
-    await safe_edit_message(bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=chat_id, message_id=msg_id)
+    await safe_edit_message(context.bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=chat_id, message_id=msg_id)
 
-    loop = asyncio.get_event_loop()
-    duel["timer_task"] = loop.create_task(question_timeout_worker(bot, duel_id, q_idx))
+    # ثبت تایمر رسمی ۱۵ ثانیه
+    context.job_queue.run_once(
+        question_timeout_job,
+        15,
+        data={"duel_id": duel_id, "q_idx": q_idx},
+        name=f"duel_timer_{duel_id}_{q_idx}"
+    )
 
 # -------------------------------------------------------------
 # Callback Router
@@ -370,8 +375,8 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
-    elif data.startswith("accept_duel_"):
-        duel_id = data.replace("accept_duel_", "")
+    elif data.startswith("acd_"):
+        duel_id = data.replace("acd_", "")
         duel = ACTIVE_DUELS.get(duel_id)
         if not duel:
             await query.answer("⚠️ این دوئل منقضی شده است.", show_alert=True)
@@ -381,19 +386,19 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("⛔ فقط حریف دعوت‌شده می‌تواند چالش را قبول کند!", show_alert=True)
             return
 
-        await proceed_duel(context.bot, duel_id)
+        await proceed_duel(context, duel_id)
 
-    elif data.startswith("reject_duel_"):
-        duel_id = data.replace("reject_duel_", "")
+    elif data.startswith("rjd_"):
+        duel_id = data.replace("rjd_", "")
         duel = ACTIVE_DUELS.get(duel_id)
         if duel and query.from_user.id in [duel["opponent"]["id"], duel["challenger"]["id"]]:
             del ACTIVE_DUELS[duel_id]
             await safe_edit_message(query, "❌ رقابت دوئل لغو گردید.")
 
-    elif data.startswith("ans_duel_"):
+    elif data.startswith("ad_"):
         parts = data.split("_")
-        duel_id = parts[2]
-        chosen_idx = int(parts[3])
+        duel_id = parts[1]
+        chosen_idx = int(parts[2])
         duel = ACTIVE_DUELS.get(duel_id)
 
         if not duel:
@@ -422,13 +427,19 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.answer("❌ پاسخ اشتباه ثبت شد!")
 
+        # آپدیت وضعیت پاسخگویی در متن سوال
         q_text = render_duel_question_text(duel, curr_q, duel["current_q"])
         await safe_edit_message(query, q_text, reply_markup=query.message.reply_markup)
 
+        # اگر هر دو نفر پاسخ دادند، لغو تایمر و رفتن فوری به سوال بعد
         if len(duel["answered"]) >= 2:
+            current_jobs = context.job_queue.get_jobs_by_name(f"duel_timer_{duel_id}_{duel['current_q']}")
+            for j in current_jobs:
+                j.schedule_removal()
+
             await asyncio.sleep(1)
             duel["current_q"] += 1
-            await proceed_duel(context.bot, duel_id)
+            await proceed_duel(context, duel_id)
 
     elif data == "select_matches_today":
         await safe_edit_message(
@@ -505,7 +516,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await safe_edit_message(query, f"⏳ جدول {league_title} در دسترس نیست.", reply_markup=kb.get_back_button())
             return
             
-        # ساخت جدول دقیق، تراز و کلاسیک با تگ pre
         text = f"🏆 <b>{league_title} Standings (Top 10)</b>\n\n"
         text += "<pre>"
         text += "#  | Team          | P  | Pts\n"
@@ -656,7 +666,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot running with HTML Formatting and Beautiful Tables!")
+    logger.info("Bot running with precision JobQueue timers and compact callback keys!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
