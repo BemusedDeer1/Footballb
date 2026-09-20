@@ -219,13 +219,14 @@ async def ensure_escobar_ai():
     except Exception as e:
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
+# سیستم سهمیه پنالتی با ریست رأس ساعت ۱۲ شب ایران
 async def get_penalty_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT penalty_date, penalty_count FROM users WHERE user_id = ?", (user_id,)) as cur:
             row = await cur.fetchone()
             if row and row[0] == today_str:
-                return row[1]
+                return row[1] or 0
     return 0
 
 async def increment_penalty_count_db(user_id: int):
@@ -237,6 +238,7 @@ async def increment_penalty_count_db(user_id: int):
         """, (today_str, cur_count + 1, user_id))
         await db.commit()
 
+# سیستم سهمیه حدس با ریست رأس ساعت ۱۲ شب ایران
 async def get_guess_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -670,7 +672,7 @@ async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             row = await cur.fetchone()
             if row and row[0] == today_str:
                 await update.effective_message.reply_text(
-                    f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، پاداش روزانه امروز خود را دریافت کرده‌اید!\nفردا برای پاداش جدید سر بزنید.",
+                    f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، پاداش روزانه امروز خود را دریافت کرده‌اید!\nامشب بعد از ساعت ۱۲ (۰۰:۰۰) پاداش فردا فعال خواهد شد.",
                     parse_mode="HTML"
                 )
                 return
@@ -698,7 +700,7 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             row = await cur.fetchone()
             if row and row[0] == today_str:
                 await update.effective_message.reply_text(
-                    f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، شوت روزانه امروز خود را زده‌اید!\nفردا دوباره شانس‌ات را امتحان کن.",
+                    f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، شوت روزانه امروز خود را زده‌اید!\nامشب بعد از ساعت ۱۲ (۰۰:۰۰) شانس شوت فردا فعال خواهد شد.",
                     parse_mode="HTML"
                 )
                 return
@@ -724,7 +726,7 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     else:
         await update.effective_message.reply_text(
-            "🧤❌ <b>توپ گل نشد!</b> (برخورد به تیرک یا مهار سنگربان)\nفردا دوباره امتحان کن.",
+            "🧤❌ <b>توپ گل نشد!</b> (برخورد به تیرک یا مهار سنگربان)\nامشب بعد از ساعت ۱۲ دوباره شانس داری.",
             parse_mode="HTML"
         )
 
@@ -741,7 +743,7 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             row = await cur.fetchone()
             if row and row[0] == today_str:
                 await update.effective_message.reply_text(
-                    f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، امروز گردونه را چرخانده‌اید!\nفردا برای شانس بعدی سر بزنید.",
+                    f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، امروز گردونه را چرخانده‌اید!\nامشب بعد از ساعت ۱۲ (۰۰:۰۰) شانس چرخاندن مجدد را خواهی داشت.",
                     parse_mode="HTML"
                 )
                 return
@@ -761,7 +763,7 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if win > 0:
         msg = f"🎡 <b>گردونه متوقف شد!</b>\n🎉 تبریک <b>{html.escape(user.first_name)}</b>، شما برنده <b>+{win} امتیاز</b> شدید!"
     else:
-        msg = f"🎡 <b>گردونه متوقف شد!</b>\n❌ این‌بار پوچ بود! فردا دوباره شانس‌ات را امتحان کن."
+        msg = f"🎡 <b>گردونه متوقف شد!</b>\n❌ این‌بار پوچ بود! امشب بعد از ساعت ۱۲ دوباره شانس‌ات را امتحان کن."
 
     await update.effective_message.reply_text(msg, parse_mode="HTML")
 
@@ -790,8 +792,8 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     g_count = await get_guess_count_db(user.id)
     if g_count >= 3:
         await update.effective_message.reply_text(
-            f"⛔️ <b>{html.escape(user.first_name)}</b> عزیز، شما سهمیه ۳ بار حدس بازیکن امروز خود را مصرف کرده‌اید!\n"
-            "فردا مجدداً می‌توانید ۳ پرونده دیگر حل کنید.",
+            f"⛔️ <b>{html.escape(user.first_name)}</b> عزیز، شما سقف ۳ بار حدس بازیکن امروز خود را مصرف کرده‌اید!\n"
+            "امشب بعد از ساعت ۱۲ (۰۰:۰۰) سهمیه ۳تایی جدید شما آزاد خواهد شد.",
             parse_mode="HTML"
         )
         return
@@ -873,12 +875,18 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
 
     c_count = await get_penalty_count_db(challenger.id)
     if c_count >= 3:
-        await update.message.reply_text(f"⛔️ <b>{html.escape(challenger.first_name)}</b> عزیز، شما سقف مجاز ۳ پنالتی در روز خود را مصرف کرده‌اید!", parse_mode="HTML")
+        await update.message.reply_text(
+            f"⛔️ <b>{html.escape(challenger.first_name)}</b> عزیز، شما سقف مجاز ۳ پنالتی در روز خود را مصرف کرده‌اید!\nامشب بعد از ساعت ۱۲ دوباره سهمیه خواهی داشت.",
+            parse_mode="HTML"
+        )
         return
 
     o_count = await get_penalty_count_db(opponent.id)
     if o_count >= 3:
-        await update.message.reply_text(f"⛔️ حریف شما <b>{html.escape(opponent.first_name)}</b> امروز ۳ پنالتی خود را بازی کرده است!", parse_mode="HTML")
+        await update.message.reply_text(
+            f"⛔️ حریف شما <b>{html.escape(opponent.first_name)}</b> امروز ۳ پنالتی خود را بازی کرده است!",
+            parse_mode="HTML"
+        )
         return
 
     await ensure_user(challenger)
@@ -1500,7 +1508,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully upgraded: Clean BiDi Leaderboard, 3x Guess (10 PTS) & 3x Penalty (15 PTS) online!")
+    logger.info("Bot fully upgraded: Calendar Midnight Reset & Clean Minimal Leaderboard online!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
