@@ -48,6 +48,7 @@ def format_iran_time(utc_date_str):
     except Exception:
         return "20:00"
 
+# سیستم سطوح کاملاً متمایز، منطقی و متناسب با ارزش امتیاز
 def get_user_tier(points: int) -> tuple[str, str]:
     if points >= 1500:
         return "🐐", "G.O.A.T"
@@ -60,11 +61,11 @@ def get_user_tier(points: int) -> tuple[str, str]:
     elif points >= 350:
         return "🎖", "Captain"
     elif points >= 200:
-        return "🥇", "First Team"
+        return "⭐", "First Team"
     elif points >= 100:
-        return "🥈", "Semi-Pro"
+        return "⚡️", "Semi-Pro"
     else:
-        return "🥉", "Academy"
+        return "🔰", "Academy"
 
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -252,7 +253,7 @@ async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"✅ <b>این گروه به عنوان گروه اختصاصی مسابقات و گزارش زنده ثبت شد!</b> 🏟🔥\n"
             f"شناسه اختصاصی: <code>{chat.id}</code>\n"
-            "گزارش لحظه‌ای بازی‌های رئال مادرید و بارسلونا در همین گروه ارسال خواهد شد.",
+            "رویدادها و گزارش بازی‌های مهم در همین گروه ارسال خواهد شد.",
             parse_mode="HTML"
         )
     else:
@@ -284,9 +285,6 @@ async def generate_pool_message_text(match_data, pool_participants=None):
     text += "\n👇 <b>پیش‌بینی خود را انتخاب کنید:</b>"
     return text
 
-# -------------------------------------------------------------
-# موتور گزارشگر زنده و رویدادهای بازی (رئال و بارسا)
-# -------------------------------------------------------------
 async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
     target_chat_id = await get_live_chat_id()
     if not target_chat_id:
@@ -316,7 +314,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
         a_name = str(m.get("away_team", ""))
         combined = (h_name + " " + a_name).lower()
 
-        # بررسی بازی‌های رئال یا بارسا
         if not any(x in combined for x in ["barcelona", "barca", "بارسلونا", "real madrid", "madrid", "رئال"]):
             continue
 
@@ -353,7 +350,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             except Exception:
                 pass
 
-        # ۱. باز کردن استخر ۳۰۰ امتیازی قبل از بازی
         if raw_status in ["UPCOMING", "PRE"] and not track["pool_opened"] and (0 <= minutes_to_start <= 25):
             track["pool_opened"] = True
             pool_kb = InlineKeyboardMarkup([
@@ -373,7 +369,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
         is_finished = raw_status in ["FINISHED", "FT", "POST"]
         is_in_play = (raw_status in ["LIVE", "IN_PLAY", "1H", "2H", "HT", "HALFTIME"]) or (h_score is not None and not is_finished)
 
-        # ۲. سوت آغاز بازی
         if is_in_play and not track["started_announced"]:
             track["started_announced"] = True
             track["last_status"] = "LIVE"
@@ -395,7 +390,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             )
             await context.bot.send_message(chat_id=target_chat_id, text=start_msg, parse_mode="HTML")
 
-        # ۳. گزارش دقیق گل‌ها
         if is_in_play and h_score is not None and a_score is not None:
             if h_score > track["home_score"]:
                 track["home_score"] = h_score
@@ -417,7 +411,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                 )
                 await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
 
-        # ۴. پایان نیمه اول
         if raw_status in ["HT", "HALFTIME"] and not track["ht_announced"]:
             track["ht_announced"] = True
             cur_h = h_score if h_score is not None else track["home_score"]
@@ -429,7 +422,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             )
             await context.bot.send_message(chat_id=target_chat_id, text=ht_msg, parse_mode="HTML")
 
-        # ۵. شروع نیمه دوم
         if raw_status in ["2H", "LIVE"] and track["ht_announced"] and not track["second_half_announced"]:
             track["second_half_announced"] = True
             sh_msg = (
@@ -439,7 +431,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             )
             await context.bot.send_message(chat_id=target_chat_id, text=sh_msg, parse_mode="HTML")
 
-        # ۶. پایان بازی و تقسیم استخر ۳۰۰ امتیازی
         if is_finished and track["last_status"] != "FINISHED":
             track["last_status"] = "FINISHED"
             final_h = h_score if h_score is not None else track["home_score"]
@@ -470,9 +461,6 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             )
             await context.bot.send_message(chat_id=target_chat_id, text=ft_msg, parse_mode="HTML")
 
-# -------------------------------------------------------------
-# سیستم تسویه سیزن ماهانه
-# -------------------------------------------------------------
 async def check_and_settle_monthly_season(context: ContextTypes.DEFAULT_TYPE):
     iran_now = get_iran_now()
     cur_month_str = iran_now.strftime("%Y-%m")
@@ -561,6 +549,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, reply_markup=kb.get_main_menu(), parse_mode="HTML")
 
+# جدول رده‌بندی بازطراحی‌شده: بدون ایموجی تکراری، منظم و کاملاً منطقی
 async def show_leaderboard_text():
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT first_name, points, duel_wins FROM users ORDER BY points DESC, duel_wins DESC") as cur:
@@ -573,7 +562,8 @@ async def show_leaderboard_text():
     else:
         for idx, u in enumerate(all_users, 1):
             name, pts, wins = u[0], max(0, u[1]), u[2]
-            rank_badge = "🥇" if idx == 1 else ("🥈" if idx == 2 else ("🥉" if idx == 3 else f"{idx:02d}."))
+            # فقط ۳ نفر برتر مدال رتبه می‌گیرند، رتبه‌های بعدی تگ عددی شیک دریافت می‌کنند
+            rank_badge = "🥇" if idx == 1 else ("🥈" if idx == 2 else ("🥉" if idx == 3 else f"<code>{idx:02d}.</code>"))
             safe_name = html.escape(str(name))
             icon, tier = get_user_tier(pts)
 
@@ -1224,7 +1214,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "select_standings_league":
         await safe_edit_message(query, "🏆 <b>جدول رده‌بندی کدام لیگ را می‌خواهید؟</b>", reply_markup=kb.get_standings_leagues_keyboard())
 
-    # نمایش فوق‌العاده شیک، خوانا و تفکیک‌شده بازی‌های امروز و فردا
     elif data.startswith("today_") or data.startswith("tmrw_"):
         is_today = data.startswith("today_")
         league_code = data.replace("today_", "").replace("tmrw_", "")
@@ -1256,7 +1245,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             status = str(m.get('status', 'UPCOMING')).upper()
             match_time = format_iran_time(m.get("date"))
 
-            # وضعیت‌های بازی با بج‌های اختصاصی و شیک
             if status in ["LIVE", "IN_PLAY", "1H", "2H", "HT"]:
                 score_box = f"<b>{h_sc}</b> - <b>{a_sc}</b>" if h_sc is not None else "0 - 0"
                 status_badge = "🔴 <b>در حال برگزاری (LIVE)</b>"
@@ -1441,7 +1429,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
-    # فعال‌سازی مانیتور زنده هر ۲۵ ثانیه
+    # فعال‌سازی جاب مانیتور زنده مسابقات (هر ۲۵ ثانیه)
     application.job_queue.run_repeating(monitor_real_barca_live_job, interval=25, first=3)
     # فعال‌سازی جاب بررسی ماهانه تسویه سیزن
     application.job_queue.run_repeating(check_and_settle_monthly_season, interval=3600, first=10)
