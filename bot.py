@@ -73,32 +73,6 @@ def format_bidi_name(name: str, max_len: int = 15) -> str:
         safe_name = safe_name[:max_len] + "…"
     return f"{LRM}{safe_name}{LRM}"
 
-def get_rank_badge(rank: int, is_ai: bool = False) -> str:
-    if is_ai:
-        return "🤖"
-    if rank == 1:
-        return "🥇 👑"
-    elif rank == 2:
-        return "🥈 👑"
-    elif rank == 3:
-        return "🥉 👑"
-    
-    rank_badges = {
-        4: "🌟",
-        5: "🌟",
-        6: "🔥",
-        7: "💎",
-        8: "🦁",
-        9: "⚡️",
-        10: "🎯",
-        11: "⚔️",
-        12: "⚽️",
-        13: "🚀",
-        14: "💫",
-        15: "✨"
-    }
-    return rank_badges.get(rank, "🔹")
-
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -245,7 +219,6 @@ async def ensure_escobar_ai():
     except Exception as e:
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
-# شمارنده پنالتی (۳ بار در روز)
 async def get_penalty_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -264,7 +237,6 @@ async def increment_penalty_count_db(user_id: int):
         """, (today_str, cur_count + 1, user_id))
         await db.commit()
 
-# شمارنده حدس بازیکن (۳ بار در روز)
 async def get_guess_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -601,6 +573,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, reply_markup=kb.get_main_menu(), parse_mode="HTML")
 
+# جدول رده‌بندی مینیمال: مدال و تاج فقط برای ۳ نفر اول
 async def show_leaderboard_text() -> str:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute(
@@ -620,17 +593,18 @@ async def show_leaderboard_text() -> str:
     remaining_list = all_users[15:]
 
     for idx, u in enumerate(top_list, 1):
-        u_id, name, pts, wins = u[0], u[1], max(0, u[2]), u[3]
-        is_ai = (u_id == ESCOBAR_AI_ID)
-        
-        badge = get_rank_badge(idx, is_ai=is_ai)
+        name, pts, wins = u[1], max(0, u[2]), u[3]
         _, tier = get_user_tier(pts)
         display_name = format_bidi_name(name)
 
-        if idx <= 3:
-            rank_prefix = f"{badge}"
+        if idx == 1:
+            rank_prefix = "🥇 👑"
+        elif idx == 2:
+            rank_prefix = "🥈 👑"
+        elif idx == 3:
+            rank_prefix = "🥉 👑"
         else:
-            rank_prefix = f"<code>{idx:02d}.</code> {badge}"
+            rank_prefix = f"<code>{idx:02d}.</code>"
 
         text += f"{rank_prefix} <b>{display_name}</b> ({tier})\n"
         text += f"    └ 💰 <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
@@ -638,17 +612,11 @@ async def show_leaderboard_text() -> str:
     if remaining_list:
         text += "────────────────────\n\n"
         for idx, u in enumerate(remaining_list, 16):
-            u_id, name, pts, wins = u[0], u[1], max(0, u[2]), u[3]
-            is_ai = (u_id == ESCOBAR_AI_ID)
-            
-            badge = "🔰" if pts < 100 else "🔹"
-            if is_ai:
-                badge = "🤖"
-                
+            name, pts, wins = u[1], max(0, u[2]), u[3]
             _, tier = get_user_tier(pts)
             display_name = format_bidi_name(name)
 
-            text += f"<code>{idx:02d}.</code> {badge} <b>{display_name}</b> ({tier})\n"
+            text += f"<code>{idx:02d}.</code> <b>{display_name}</b> ({tier})\n"
             text += f"    └ 💰 <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
 
     text += "────────────────────"
@@ -811,7 +779,7 @@ async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
-# چالش حدس: ۳ بار در روز + ۱۰ امتیاز پاداش
+# چالش حدس: ۳ بار در روز، ۱۰ امتیاز برای هر پاسخ درست
 async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
@@ -847,7 +815,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ACTIVE_GUESS_GAME = {
         "names": p["names"],
         "player_name": p["names"][1] if len(p["names"]) > 1 else p["names"][0],
-        "reward": 10,  # ۱۰ امتیاز برای هر پاسخ درست
+        "reward": 10,
         "chat_id": update.effective_chat.id,
         "challenger_id": user.id,
         "challenger_name": user.first_name,
@@ -884,7 +852,7 @@ async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, parse_mode="HTML")
 
-# مسابقه پنالتی: ۳ بار در روز + شرط ۱۵ امتیاز
+# پنالتی: ۳ بار در روز، شرط ۱۵ امتیاز
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
@@ -922,7 +890,7 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
         "p2": {"id": opponent.id, "name": opponent.first_name, "shot": None},
         "current_turn": challenger.id,
         "round": 1,
-        "stake": 15,  # تغییر به ۱۵ امتیاز
+        "stake": 15,
         "chat_id": update.effective_chat.id,
         "message_id": None
     }
@@ -1532,7 +1500,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully upgraded: 3x Guess (10 PTS) & 3x Penalty (15 PTS) online!")
+    logger.info("Bot fully upgraded: Clean BiDi Leaderboard, 3x Guess (10 PTS) & 3x Penalty (15 PTS) online!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
