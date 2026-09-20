@@ -48,22 +48,30 @@ def format_iran_time(utc_date_str):
     except Exception:
         return "20:00"
 
-def get_user_tier(points: int) -> str:
-    if points >= 300:
-        return "💎 Legend"
+def get_user_tier(points: int) -> tuple[str, str]:
+    if points >= 1500:
+        return "🐐", "G.O.A.T"
+    elif points >= 1100:
+        return "👑", "Ballon d'Or"
+    elif points >= 800:
+        return "💎", "Legend"
+    elif points >= 550:
+        return "🔮", "World Class"
+    elif points >= 350:
+        return "🎖", "Captain"
     elif points >= 200:
-        return "🥇 Master"
-    elif points >= 130:
-        return "🥈 Pro"
+        return "🥇", "First Team"
+    elif points >= 100:
+        return "🥈", "Semi-Pro"
     else:
-        return "🥉 Rookie"
+        return "🥉", "Academy"
 
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header("Content-type", "text/plain; charset=utf-8")
         self.end_headers()
-        self.wfile.write(b"Football Hub Live Engine Online! 200 OK")
+        self.wfile.write(b"Football Hub Online! 200 OK")
 
     def log_message(self, format, *args):
         return
@@ -83,7 +91,6 @@ LEAGUE_TITLES = {
     "all": "🌍 Top European Matches"
 }
 
-# بانک جامع و فوق‌حرفه‌ای ۱۰۵ بازیکن
 RAW_GUESS_PLAYERS = [
     {"nation": "آرژانتین 🇦🇷", "pos": "مهاجم کاذب / وینگر راست", "career": ["نیوولز اولد بویز 🇦🇷", "بارسلونا 🇪🇸", "پاری‌سن‌ژرمن 🇫🇷", "اینتر میامی 🇺🇸"], "clue": "ثبت ۹۱ گل رسمی در یک سال تقویمی (۲۰۱۲) و برنده ۸ توپ طلا", "names": ["مسی", "لیونل مسی", "messi"]},
     {"nation": "پرتغال 🇵🇹", "pos": "وینگر چپ / مهاجم هدف", "career": ["اسپورتینگ لیسبون 🇵🇹", "منچستریونایتد 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "رئال مادرید 🇪🇸", "یوونتوس 🇮🇹", "النصر 🇸🇦"], "clue": "تنها بازیکن با بیش از ۹۰۰ گل رسمی، ۵ قهرمانی UCL و فریاد شادی Siuuu", "names": ["رونالدو", "کریستیانو رونالدو", "کریس رونالدو", "ronaldo", "cr7"]},
@@ -264,8 +271,10 @@ async def safe_edit_message(query_or_bot, text, reply_markup=None, chat_id=None,
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
-    except Exception:
-        pass
+    except BadRequest as e:
+        logger.warning(f"Bad request in safe_edit_message: {e}")
+    except Exception as e:
+        logger.warning(f"Unexpected edit warning: {e}")
 
 async def ensure_user(user):
     try:
@@ -292,14 +301,6 @@ async def ensure_escobar_ai():
     except Exception as e:
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
-async def remove_unwanted_users():
-    try:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
-            await db.execute("DELETE FROM users WHERE first_name LIKE '%ՏᎻᎪΝͲᏆᎪ%' OR first_name LIKE '%شنتیا%'")
-            await db.commit()
-    except Exception as e:
-        logger.error(f"Error removing user: {e}")
-
 async def get_penalty_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -321,16 +322,15 @@ async def increment_penalty_count_db(user_id: int):
 async def reset_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID):
-        await update.message.reply_text("⛔️ دسترسی غیرمجاز! فقط ادمین اصلی می‌تواند این دستور را اجرا کند.")
+        await update.message.reply_text("⛔️ دسترسی غیرمجاز!")
         return
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
             await db.execute("UPDATE users SET points = 100")
             await db.commit()
-        await update.message.reply_text("✅ <b>امتیاز تمامی کاربران با موفقیت روی ۱۰۰ ریست شد!</b>\nبردها بدون تغییر باقی ماندند.", parse_mode="HTML")
+        await update.message.reply_text("✅ <b>امتیاز تمامی کاربران با موفقیت روی ۱۰۰ ریست شد!</b>\nافتخارات و مدال‌های سیزن حفظ شدند.", parse_mode="HTML")
     except Exception as e:
         logger.error(f"Error resetting points: {e}")
-        await update.message.reply_text("❌ خطا در اجرای ریست امتیازات.")
 
 async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
@@ -339,12 +339,59 @@ async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES ('live_chat_id', ?)", (str(chat.id),))
             await db.commit()
         await update.message.reply_text(
-            f"✅ <b>این گروه با موفقیت به عنوان گروه اختصاصی مسابقات و گزارش زنده ثبت شد!</b> 🏟🔥\n"
+            f"✅ <b>این گروه به عنوان گروه اختصاصی مسابقات و گزارش زنده ثبت شد!</b> 🏟🔥\n"
             f"شناسه گروه: <code>{chat.id}</code>",
             parse_mode="HTML"
         )
     else:
         await update.message.reply_text("⚠️ این دستور باید در گروه ارسال شود.")
+
+async def check_and_settle_monthly_season(context: ContextTypes.DEFAULT_TYPE):
+    iran_now = get_iran_now()
+    cur_month_str = iran_now.strftime("%Y-%m")
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT value FROM bot_settings WHERE key = 'last_settled_month'") as cur:
+            row = await cur.fetchone()
+            last_settled = row[0] if row else None
+
+        if not last_settled:
+            await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES ('last_settled_month', ?)", (cur_month_str,))
+            await db.commit()
+            return
+
+        if cur_month_str != last_settled:
+            logger.info(f"Settling season for previous month: {last_settled}")
+            async with db.execute("SELECT user_id, first_name, points FROM users WHERE user_id != ? ORDER BY points DESC LIMIT 3", (ESCOBAR_AI_ID,)) as cur:
+                top3 = await cur.fetchall()
+
+            if top3 and len(top3) >= 3:
+                p1, p2, p3 = top3[0], top3[1], top3[2]
+                await db.execute("UPDATE users SET season_gold = season_gold + 1 WHERE user_id = ?", (p1[0],))
+                await db.execute("UPDATE users SET season_silver = season_silver + 1 WHERE user_id = ?", (p2[0],))
+                await db.execute("UPDATE users SET season_bronze = season_bronze + 1 WHERE user_id = ?", (p3[0],))
+
+                target_chat_id = await get_live_chat_id()
+                if target_chat_id:
+                    msg = (
+                        f"🏆🔥 <b>پایان رسمی رقابت‌های این سیزن!</b> 🏁\n"
+                        "────────────────────\n"
+                        "👑 <b>تالار قهرمانان و برندگان مدال ماه:</b>\n\n"
+                        f"🥇 قهرمان سیزن: <b>{html.escape(p1[1])}</b> (مدال طلا 🥇)\n"
+                        f"🥈 نایب قهرمان: <b>{html.escape(p2[1])}</b> (مدال نقره 🥈)\n"
+                        f"🥉 مقام سوم: <b>{html.escape(p3[1])}</b> (مدال برنز 🥉)\n\n"
+                        "⚡️ مدال‌های افتخار در پروفایل این ۳ ستاره ثبت گردید.\n"
+                        "🔄 <b>امتیازات برای سیزن جدید همگی روی ۱۰۰ ریست شدند!</b>\n"
+                        "رقابت برای قهرمانی سیزن جدید از همین حالا آغاز شد! 🔥"
+                    )
+                    try:
+                        await context.bot.send_message(chat_id=target_chat_id, text=msg, parse_mode="HTML")
+                    except Exception as e:
+                        logger.error(f"Error sending season announcement: {e}")
+
+                await db.execute("UPDATE users SET points = 100")
+                await db.execute("UPDATE bot_settings SET value = ? WHERE key = 'last_settled_month'", (cur_month_str,))
+                await db.commit()
 
 async def record_ai_prediction_if_needed(match_id: str):
     try:
@@ -357,7 +404,6 @@ async def record_ai_prediction_if_needed(match_id: str):
                 INSERT INTO predictions (user_id, match_id, outcome_choice, predicted_home, predicted_away)
                 VALUES (?, ?, ?, 0, 0)
             """, (ESCOBAR_AI_ID, match_id, ai_choice))
-            await db.execute("UPDATE users SET points = points + 10, total_predictions = total_predictions + 1 WHERE user_id = ?", (ESCOBAR_AI_ID,))
             await db.commit()
     except Exception as e:
         logger.error(f"Error in record_ai_prediction: {e}")
@@ -366,30 +412,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
 
-    if context.args and len(context.args) > 0:
-        referrer_id_str = context.args[0]
-        if referrer_id_str.isdigit() and int(referrer_id_str) != user.id:
-            ref_id = int(referrer_id_str)
-            async with aiosqlite.connect(DATABASE_PATH) as db:
-                async with db.execute("SELECT points FROM users WHERE user_id = ?", (ref_id,)) as cur:
-                    if await cur.fetchone():
-                        await db.execute("UPDATE users SET points = points + 30 WHERE user_id = ?", (ref_id,))
-                        await db.execute("UPDATE users SET points = points + 20 WHERE user_id = ?", (user.id,))
-                        await db.commit()
-
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT points FROM users WHERE user_id = ?", (user.id,)) as cur:
             row = await cur.fetchone()
             pts = row[0] if row else 100
 
-    tier = get_user_tier(pts)
+    icon, tier = get_user_tier(pts)
     safe_name = html.escape(user.first_name)
 
     text = (
         f"⚽️ <b>FOOTBALL HUB</b>\n"
         f"────────────────────\n"
         f"👤 بازیکن: <b>{safe_name}</b>\n"
-        f"⚡️ موجودی: <code>{pts} PTS</code>  ▫️  سطح: <b>{tier}</b>\n"
+        f"⚡️ موجودی: <code>{pts} PTS</code>  ▫️  سطح: {icon} <b>{tier}</b>\n"
         f"────────────────────\n"
         f"جهت دسترسی به بخش‌های ربات از منوی زیر استفاده کنید:"
     )
@@ -404,7 +439,7 @@ async def show_leaderboard_text():
         async with db.execute("SELECT first_name, points, duel_wins FROM users ORDER BY points DESC, duel_wins DESC") as cur:
             all_users = await cur.fetchall()
 
-    text = "🏆 <b>جدول رده‌بندی کاربران</b>\n"
+    text = "🏆 <b>جدول رده‌بندی سیزن</b> 🔥\n"
     text += "────────────────────\n\n"
     if not all_users:
         text += "هنوز کاربری ثبت نشده است.\n"
@@ -413,16 +448,45 @@ async def show_leaderboard_text():
             name, pts, wins = u[0], max(0, u[1]), u[2]
             rank_badge = "🥇" if idx == 1 else ("🥈" if idx == 2 else ("🥉" if idx == 3 else f"{idx:02d}."))
             safe_name = html.escape(str(name))
-            tier = get_user_tier(pts)
+            icon, tier = get_user_tier(pts)
 
-            text += f"{rank_badge} <b>{safe_name}</b>  <i>({tier})</i>\n"
-            text += f"    ⚡️ <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins} برد</code>\n\n"
+            text += f"{rank_badge} {icon} <b>{safe_name}</b> <i>({tier})</i>\n"
+            text += f"    └ ⚡️ <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
     text += "────────────────────"
     return text
 
 async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = await show_leaderboard_text()
     await update.message.reply_text(text, parse_mode="HTML")
+
+async def user_profile_handler(query):
+    user_id = query.from_user.id
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("""
+            SELECT points, duel_wins, total_predictions, correct_results, exact_predictions, season_gold, season_silver, season_bronze
+            FROM users WHERE user_id = ?
+        """, (user_id,)) as cur:
+            u = await cur.fetchone()
+
+    pts, dw, total, correct, exact, g, s, b = u if u else (100, 0, 0, 0, 0, 0, 0, 0)
+    icon, tier = get_user_tier(pts)
+    safe_name = html.escape(query.from_user.first_name)
+    p_today = await get_penalty_count_db(user_id)
+
+    trophies = ""
+    if g > 0 or s > 0 or b > 0:
+        trophies = f"\n🏆 <b>ویترین مدال‌های سیزن:</b>\n🥇 طلا: {g}  ▫️  🥈 نقره: {s}  ▫️  🥉 برنز: {b}\n"
+
+    text = (
+        f"👤 <b>پروفایل بازیکن: {safe_name}</b>\n"
+        f"────────────────────\n"
+        f"🌟 رتبه: {icon} <b>{tier}</b>\n"
+        f"⚡️ موجودی: <code>{pts} PTS</code>  ▫️  ⚔️ بردها: <code>{dw}</code>\n"
+        f"🥅 پنالتی‌های امروز: <code>{p_today}/2</code>\n"
+        f"{trophies}"
+        f"────────────────────"
+    )
+    await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
 async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
@@ -532,7 +596,6 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.effective_message.reply_text(msg, parse_mode="HTML")
 
-# تایمر ۴۵ ثانیه‌ای برای پاسخ
 async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     global ACTIVE_GUESS_GAME
     if ACTIVE_GUESS_GAME and ACTIVE_GUESS_GAME.get("is_active"):
@@ -548,7 +611,6 @@ async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
-# اجرای چالش حدس با ۱۰۵ بازیکن، تایمر و قفل پاسخ‌دهی به طراح
 async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
@@ -563,7 +625,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if row and row[0] == today_str:
                 await update.effective_message.reply_text(
                     f"⛔️ <b>{html.escape(user.first_name)}</b> عزیز، شما امروز سهمیه ۱ بار اجرای چالش حدس خود را مصرف کرده‌اید!\n"
-                    "فردا دوباره می‌توانید این چالش را در گروه بسازید.",
+                    "فردا دوباره می‌توانید این چالش را بسازید.",
                     parse_mode="HTML"
                 )
                 return
@@ -609,7 +671,6 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👇 نام بازیکن را در گروه ارسال کنید:"
     )
     await update.message.reply_text(text, parse_mode="HTML")
-
     context.job_queue.run_once(guess_timeout_job, 45, name=f"guess_timer_{user.id}")
 
 async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1042,26 +1103,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
     elif data == "user_profile":
-        user_id = query.from_user.id
-        async with aiosqlite.connect(DATABASE_PATH) as db:
-            async with db.execute("SELECT points, exact_predictions, correct_results, total_predictions, duel_wins FROM users WHERE user_id = ?", (user_id,)) as cur:
-                u = await cur.fetchone()
-
-        pts, exact, correct, total, dw = (u[0], u[1], u[2], u[3], u[4]) if u else (100, 0, 0, 0, 0)
-        tier = get_user_tier(pts)
-        safe_name = html.escape(query.from_user.first_name)
-        p_today = await get_penalty_count_db(user_id)
-        text = (
-            f"👤 <b>پروفایل بازیکن: {safe_name}</b>\n"
-            f"────────────────────\n"
-            f"🌟 رتبه: <b>{tier}</b>\n"
-            f"⚡️ موجودی امتیاز: <code>{pts} PTS</code>\n"
-            f"🥅 پنالتی‌های بازی‌شده امروز: <code>{p_today}/2</code>\n"
-            f"⚔️ بردهای دوئل: <code>{dw}</code>\n"
-            f"🎯 کل پیش‌بینی‌ها: <code>{total}</code> (برنده: {correct} | دقیق: {exact})\n"
-            f"────────────────────"
-        )
-        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
+        await user_profile_handler(query)
 
     elif data == "leaderboard_hub":
         text = await show_leaderboard_text()
@@ -1144,7 +1186,6 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
     if not msg:
         return
 
-    # بررسی پاسخ مینی‌گیم حدس بازیکن: فقط خود طراح چالش مجاز به پاسخ است
     global ACTIVE_GUESS_GAME
     if ACTIVE_GUESS_GAME and ACTIVE_GUESS_GAME.get("is_active") and ACTIVE_GUESS_GAME["chat_id"] == update.effective_chat.id:
         if update.effective_user.id == ACTIVE_GUESS_GAME["challenger_id"]:
@@ -1212,7 +1253,8 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
-    await remove_unwanted_users()
+    # جاب بررسی ماهانه برای تسویه سیزن (هر ۱ ساعت یکبار چک می‌کند)
+    application.job_queue.run_repeating(check_and_settle_monthly_season, interval=3600, first=10)
 
 def main():
     t = threading.Thread(target=start_health_server, daemon=True)
@@ -1235,7 +1277,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully upgraded and online with 100+ Player Guess Bank!")
+    logger.info("Bot fully upgraded with Monthly Seasons, Trophy Cabinet, and Minimal Leaderboard!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
