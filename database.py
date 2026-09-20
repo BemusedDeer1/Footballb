@@ -6,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 async def init_db():
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        # جدول اصلی کاربران به همراه ردیاب‌های فعالیت‌های روزانه و ویترین مدال‌های سیزن
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
@@ -21,6 +20,7 @@ async def init_db():
                 last_shoot_date TEXT DEFAULT '',
                 last_wheel_date TEXT DEFAULT '',
                 last_guess_date TEXT DEFAULT '',
+                guess_count INTEGER DEFAULT 0,
                 penalty_date TEXT DEFAULT '',
                 penalty_count INTEGER DEFAULT 0,
                 season_gold INTEGER DEFAULT 0,
@@ -29,12 +29,12 @@ async def init_db():
             )
         """)
 
-        # افزودن خودکار ستون‌های جدید در صورت وجود دیتابیس قبلی
         cols_to_add = [
             ("last_daily_date", "TEXT DEFAULT ''"),
             ("last_shoot_date", "TEXT DEFAULT ''"),
             ("last_wheel_date", "TEXT DEFAULT ''"),
             ("last_guess_date", "TEXT DEFAULT ''"),
+            ("guess_count", "INTEGER DEFAULT 0"),
             ("penalty_date", "TEXT DEFAULT ''"),
             ("penalty_count", "INTEGER DEFAULT 0"),
             ("season_gold", "INTEGER DEFAULT 0"),
@@ -47,7 +47,6 @@ async def init_db():
             except Exception:
                 pass
 
-        # جدول تنظیمات سیستم و گزارش زنده
         await db.execute("""
             CREATE TABLE IF NOT EXISTS bot_settings (
                 key TEXT PRIMARY KEY,
@@ -55,7 +54,6 @@ async def init_db():
             )
         """)
 
-        # جدول پیش‌بینی‌های عمومی مسابقات
         await db.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +68,6 @@ async def init_db():
             )
         """)
 
-        # جدول استخر ویژه ۳۰۰ امتیازی مسابقات رئال و بارسا
         await db.execute("""
             CREATE TABLE IF NOT EXISTS special_pool_predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,4 +81,4 @@ async def init_db():
         """)
 
         await db.commit()
-        logger.info("Database initialized successfully with Season Trophy Cabinet and Persistent Trackers!")
+        logger.info("Database initialized with 3x Guess and 3x Penalty counters!")
