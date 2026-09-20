@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 async def init_db():
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        # جدول کاربران به همراه فیلدهای ثبت دائمی محدودیت‌های روزانه
+        # جدول اصلی کاربران به همراه ردیاب‌های فعالیت‌های روزانه و ویترین مدال‌های سیزن
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
@@ -22,25 +22,40 @@ async def init_db():
                 last_wheel_date TEXT DEFAULT '',
                 last_guess_date TEXT DEFAULT '',
                 penalty_date TEXT DEFAULT '',
-                penalty_count INTEGER DEFAULT 0
+                penalty_count INTEGER DEFAULT 0,
+                season_gold INTEGER DEFAULT 0,
+                season_silver INTEGER DEFAULT 0,
+                season_bronze INTEGER DEFAULT 0
             )
         """)
 
-        # اطمینان از وجود ستون‌های جدید در صورت وجود قبلی دیتابیس
+        # افزودن خودکار ستون‌های جدید در صورت وجود دیتابیس قبلی
         cols_to_add = [
             ("last_daily_date", "TEXT DEFAULT ''"),
             ("last_shoot_date", "TEXT DEFAULT ''"),
             ("last_wheel_date", "TEXT DEFAULT ''"),
             ("last_guess_date", "TEXT DEFAULT ''"),
             ("penalty_date", "TEXT DEFAULT ''"),
-            ("penalty_count", "INTEGER DEFAULT 0")
+            ("penalty_count", "INTEGER DEFAULT 0"),
+            ("season_gold", "INTEGER DEFAULT 0"),
+            ("season_silver", "INTEGER DEFAULT 0"),
+            ("season_bronze", "INTEGER DEFAULT 0")
         ]
         for col_name, col_type in cols_to_add:
             try:
                 await db.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
             except Exception:
                 pass
-        
+
+        # جدول تنظیمات سیستم و گزارش زنده
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS bot_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        """)
+
+        # جدول پیش‌بینی‌های عمومی مسابقات
         await db.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,13 +70,7 @@ async def init_db():
             )
         """)
 
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS bot_settings (
-                key TEXT PRIMARY KEY,
-                value TEXT
-            )
-        """)
-
+        # جدول استخر ویژه ۳۰۰ امتیازی مسابقات رئال و بارسا
         await db.execute("""
             CREATE TABLE IF NOT EXISTS special_pool_predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,4 +84,4 @@ async def init_db():
         """)
 
         await db.commit()
-        logger.info("Database initialized successfully with persistent daily activity trackers!")
+        logger.info("Database initialized successfully with Season Trophy Cabinet and Persistent Trackers!")
