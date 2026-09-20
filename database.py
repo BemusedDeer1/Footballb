@@ -6,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 async def init_db():
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        # جدول اطلاعات و امتیازات کاربران
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
@@ -20,7 +19,6 @@ async def init_db():
             )
         """)
         
-        # جدول پیش‌بینی‌های عمومی مسابقات
         await db.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +33,6 @@ async def init_db():
             )
         """)
 
-        # جدول تنظیمات سیستم (جهت ذخیره شناسه گروه اختصاصی شما)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS bot_settings (
                 key TEXT PRIMARY KEY,
@@ -43,7 +40,6 @@ async def init_db():
             )
         """)
 
-        # جدول استخر پیش‌بینی ویژه ۳۰۰ امتیازی
         await db.execute("""
             CREATE TABLE IF NOT EXISTS special_pool_predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,5 +52,17 @@ async def init_db():
             )
         """)
 
+        # جدول جک‌پات
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS jackpot_bets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                user_name TEXT,
+                combo_choices TEXT,
+                settled INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         await db.commit()
-        logger.info("Database initialized successfully with Settings and Live tables!")
+        logger.info("Database initialized successfully!")
