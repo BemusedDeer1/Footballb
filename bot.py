@@ -83,42 +83,133 @@ LEAGUE_TITLES = {
     "all": "🌍 Top European Matches"
 }
 
-GUESS_PLAYERS = [
-    {"clue": "🇳🇴 ➡️ 🇦🇹 سالزبورگ ➡️ 🇩🇪 دورتموند ➡️ 🏴󠁧󠁢󠁥󠁮󠁧󠁿 منچسترسیتی\nلقب: ترمیناتور 🤖", "names": ["هالند", "ارلینگ هالند", "haaland"]},
-    {"clue": "🇪🇬 ➡️ 🇨🇭 بازل ➡️ 🏴󠁧󠁢󠁥󠁮󠁧󠁿 چلسی ➡️ 🇮🇹 رم ➡️ 🏴󠁧󠁢󠁥󠁮󠁧󠁿 لیورپول\nلقب: فرعون مصری 👑", "names": ["صلاح", "محمد صلاح", "salah"]},
-    {"clue": "🇵🇹 ➡️ 🇵🇹 اسپورتینگ ➡️ 🏴󠁧󠁢󠁥󠁮󠁧󠁿 منچستر ➡️ 🇪🇸 رئال مادرید ➡️ 🇮🇹 یووه ➡️ 🇸🇦 النصر\nشماره: ۷ اسطوره‌ای 🐐", "names": ["رونالدو", "کریس رونالدو", "کریستیانو رونالدو", "cr7", "ronaldo"]},
-    {"clue": "🇦🇷 ➡️ 🇪🇸 بارسلونا ➡️ 🇫🇷 پاری‌سن‌ژرمن ➡️ 🇺🇸 اینتر میامی\nافتخار: ۸ توپ طلا ⭐️", "names": ["مسی", "لیونل مسی", "messi"]},
-    {"clue": "🇪🇸 ➡️ 🇪🇸 لاماسیا ➡️ 🇪🇸 بارسلونا\nسن: ۱۷ ساله با براکت دندان ⚡️", "names": ["یامال", "لامین یامال", "yamal"]},
-    {"clue": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 ➡️ 🏴󠁧󠁢󠁥󠁮󠁧󠁿 بیرمنگام ➡️ 🇩🇪 دورتموند ➡️ 🇪🇸 رئال مادرید\nحرکت: باز کردن دو دست بعد از گل 🙌", "names": ["بلینگام", "جود بلینگام", "bellingham"]},
-    {"clue": "🇫🇷 ➡️ 🇫🇷 موناکو ➡️ 🇫🇷 پی‌اس‌جی ➡️ 🇪🇸 رئال مادرید\nلقب: لاکپشت نینجا 🐢", "names": ["امباپه", "کیلیان امباپه", "mbappe"]},
-    {"clue": "🇧🇷 ➡️ 🇧🇷 فلامینگو ➡️ 🇪🇸 رئال مادرید\nپست: وینگر چپ تکنیکی و رقص سامبا 🕺", "names": ["وینیسیوس", "وینی", "vinicius", "vini"]}
+# بانک بزرگ و جامع بازیکنان برای چالش حدس با ساختار شیک
+RAW_GUESS_PLAYERS = [
+    {
+        "nation": "آرژانتین 🇦🇷",
+        "pos": "وینگر راست / مهاجم کاذب",
+        "career": ["بارسلونا 🇪🇸", "پاری‌سن‌ژرمن 🇫🇷", "اینتر میامی 🇺🇸"],
+        "clue": "۸ توپ طلا، قهرمان جام جهانی قطر و اسطوره ابدی لئو 🐐",
+        "names": ["مسی", "لیونل مسی", "messi"]
+    },
+    {
+        "nation": "پرتغال 🇵🇹",
+        "pos": "مهاجم نوک / وینگر چپ",
+        "career": ["اسپورتینگ لیسبون 🇵🇹", "منچستریونایتد 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "رئال مادرید 🇪🇸", "یوونتوس 🇮🇹", "النصر 🇸🇦"],
+        "clue": "آقای گل تاریخ فوتبال با پیراهن افسانه‌ای شماره ۷ CR7 🔥",
+        "names": ["رونالدو", "کریستیانو رونالدو", "کریس رونالدو", "ronaldo", "cr7"]
+    },
+    {
+        "nation": "نروژ 🇳🇴",
+        "pos": "مهاجم نوک قاتل",
+        "career": ["سالزبورگ 🇦🇹", "دورتموند 🇩🇪", "منچسترسیتی 🏴󠁧󠁢󠁥󠁮󠁧󠁿"],
+        "clue": "ملقب به سایبورگ و ترمیناتور، شکننده تمام رکوردهای گلزنی لیگ جزیره 🤖",
+        "names": ["هالند", "ارلینگ هالند", "haaland"]
+    },
+    {
+        "nation": "اسپانیا 🇪🇸",
+        "pos": "وینگر راست تکنیکی",
+        "career": ["لاماسیا 🇪🇸", "بارسلونا 🇪🇸"],
+        "clue": "پدیده ۱۷ ساله با براکت ارتودنسی و درخشش خیره‌کننده در یورو ۲۰۲۴ ⚡️",
+        "names": ["یامال", "لامین یامال", "yamal"]
+    },
+    {
+        "nation": "فرانسه 🇫🇷",
+        "pos": "وینگر چپ / مهاجم",
+        "career": ["موناکو 🇫🇷", "پاری‌سن‌ژرمن 🇫🇷", "رئال مادرید 🇪🇸"],
+        "clue": "هت‌تریک در فینال جام جهانی و سرعت سرسام‌آور ملقب به لاکپشت نینجا 🐢",
+        "names": ["امباپه", "کیلیان امباپه", "mbappe"]
+    },
+    {
+        "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+        "pos": "هافبک هجومی باکس‌تو‌باکس",
+        "career": ["بیرمنگام 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "دورتموند 🇩🇪", "رئال مادرید 🇪🇸"],
+        "clue": "پسر طلایی سانتیاگو برنابئو با شادی گل باز کردن دست‌ها 🙌",
+        "names": ["بلینگام", "جود بلینگام", "bellingham"]
+    },
+    {
+        "nation": "مصر 🇪🇬",
+        "pos": "وینگر راست سرعتی",
+        "career": ["بازل 🇨🇭", "چلسی 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "فیورنتینا 🇮🇹", "رم 🇮🇹", "لیورپول 🏴󠁧󠁢󠁥󠁮󠁧󠁿"],
+        "clue": "فرعون آنفیلد و یکی از برترین گلزنان تاریخ لیگ برتر انگلیس 👑",
+        "names": ["صلاح", "محمد صلاح", "salah"]
+    },
+    {
+        "nation": "برزیل 🇧🇷",
+        "pos": "وینگر چپ",
+        "career": ["فلامینگو 🇧🇷", "رئال مادرید 🇪🇸"],
+        "clue": "زننده گل قهرمانی در ۲ فینال چمپیونزلیگ با تکنیک رقص سامبا 🕺",
+        "names": ["وینیسیوس", "وینی", "vinicius", "vini"]
+    },
+    {
+        "nation": "لهستان 🇵🇱",
+        "pos": "مهاجم هدف کلاسیک",
+        "career": ["لخ پوزنان 🇵🇱", "دورتموند 🇩🇪", "بایرن مونیخ 🇩🇪", "بارسلونا 🇪🇸"],
+        "clue": "ثبت رکورد افسانه‌ای ۴۱ گل در یک فصل بوندسلیگا 🎯",
+        "names": ["لواندوفسکی", "لوا", "lewandowski"]
+    },
+    {
+        "nation": "کرواسی 🇭🇷",
+        "pos": "هافبک میانی بازی‌ساز",
+        "career": ["دینامو زاگرب 🇭🇷", "تاتنهام 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "رئال مادرید 🇪🇸"],
+        "clue": "برنده توپ طلای ۲۰۱۸ با پاس‌های بیرون پای استثنایی 🪄",
+        "names": ["مودریچ", "لوکا مودریچ", "modric"]
+    },
+    {
+        "nation": "بلژیک 🇧🇪",
+        "pos": "مهندس و هافبک طراح",
+        "career": ["خنک 🇧🇪", "چلسی 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "ولفسبورگ 🇩🇪", "منچسترسیتی 🏴󠁧󠁢󠁥󠁮󠁧󠁿"],
+        "clue": "سلطان پاس گل دنیا با دید ۳۶۰ درجه در تیم پپ گواردیولا 📐",
+        "names": ["دی بروینه", "کوین دی بروینه", "دیبروینه", "de bruyne"]
+    },
+    {
+        "nation": "آلمان 🇩🇪",
+        "pos": "هافبک هجومی / وینگر",
+        "career": ["چلسی 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "بایرن مونیخ 🇩🇪"],
+        "clue": "دریبل‌زن‌ترین جواهر ژرمن‌ها با لقب بامبی 🦌",
+        "names": ["موسیالا", "جمال موسیالا", "musiala"]
+    },
+    {
+        "nation": "اروگوئه 🇺🇾",
+        "pos": "موتور خستگی‌ناپذیر میانه میدان",
+        "career": ["پنیارول 🇺🇾", "دپورتیوو لاکرونیا 🇪🇸", "رئال مادرید 🇪🇸"],
+        "clue": "معروف به شاهین (ال هاکون) با شوت‌های موشکی و ریه‌های بی‌پایان 🦅",
+        "names": ["والورده", "فدریکو والورده", "valverde"]
+    },
+    {
+        "nation": "اسپانیا 🇪🇸",
+        "pos": "مغز متفکر میانه زمین",
+        "career": ["لاس پالماس 🇪🇸", "بارسلونا 🇪🇸"],
+        "clue": "پسر طلایی کاتالونیا با سبک بازی چشم‌نواز مشابه اینیستا 🎩",
+        "names": ["پدری", "pedri"]
+    },
+    {
+        "nation": "برزیل 🇧🇷",
+        "pos": "وینگر فانتزی",
+        "career": ["سانتوس 🇧🇷", "بارسلونا 🇪🇸", "پاری‌سن‌ژرمن 🇫🇷", "الهلال 🇸🇦"],
+        "clue": "گران‌ترین انتقال تاریخ فوتبال (۲۲۲ میلیون یورو) و پادشاه تکنیک خیابانی 🤙",
+        "names": ["نیمار", "neymar"]
+    }
 ]
+
+GUESS_DECK = []
+
+def get_next_guess_player():
+    global GUESS_DECK
+    if not GUESS_DECK:
+        GUESS_DECK = RAW_GUESS_PLAYERS[:]
+        random.shuffle(GUESS_DECK)
+    return GUESS_DECK.pop()
 
 ACTIVE_GUESS_GAME = None
 MATCH_CACHE = {}
 ACTIVE_DUELS = {}
 ACTIVE_SHOOTOUTS = {}
-USER_LAST_SHOT = {}
-USER_LAST_DAILY = {}
-USER_LAST_WHEEL = {}
-USER_DAILY_PENALTIES = {}
 TRACKED_LIVE_MATCHES = {}
 
-def get_penalty_count_today(user_id: int) -> int:
-    today_str = get_iran_now().strftime("%Y-%m-%d")
-    data = USER_DAILY_PENALTIES.get(user_id)
-    if not data or data["date"] != today_str:
-        return 0
-    return data["count"]
-
-def increment_penalty_count_today(user_id: int):
-    today_str = get_iran_now().strftime("%Y-%m-%d")
-    data = USER_DAILY_PENALTIES.get(user_id)
-    if not data or data["date"] != today_str:
-        USER_DAILY_PENALTIES[user_id] = {"date": today_str, "count": 1}
-    else:
-        data["count"] += 1
-
+# -------------------------------------------------------------
+# توابع خواندن و نوشتن دائمی در دیتابیس (بدون پریدن در ری‌دیپلو)
+# -------------------------------------------------------------
 async def get_live_chat_id():
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT value FROM bot_settings WHERE key = 'live_chat_id'") as cur:
@@ -134,9 +225,9 @@ async def is_action_allowed_in_chat(update: Update) -> bool:
     target_chat_id = await get_live_chat_id()
     if not target_chat_id or chat.id == target_chat_id:
         return True
-    await update.message.reply_text(
+    await update.effective_message.reply_text(
         "⛔️ <b>بخش‌های مسابقاتی و امتیازی فقط در گروه اصلی فعال است!</b>\n"
-        "▫️ سایر بخش‌ها از جمله جداول رده‌بندی، بازی‌های امروز و نتایج برای همه در دسترس است.",
+        "▫️ سایر بخش‌ها از جمله جداول رده‌بندی، مسابقات و نتایج برای همه در دسترس است.",
         parse_mode="HTML"
     )
     return False
@@ -193,6 +284,25 @@ async def remove_unwanted_users():
     except Exception as e:
         logger.error(f"Error removing user: {e}")
 
+# تابع مدیریت پنالتی‌های روزانه در دیتابیس
+async def get_penalty_count_db(user_id: int) -> int:
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT penalty_date, penalty_count FROM users WHERE user_id = ?", (user_id,)) as cur:
+            row = await cur.fetchone()
+            if row and row[0] == today_str:
+                return row[1]
+    return 0
+
+async def increment_penalty_count_db(user_id: int):
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+    cur_count = await get_penalty_count_db(user_id)
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("""
+            UPDATE users SET penalty_date = ?, penalty_count = ? WHERE user_id = ?
+        """, (today_str, cur_count + 1, user_id))
+        await db.commit()
+
 async def reset_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID):
@@ -219,9 +329,8 @@ async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
     else:
-        await update.message.reply_text("⚠️ این دستور را باید در گروه اصلی ارسال کنید.")
+        await update.message.reply_text("⚠️ این دستور باید در گروه ارسال شود.")
 
-# شرکت خودکار ربات در پیش‌بینی‌ها
 async def record_ai_prediction_if_needed(match_id: str):
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -238,210 +347,6 @@ async def record_ai_prediction_if_needed(match_id: str):
     except Exception as e:
         logger.error(f"Error in record_ai_prediction: {e}")
 
-async def generate_pool_message_text(match_data, pool_participants=None):
-    h_name = match_data.get("home_team", "")
-    a_name = match_data.get("away_team", "")
-    time_str = format_iran_time(match_data.get("date"))
-
-    text = (
-        f"🚨🔥 <b>۱۵ دقیقه تا آغاز نبرد حساس! پیش‌بینی ویژه استخر ۳۰۰ امتیازی</b> 🏆\n"
-        "────────────────────\n"
-        f"⚽️ <b>{h_name}</b> 🆚 <b>{a_name}</b>\n"
-        f"⏰ شروع بازی: <code>{time_str}</code> (به وقت تهران)\n"
-        "💰 <b>استخر جایزه: ۳۰۰ امتیاز</b> 🪙\n"
-        "⚡️ جایزه ۳۰۰ امتیازی بین حدس‌های درست تقسیم می‌شود!\n"
-        "⏱ مهلت ثبت: تا سوت شروع بازی!\n"
-        "────────────────────\n"
-    )
-
-    if pool_participants:
-        text += f"👥 <b>شرکت‌کنندگان تا این لحظه ({len(pool_participants)} نفر):</b>\n"
-        for uname, choice in pool_participants:
-            choice_label = f"برد {h_name[:10]}" if choice == "HOME" else ("مساوی" if choice == "DRAW" else f"برد {a_name[:10]}")
-            text += f"▫️ <b>{html.escape(uname)}</b>: <i>{choice_label}</i>\n"
-    else:
-        text += "▫️ هنوز کسی در استخر پیش‌بینی ثبت نکرده است!\n"
-
-    text += "\n👇 <b>پیش‌بینی خود را با دکمه‌های زیر ثبت کنید:</b>"
-    return text
-
-# گزارش زنده دقیق، فنی و بدون عبارات کلیشه‌ای
-async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
-    target_chat_id = await get_live_chat_id()
-    if not target_chat_id:
-        return
-
-    iran_now = get_iran_now()
-    dates = [iran_now.strftime("%Y%m%d"), (iran_now - timedelta(days=1)).strftime("%Y%m%d"), (iran_now + timedelta(days=1)).strftime("%Y%m%d")]
-
-    matches = []
-    for d in dates:
-        for l_code in ["esp.1", "uefa.champions"]:
-            try:
-                matches.extend(await provider.get_matches(d, league_code=l_code))
-            except Exception:
-                pass
-
-    unique_matches = {m["id"]: m for m in matches}
-    utc_now = datetime.now(timezone.utc)
-
-    for m_id, m in unique_matches.items():
-        h_name = str(m.get("home_team", ""))
-        a_name = str(m.get("away_team", ""))
-        combined = (h_name + " " + a_name).lower()
-
-        if not any(x in combined for x in ["barcelona", "barca", "بارسلونا", "real madrid", "madrid", "رئال"]):
-            continue
-
-        MATCH_CACHE[m_id] = m
-        raw_status = str(m.get("status", "UPCOMING")).upper()
-        
-        try:
-            h_score = int(m.get("home_score")) if m.get("home_score") is not None else None
-            a_score = int(m.get("away_score")) if m.get("away_score") is not None else None
-        except Exception:
-            h_score, a_score = None, None
-
-        track = TRACKED_LIVE_MATCHES.get(m_id)
-        if not track:
-            track = {
-                "last_status": raw_status,
-                "home_score": h_score if h_score is not None else 0,
-                "away_score": a_score if a_score is not None else 0,
-                "started_announced": False,
-                "ht_announced": False,
-                "second_half_announced": False,
-                "pool_opened": False,
-                "pool_msg_id": None
-            }
-            TRACKED_LIVE_MATCHES[m_id] = track
-
-        match_date_str = m.get("date")
-        minutes_to_start = 9999
-        if match_date_str:
-            try:
-                dt_match = datetime.fromisoformat(match_date_str.replace("Z", "+00:00"))
-                diff_sec = (dt_match - utc_now).total_seconds()
-                minutes_to_start = int(diff_sec // 60)
-            except Exception:
-                pass
-
-        # باز کردن استخر ۳۰۰ امتیازی
-        if raw_status in ["UPCOMING", "PRE"] and not track["pool_opened"] and (0 <= minutes_to_start <= 20):
-            track["pool_opened"] = True
-            pool_kb = InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton(f"⚪️ برد {h_name[:10]}", callback_data=f"pool_{m_id}_HOME"),
-                    InlineKeyboardButton("🤝 مساوی", callback_data=f"pool_{m_id}_DRAW"),
-                    InlineKeyboardButton(f"🔴 برد {a_name[:10]}", callback_data=f"pool_{m_id}_AWAY")
-                ]
-            ])
-            pool_text = await generate_pool_message_text(m, [])
-            try:
-                sent = await context.bot.send_message(chat_id=target_chat_id, text=pool_text, reply_markup=pool_kb, parse_mode="HTML")
-                track["pool_msg_id"] = sent.message_id
-            except Exception:
-                pass
-
-        is_finished = raw_status in ["FINISHED", "FT", "POST"]
-        is_in_play = (raw_status in ["LIVE", "IN_PLAY", "1H", "2H", "HT", "HALFTIME"]) or (h_score is not None and not is_finished)
-
-        # سوت آغاز
-        if is_in_play and not track["started_announced"]:
-            track["started_announced"] = True
-            track["last_status"] = "LIVE"
-            if track.get("pool_msg_id"):
-                try:
-                    await context.bot.edit_message_reply_markup(
-                        chat_id=target_chat_id,
-                        message_id=track["pool_msg_id"],
-                        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔒 مهلت پیش‌بینی به پایان رسید", callback_data="none")]])
-                    )
-                except Exception:
-                    pass
-
-            start_msg = (
-                f"📢 <b>سوت آغاز مسابقه به صدا درآمد!</b>\n"
-                f"⚪️ <b>{h_name}</b> 🆚 <b>{a_name}</b> 🔴\n\n"
-                f"🎙 گزارش فنی و رویدادهای زنده بازی فعال است."
-            )
-            await context.bot.send_message(chat_id=target_chat_id, text=start_msg, parse_mode="HTML")
-
-        # ثبت گل‌ها (دقیق و فنی)
-        if is_in_play and h_score is not None and a_score is not None:
-            if h_score > track["home_score"]:
-                track["home_score"] = h_score
-                goal_order = f"گل شماره {h_score}"
-                goal_msg = (
-                    f"⚽️ <b>{goal_order} برای {h_name}!</b>\n"
-                    f"────────────────────\n"
-                    f"📊 نتیجه لحظه‌ای: <b>{h_name} [{h_score}] - [{a_score}] {a_name}</b>"
-                )
-                await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
-
-            elif a_score > track["away_score"]:
-                track["away_score"] = a_score
-                goal_order = f"گل شماره {a_score}"
-                goal_msg = (
-                    f"⚽️ <b>{goal_order} برای {a_name}!</b>\n"
-                    f"────────────────────\n"
-                    f"📊 نتیجه لحظه‌ای: <b>{h_name} [{h_score}] - [{a_score}] {a_name}</b>"
-                )
-                await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
-
-        # پایان نیمه اول
-        if raw_status in ["HT", "HALFTIME"] and not track["ht_announced"]:
-            track["ht_announced"] = True
-            cur_h = h_score if h_score is not None else track["home_score"]
-            cur_a = a_score if a_score is not None else track["away_score"]
-            ht_msg = (
-                f"⏸ <b>پایان نیمه اول مسابقه</b>\n"
-                f"────────────────────\n"
-                f"⚪️ <b>{h_name}</b> [{cur_h}] - [{cur_a}] <b>{a_name}</b> 🔴"
-            )
-            await context.bot.send_message(chat_id=target_chat_id, text=ht_msg, parse_mode="HTML")
-
-        # شروع نیمه دوم
-        if raw_status in ["2H", "LIVE"] and track["ht_announced"] and not track["second_half_announced"]:
-            track["second_half_announced"] = True
-            sh_msg = (
-                f"▶️ <b>شروع نیمه دوم مسابقه</b>\n"
-                f"⚪️ <b>{h_name}</b> 🆚 <b>{a_name}</b> 🔴"
-            )
-            await context.bot.send_message(chat_id=target_chat_id, text=sh_msg, parse_mode="HTML")
-
-        # پایان بازی و تسویه استخر
-        if is_finished and track["last_status"] != "FINISHED":
-            track["last_status"] = "FINISHED"
-            final_h = h_score if h_score is not None else track["home_score"]
-            final_a = a_score if a_score is not None else track["away_score"]
-            actual_outcome = "HOME" if final_h > final_a else ("AWAY" if final_a > final_h else "DRAW")
-
-            async with aiosqlite.connect(DATABASE_PATH) as db:
-                async with db.execute("SELECT user_id, user_name FROM special_pool_predictions WHERE match_id = ? AND choice = ?", (m_id, actual_outcome)) as cur:
-                    winners = await cur.fetchall()
-
-                winners_text = ""
-                if winners:
-                    share = 300 // len(winners)
-                    winners_text = f"\n\n🎁 <b>برندگان استخر ۳۰۰ امتیازی (هر نفر +{share} PTS):</b>\n"
-                    for w_id, w_name in winners:
-                        await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (share, w_id))
-                        winners_text += f"▫️ <b>{html.escape(w_name)}</b>\n"
-                else:
-                    winners_text = "\n\nهیچ کاربری برنده نهایی را درست حدس نزد!"
-
-                await db.execute("UPDATE special_pool_predictions SET settled = 1 WHERE match_id = ?", (m_id,))
-                await db.commit()
-
-            ft_msg = (
-                f"🏁 <b>سوت پایان مسابقه (FT)</b>\n"
-                f"────────────────────\n"
-                f"نتیجه نهایی: <b>{h_name} [{final_h}] - [{final_a}] {a_name}</b>{winners_text}"
-            )
-            await context.bot.send_message(chat_id=target_chat_id, text=ft_msg, parse_mode="HTML")
-
-# منوی اصلی مینیمال و خلوت
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
@@ -479,7 +384,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, reply_markup=kb.get_main_menu(), parse_mode="HTML")
 
-# رنکینگ بازطراحی‌شده و بدون باگ تکرار مدال
 async def show_leaderboard_text():
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT first_name, points, duel_wins FROM users ORDER BY points DESC, duel_wins DESC") as cur:
@@ -505,61 +409,59 @@ async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = await show_leaderboard_text()
     await update.message.reply_text(text, parse_mode="HTML")
 
+# جایزه روزانه کاملاً ثبت‌شده در دیتابیس
 async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
 
     user = update.effective_user
     await ensure_user(user)
-    now = datetime.utcnow()
-    last = USER_LAST_DAILY.get(user.id)
+    today_str = get_iran_now().strftime("%Y-%m-%d")
 
-    if last and (now - last) < timedelta(hours=24):
-        rem = timedelta(hours=24) - (now - last)
-        h = int(rem.total_seconds() // 3600)
-        m = int((rem.total_seconds() % 3600) // 60)
-        await update.effective_message.reply_text(
-            f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، پاداش روزانه خود را دریافت کرده‌اید!\n"
-            f"نوبت بعدی: <b>{h} ساعت و {m} دقیقه</b> دیگر.",
-            parse_mode="HTML"
-        )
-        return
-
-    reward = 20
-    USER_LAST_DAILY[user.id] = now
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, user.id))
+        async with db.execute("SELECT last_daily_date FROM users WHERE user_id = ?", (user.id,)) as cur:
+            row = await cur.fetchone()
+            if row and row[0] == today_str:
+                await update.effective_message.reply_text(
+                    f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، پاداش روزانه امروز خود را دریافت کرده‌اید!\nفردا برای پاداش جدید سر بزنید.",
+                    parse_mode="HTML"
+                )
+                return
+
+        reward = 20
+        await db.execute("UPDATE users SET points = points + ?, last_daily_date = ? WHERE user_id = ?", (reward, today_str, user.id))
         await db.commit()
 
     await update.effective_message.reply_text(
-        f"🎁 <b>پاداش روزانه دریافت شد!</b>\n"
-        f"💰 <b>+{reward} امتیاز</b> به حساب شما واریز گردید.",
+        f"🎁 <b>پاداش روزانه با موفقیت واریز شد!</b>\n"
+        f"💰 <b>+{reward} امتیاز</b> به حساب شما اضافه شد.",
         parse_mode="HTML"
     )
 
+# شوت روزانه کاملاً ثبت‌شده در دیتابیس
 async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
 
     user = update.effective_user
     await ensure_user(user)
+    today_str = get_iran_now().strftime("%Y-%m-%d")
 
-    now = datetime.utcnow()
-    last_shot = USER_LAST_SHOT.get(user.id)
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT last_shoot_date FROM users WHERE user_id = ?", (user.id,)) as cur:
+            row = await cur.fetchone()
+            if row and row[0] == today_str:
+                await update.effective_message.reply_text(
+                    f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، شوت روزانه امروز خود را زده‌اید!\nفردا دوباره شانس‌ات را امتحان کن.",
+                    parse_mode="HTML"
+                )
+                return
 
-    if last_shot and (now - last_shot) < timedelta(hours=24):
-        remaining = timedelta(hours=24) - (now - last_shot)
-        hours = int(remaining.total_seconds() // 3600)
-        minutes = int((remaining.total_seconds() % 3600) // 60)
-        await update.effective_message.reply_text(
-            f"⏳ شوت روزانه خود را زده‌اید!\nفرصت بعدی: <b>{hours} ساعت و {minutes} دقیقه</b> دیگر.",
-            parse_mode="HTML"
-        )
-        return
+        await db.execute("UPDATE users SET last_shoot_date = ? WHERE user_id = ?", (today_str, user.id))
+        await db.commit()
 
     msg = await update.effective_message.reply_dice(emoji="⚽")
     dice_val = msg.dice.value
-    USER_LAST_SHOT[user.id] = now
 
     await asyncio.sleep(2.5)
 
@@ -570,8 +472,8 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.commit()
 
         await update.effective_message.reply_text(
-            f"⚽️🔥 <b>گـُـل شد! ضربه فوق‌العاده!</b>\n"
-            f"💰 پاداش: <b>+{reward} امتیاز</b> اضافه شد.",
+            f"⚽️🔥 <b>گـُـل شد! ضربه مهارنشدنی!</b>\n"
+            f"💰 پاداش: <b>+{reward} امتیاز</b> دریافت کردید.",
             parse_mode="HTML"
         )
     else:
@@ -580,45 +482,28 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
-async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_action_allowed_in_chat(update):
-        return
-
-    global ACTIVE_GUESS_GAME
-    item = random.choice(GUESS_PLAYERS)
-    ACTIVE_GUESS_GAME = {
-        "clue": item["clue"],
-        "names": item["names"],
-        "reward": 25,
-        "chat_id": update.effective_chat.id
-    }
-
-    text = (
-        "🕵️‍♂️ <b>چالش حدس بازیکن با سرنخ!</b>\n"
-        "────────────────────\n"
-        f"{item['clue']}\n\n"
-        "💰 جایزه: <b>+25 امتیاز</b>\n"
-        "⚡️ اولین نفری که نام بازیکن را بنویسد برنده است!"
-    )
-    await update.message.reply_text(text, parse_mode="HTML")
-
+# گردونه شانس کاملاً ثبت‌شده در دیتابیس
 async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
 
     user = update.effective_user
     await ensure_user(user)
+    today_str = get_iran_now().strftime("%Y-%m-%d")
 
-    now = datetime.utcnow()
-    last = USER_LAST_WHEEL.get(user.id)
-    if last and (now - last) < timedelta(hours=24):
-        rem = timedelta(hours=24) - (now - last)
-        h = int(rem.total_seconds() // 3600)
-        m = int((rem.total_seconds() % 3600) // 60)
-        await update.effective_message.reply_text(f"⏳ گردونه را چرخانده‌اید!\nنوبت بعدی: <b>{h} ساعت و {m} دقیقه</b> دیگر.", parse_mode="HTML")
-        return
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT last_wheel_date FROM users WHERE user_id = ?", (user.id,)) as cur:
+            row = await cur.fetchone()
+            if row and row[0] == today_str:
+                await update.effective_message.reply_text(
+                    f"⏳ <b>{html.escape(user.first_name)}</b> عزیز، امروز گردونه را چرخانده‌اید!\nفردا برای شانس بعدی سر بزنید.",
+                    parse_mode="HTML"
+                )
+                return
 
-    USER_LAST_WHEEL[user.id] = now
+        await db.execute("UPDATE users SET last_wheel_date = ? WHERE user_id = ?", (today_str, user.id))
+        await db.commit()
+
     prizes = [10, 15, 20, 25, 40, 50, 0]
     weights = [30, 25, 20, 12, 8, 3, 2]
     win = random.choices(prizes, weights=weights)[0]
@@ -635,6 +520,54 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.effective_message.reply_text(msg, parse_mode="HTML")
 
+# مینی‌گیم شیک و بدون به‌هم‌ریختگی حدس بازیکن با سقف ۱ بار در روز
+async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await is_action_allowed_in_chat(update):
+        return
+
+    user = update.effective_user
+    await ensure_user(user)
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT last_guess_date FROM users WHERE user_id = ?", (user.id,)) as cur:
+            row = await cur.fetchone()
+            if row and row[0] == today_str:
+                await update.effective_message.reply_text(
+                    f"⛔️ <b>{html.escape(user.first_name)}</b> عزیز، شما امروز سهمیه ۱ حدس بازیکن خود را استفاده کرده‌اید!\nفردا دوباره چالش را امتحان کنید.",
+                    parse_mode="HTML"
+                )
+                return
+
+    global ACTIVE_GUESS_GAME
+    if ACTIVE_GUESS_GAME and ACTIVE_GUESS_GAME.get("is_active"):
+        await update.effective_message.reply_text("⚠️ یک مسابقه حدس بازیکن در جریان است! ابتدا پاسخ آن را ارسال کنید.")
+        return
+
+    p = get_next_guess_player()
+
+    career_str = "\n".join([f"  {idx}. {club}" for idx, club in enumerate(p['career'], 1)])
+
+    ACTIVE_GUESS_GAME = {
+        "names": p["names"],
+        "reward": 25,
+        "chat_id": update.effective_chat.id,
+        "is_active": True
+    }
+
+    text = (
+        "🕵️‍♂️ <b>پرونده اطلاعاتی: ستاره فوتبال را شناسایی کنید!</b>\n"
+        "────────────────────\n"
+        f"🌍 <b>ملیت:</b> {p['nation']}\n"
+        f"📌 <b>پست:</b> {p['pos']}\n\n"
+        f"🏟 <b>مسیر باشگاهی:</b>\n{career_str}\n\n"
+        f"⭐️ <b>سرنخ ویژه:</b>\n{p['clue']}\n"
+        "────────────────────\n"
+        "💰 جایزه: <b>+25 امتیاز</b>\n"
+        "⚡️ اولین نفری که نام بازیکن را ارسال کند برنده است!"
+    )
+    await update.message.reply_text(text, parse_mode="HTML")
+
 async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "🎰 <b>پیش‌بینی زنجیره‌ای جک‌پات (Jackpot Combo)</b>\n"
@@ -649,6 +582,7 @@ async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, parse_mode="HTML")
 
+# پنالتی تک‌ضرب با سقف ۲ بار در روز ذخیره‌شده در دیتابیس
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
@@ -667,12 +601,12 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
         await update.message.reply_text("⚠️ امکان مسابقه با این کاربر وجود ندارد.")
         return
 
-    c_count = get_penalty_count_today(challenger.id)
+    c_count = await get_penalty_count_db(challenger.id)
     if c_count >= 2:
         await update.message.reply_text(f"⛔️ <b>{html.escape(challenger.first_name)}</b> عزیز، شما سقف مجاز ۲ پنالتی در روز خود را مصرف کرده‌اید!", parse_mode="HTML")
         return
 
-    o_count = get_penalty_count_today(opponent.id)
+    o_count = await get_penalty_count_db(opponent.id)
     if o_count >= 2:
         await update.message.reply_text(f"⛔️ حریف شما <b>{html.escape(opponent.first_name)}</b> امروز ۲ پنالتی خود را بازی کرده است!", parse_mode="HTML")
         return
@@ -763,8 +697,8 @@ async def execute_penalty_kick(query, context, p_id):
         stake = shootout["stake"]
 
         if p1_goal and not p2_goal:
-            increment_penalty_count_today(shootout["p1"]["id"])
-            increment_penalty_count_today(shootout["p2"]["id"])
+            await increment_penalty_count_db(shootout["p1"]["id"])
+            await increment_penalty_count_db(shootout["p2"]["id"])
             async with aiosqlite.connect(DATABASE_PATH) as db:
                 await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p1"]["id"]))
                 await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, shootout["p2"]["id"]))
@@ -773,8 +707,8 @@ async def execute_penalty_kick(query, context, p_id):
             await context.bot.send_message(chat_id=chat_id, text=f"🏁 <b>پایان مسابقه!</b>\n🎉 تبریک به <b>{p1_name}</b>! برنده <b>{stake} امتیاز</b> شد.", parse_mode="HTML")
 
         elif p2_goal and not p1_goal:
-            increment_penalty_count_today(shootout["p1"]["id"])
-            increment_penalty_count_today(shootout["p2"]["id"])
+            await increment_penalty_count_db(shootout["p1"]["id"])
+            await increment_penalty_count_db(shootout["p2"]["id"])
             async with aiosqlite.connect(DATABASE_PATH) as db:
                 await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p2"]["id"]))
                 await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, shootout["p1"]["id"]))
@@ -931,7 +865,6 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
         name=f"duel_timer_{duel_id}_{q_idx}"
     )
 
-# باز کردن پیش‌بینی‌ها بدون باگ UPCOMING و با حضور خودکار Escobar AI
 async def predictions_hub_handler(query):
     iran_now = get_iran_now()
     dates = [iran_now.strftime("%Y%m%d"), (iran_now + timedelta(days=1)).strftime("%Y%m%d")]
@@ -1048,7 +981,29 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not m:
             m = {"home_team": "میزبان", "away_team": "میهمان", "date": None}
 
-        new_text = await generate_pool_message_text(m, participants)
+        h_name = m.get("home_team", "")
+        a_name = m.get("away_team", "")
+        time_str = format_iran_time(m.get("date"))
+
+        new_text = (
+            f"🚨🔥 <b>۱۵ دقیقه تا آغاز نبرد حساس! پیش‌بینی ویژه استخر ۳۰۰ امتیازی</b> 🏆\n"
+            "────────────────────\n"
+            f"⚽️ <b>{h_name}</b> 🆚 <b>{a_name}</b>\n"
+            f"⏰ شروع بازی: <code>{time_str}</code> (به وقت تهران)\n"
+            "💰 <b>استخر جایزه: ۳۰۰ امتیاز</b> 🪙\n"
+            "⚡️ جایزه ۳۰۰ امتیازی بین حدس‌های درست تقسیم می‌شود!\n"
+            "⏱ مهلت ثبت: تا سوت شروع بازی!\n"
+            "────────────────────\n"
+        )
+        if participants:
+            new_text += f"👥 <b>شرکت‌کنندگان تا این لحظه ({len(participants)} نفر):</b>\n"
+            for uname, ch in participants:
+                choice_label = f"برد {h_name[:10]}" if ch == "HOME" else ("مساوی" if ch == "DRAW" else f"برد {a_name[:10]}")
+                new_text += f"▫️ <b>{html.escape(uname)}</b>: <i>{choice_label}</i>\n"
+        else:
+            new_text += "▫️ هنوز کسی در استخر پیش‌بینی ثبت نکرده است!\n"
+
+        new_text += "\n👇 <b>پیش‌بینی خود را با دکمه‌های زیر ثبت کنید:</b>"
         await safe_edit_message(query, new_text, reply_markup=query.message.reply_markup)
 
     elif data == "select_matches_today":
@@ -1100,11 +1055,13 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pts, exact, correct, total, dw = (u[0], u[1], u[2], u[3], u[4]) if u else (100, 0, 0, 0, 0)
         tier = get_user_tier(pts)
         safe_name = html.escape(query.from_user.first_name)
+        p_today = await get_penalty_count_db(user_id)
         text = (
             f"👤 <b>پروفایل بازیکن: {safe_name}</b>\n"
             f"────────────────────\n"
             f"🌟 رتبه: <b>{tier}</b>\n"
             f"⚡️ موجودی امتیاز: <code>{pts} PTS</code>\n"
+            f"🥅 پنالتی‌های بازی‌شده امروز: <code>{p_today}/2</code>\n"
             f"⚔️ بردهای دوئل: <code>{dw}</code>\n"
             f"🎯 کل پیش‌بینی‌ها: <code>{total}</code> (برنده: {correct} | دقیق: {exact})\n"
             f"────────────────────"
@@ -1194,67 +1151,53 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 
     # بررسی پاسخ مینی‌گیم حدس بازیکن
     global ACTIVE_GUESS_GAME
-    if ACTIVE_GUESS_GAME and ACTIVE_GUESS_GAME["chat_id"] == update.effective_chat.id:
+    if ACTIVE_GUESS_GAME and ACTIVE_GUESS_GAME.get("is_active") and ACTIVE_GUESS_GAME["chat_id"] == update.effective_chat.id:
         user_ans = msg.lower()
         if any(alias in user_ans for alias in ACTIVE_GUESS_GAME["names"]):
             winner = update.effective_user
-            reward = ACTIVE_GUESS_GAME["reward"]
+            today_str = get_iran_now().strftime("%Y-%m-%d")
+
+            # ثبت تاریخ حدس موفق برای برنده
             async with aiosqlite.connect(DATABASE_PATH) as db:
-                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, winner.id))
+                await db.execute("""
+                    UPDATE users SET points = points + ?, last_guess_date = ? WHERE user_id = ?
+                """, (ACTIVE_GUESS_GAME["reward"], today_str, winner.id))
                 await db.commit()
             
+            reward = ACTIVE_GUESS_GAME["reward"]
             await update.message.reply_text(
-                f"🎉🔥 <b>پاسخ صحیح! تبریک به {html.escape(winner.first_name)}!</b>\n"
+                f"🎉🔥 <b>پاسخ کاملاً صحیح! تبریک به {html.escape(winner.first_name)}!</b>\n"
                 f"💰 پاداش: <b>+{reward} امتیاز</b> دریافت کردید.",
                 parse_mode="HTML"
             )
-            ACTIVE_GUESS_GAME = None
+            ACTIVE_GUESS_GAME["is_active"] = False
             return
 
-    # دستورات امتیازی (انحصاری گروه شما)
     if msg in ["دوئل", "duel", "چالش"]:
-        if await is_action_allowed_in_chat(update):
-            await trigger_duel(update, context)
+        await trigger_duel(update, context)
     elif msg in ["پنالتی", "پنالتی کشی", "penalty"]:
-        if await is_action_allowed_in_chat(update):
-            await trigger_penalty_shootout(update, context)
+        await trigger_penalty_shootout(update, context)
     elif msg in ["شوت", "گل", "shoot"]:
-        if await is_action_allowed_in_chat(update):
-            await daily_shoot_cmd(update, context)
+        await daily_shoot_cmd(update, context)
     elif msg in ["جایزه", "روزانه", "daily"]:
-        if await is_action_allowed_in_chat(update):
-            await daily_reward_cmd(update, context)
+        await daily_reward_cmd(update, context)
     elif msg in ["حدس", "حدس بازیکن", "guess"]:
         await start_guess_game(update, context)
     elif msg in ["گردونه", "wheel", "شانس"]:
         await spin_wheel_cmd(update, context)
     elif msg in ["جکپات", "jackpot"]:
         await jackpot_cmd(update, context)
-
-    # دستورات عمومی
-    elif msg in ["شروع", "منو", "فوتبال"]:
+    elif msg in ["شروع", "منو"]:
         await start(update, context)
-    elif msg in ["جدول", "رنکینگ", "امتیازات"]:
+    elif msg in ["جدول", "رنکینگ"]:
         await leaderboard_cmd(update, context)
     elif msg in ["پیشبینی", "پیش بینی"]:
-        await update.message.reply_text("🎯 جهت ورود به تالار پیش‌بینی، دستور /start را ارسال فرمایید.", parse_mode="HTML")
-    elif msg in ["بازیها", "بازی ها"]:
-        iran_now = get_iran_now()
-        matches = await provider.get_matches(iran_now.strftime("%Y%m%d"), league_code="eng.1")
-        if matches:
-            t = "🔥 <b>مسابقات منتخب امروز (به وقت تهران):</b>\n────────────────────\n\n"
-            for m in matches[:4]:
-                tm = format_iran_time(m.get("date"))
-                t += f"▫️ <b>{m['home_team']}</b> 🆚 <b>{m['away_team']}</b> (⏰ <code>{tm}</code>)\n"
-            await update.message.reply_text(t, parse_mode="HTML")
-        else:
-            await update.message.reply_text("⏳ مسابقه‌ای برای امروز یافت نشد.")
+        await update.message.reply_text("🎯 جهت ورود به تالار پیش‌بینی، دستور /start را ارسال کنید.", parse_mode="HTML")
 
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
     await remove_unwanted_users()
-    application.job_queue.run_repeating(monitor_real_barca_live_job, interval=30, first=5)
 
 def main():
     t = threading.Thread(target=start_health_server, daemon=True)
@@ -1277,7 +1220,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully upgraded and online!")
+    logger.info("Bot running with persistent daily activities and clean guess format!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
