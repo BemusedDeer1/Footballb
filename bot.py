@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 ESCOBAR_AI_ID = 999999999
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
+LRM = "\u200E"
 
 def get_iran_now():
     return datetime.now(IRAN_TZ)
@@ -48,7 +49,6 @@ def format_iran_time(utc_date_str):
     except Exception:
         return "20:00"
 
-# سیستم سطوح کاملاً متمایز، منطقی و متناسب با ارزش امتیاز
 def get_user_tier(points: int) -> tuple[str, str]:
     if points >= 1500:
         return "🐐", "G.O.A.T"
@@ -61,11 +61,43 @@ def get_user_tier(points: int) -> tuple[str, str]:
     elif points >= 350:
         return "🎖", "Captain"
     elif points >= 200:
-        return "⭐", "First Team"
+        return "🌟", "First Team"
     elif points >= 100:
         return "⚡️", "Semi-Pro"
     else:
         return "🔰", "Academy"
+
+def format_bidi_name(name: str, max_len: int = 15) -> str:
+    safe_name = html.escape(str(name).strip())
+    if len(safe_name) > max_len:
+        safe_name = safe_name[:max_len] + "…"
+    return f"{LRM}{safe_name}{LRM}"
+
+def get_rank_badge(rank: int, is_ai: bool = False) -> str:
+    if is_ai:
+        return "🤖"
+    if rank == 1:
+        return "🥇 👑"
+    elif rank == 2:
+        return "🥈 👑"
+    elif rank == 3:
+        return "🥉 👑"
+    
+    rank_badges = {
+        4: "🌟",
+        5: "🌟",
+        6: "🔥",
+        7: "💎",
+        8: "🦁",
+        9: "⚡️",
+        10: "🎯",
+        11: "⚔️",
+        12: "⚽️",
+        13: "🚀",
+        14: "💫",
+        15: "✨"
+    }
+    return rank_badges.get(rank, "🔹")
 
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -213,6 +245,7 @@ async def ensure_escobar_ai():
     except Exception as e:
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
+# شمارنده پنالتی (۳ بار در روز)
 async def get_penalty_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -228,6 +261,25 @@ async def increment_penalty_count_db(user_id: int):
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("""
             UPDATE users SET penalty_date = ?, penalty_count = ? WHERE user_id = ?
+        """, (today_str, cur_count + 1, user_id))
+        await db.commit()
+
+# شمارنده حدس بازیکن (۳ بار در روز)
+async def get_guess_count_db(user_id: int) -> int:
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT last_guess_date, guess_count FROM users WHERE user_id = ?", (user_id,)) as cur:
+            row = await cur.fetchone()
+            if row and row[0] == today_str:
+                return row[1] or 0
+    return 0
+
+async def increment_guess_count_db(user_id: int):
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+    cur_count = await get_guess_count_db(user_id)
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("""
+            UPDATE users SET last_guess_date = ?, guess_count = ? WHERE user_id = ?
         """, (today_str, cur_count + 1, user_id))
         await db.commit()
 
@@ -549,26 +601,56 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, reply_markup=kb.get_main_menu(), parse_mode="HTML")
 
-# جدول رده‌بندی بازطراحی‌شده: بدون ایموجی تکراری، منظم و کاملاً منطقی
-async def show_leaderboard_text():
+async def show_leaderboard_text() -> str:
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        async with db.execute("SELECT first_name, points, duel_wins FROM users ORDER BY points DESC, duel_wins DESC") as cur:
+        async with db.execute(
+            "SELECT user_id, first_name, points, duel_wins FROM users ORDER BY points DESC, duel_wins DESC"
+        ) as cur:
             all_users = await cur.fetchall()
 
     text = "🏆 <b>جدول رده‌بندی سیزن</b> 🔥\n"
     text += "────────────────────\n\n"
+
     if not all_users:
         text += "هنوز کاربری ثبت نشده است.\n"
-    else:
-        for idx, u in enumerate(all_users, 1):
-            name, pts, wins = u[0], max(0, u[1]), u[2]
-            # فقط ۳ نفر برتر مدال رتبه می‌گیرند، رتبه‌های بعدی تگ عددی شیک دریافت می‌کنند
-            rank_badge = "🥇" if idx == 1 else ("🥈" if idx == 2 else ("🥉" if idx == 3 else f"<code>{idx:02d}.</code>"))
-            safe_name = html.escape(str(name))
-            icon, tier = get_user_tier(pts)
+        text += "────────────────────"
+        return text
 
-            text += f"{rank_badge} {icon} <b>{safe_name}</b> <i>({tier})</i>\n"
-            text += f"    └ ⚡️ <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
+    top_list = all_users[:15]
+    remaining_list = all_users[15:]
+
+    for idx, u in enumerate(top_list, 1):
+        u_id, name, pts, wins = u[0], u[1], max(0, u[2]), u[3]
+        is_ai = (u_id == ESCOBAR_AI_ID)
+        
+        badge = get_rank_badge(idx, is_ai=is_ai)
+        _, tier = get_user_tier(pts)
+        display_name = format_bidi_name(name)
+
+        if idx <= 3:
+            rank_prefix = f"{badge}"
+        else:
+            rank_prefix = f"<code>{idx:02d}.</code> {badge}"
+
+        text += f"{rank_prefix} <b>{display_name}</b> ({tier})\n"
+        text += f"    └ 💰 <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
+
+    if remaining_list:
+        text += "────────────────────\n\n"
+        for idx, u in enumerate(remaining_list, 16):
+            u_id, name, pts, wins = u[0], u[1], max(0, u[2]), u[3]
+            is_ai = (u_id == ESCOBAR_AI_ID)
+            
+            badge = "🔰" if pts < 100 else "🔹"
+            if is_ai:
+                badge = "🤖"
+                
+            _, tier = get_user_tier(pts)
+            display_name = format_bidi_name(name)
+
+            text += f"<code>{idx:02d}.</code> {badge} <b>{display_name}</b> ({tier})\n"
+            text += f"    └ 💰 <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
+
     text += "────────────────────"
     return text
 
@@ -589,6 +671,7 @@ async def user_profile_handler(query):
     icon, tier = get_user_tier(pts)
     safe_name = html.escape(query.from_user.first_name)
     p_today = await get_penalty_count_db(user_id)
+    g_today = await get_guess_count_db(user_id)
 
     trophies = ""
     if g > 0 or s > 0 or b > 0:
@@ -599,7 +682,8 @@ async def user_profile_handler(query):
         f"────────────────────\n"
         f"🌟 رتبه: {icon} <b>{tier}</b>\n"
         f"⚡️ موجودی: <code>{pts} PTS</code>  ▫️  ⚔️ بردها: <code>{dw}</code>\n"
-        f"🥅 پنالتی‌های امروز: <code>{p_today}/2</code>\n"
+        f"🥅 پنالتی‌های امروز: <code>{p_today}/3</code>\n"
+        f"🕵️‍♂️ پرونده‌های حدس امروز: <code>{g_today}/3</code>\n"
         f"{trophies}"
         f"────────────────────"
     )
@@ -723,29 +807,26 @@ async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=chat_id,
             text=f"⏰ <b>مهلت ۴۵ ثانیه‌ای پاسخ به پایان رسید!</b>\n"
-                 f"👤 ستاره مورد نظر: <b>{main_name}</b> ({player_name}) بود.\n"
-                 f"فردا می‌توانید مجدداً چالش را اجرا کنید.",
+                 f"👤 ستاره مورد نظر: <b>{main_name}</b> ({player_name}) بود.",
             parse_mode="HTML"
         )
 
+# چالش حدس: ۳ بار در روز + ۱۰ امتیاز پاداش
 async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
 
     user = update.effective_user
     await ensure_user(user)
-    today_str = get_iran_now().strftime("%Y-%m-%d")
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        async with db.execute("SELECT last_guess_date FROM users WHERE user_id = ?", (user.id,)) as cur:
-            row = await cur.fetchone()
-            if row and row[0] == today_str:
-                await update.effective_message.reply_text(
-                    f"⛔️ <b>{html.escape(user.first_name)}</b> عزیز، شما امروز سهمیه ۱ بار اجرای چالش حدس خود را مصرف کرده‌اید!\n"
-                    "فردا دوباره می‌توانید این چالش را بسازید.",
-                    parse_mode="HTML"
-                )
-                return
+    g_count = await get_guess_count_db(user.id)
+    if g_count >= 3:
+        await update.effective_message.reply_text(
+            f"⛔️ <b>{html.escape(user.first_name)}</b> عزیز، شما سهمیه ۳ بار حدس بازیکن امروز خود را مصرف کرده‌اید!\n"
+            "فردا مجدداً می‌توانید ۳ پرونده دیگر حل کنید.",
+            parse_mode="HTML"
+        )
+        return
 
     global ACTIVE_GUESS_GAME
     if ACTIVE_GUESS_GAME and ACTIVE_GUESS_GAME.get("is_active"):
@@ -757,9 +838,8 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute("UPDATE users SET last_guess_date = ? WHERE user_id = ?", (today_str, user.id))
-        await db.commit()
+    await increment_guess_count_db(user.id)
+    current_attempt = g_count + 1
 
     p = get_next_guess_player()
     career_str = "\n".join([f"  {idx}. {club}" for idx, club in enumerate(p['career'], 1)])
@@ -767,7 +847,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ACTIVE_GUESS_GAME = {
         "names": p["names"],
         "player_name": p["names"][1] if len(p["names"]) > 1 else p["names"][0],
-        "reward": 25,
+        "reward": 10,  # ۱۰ امتیاز برای هر پاسخ درست
         "chat_id": update.effective_chat.id,
         "challenger_id": user.id,
         "challenger_name": user.first_name,
@@ -777,14 +857,14 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "🕵️‍♂️ <b>پرونده اطلاعاتی: ستاره فوتبال را شناسایی کنید!</b>\n"
         "────────────────────\n"
-        f"🎯 بازیکن چالش: <b>{html.escape(user.first_name)}</b> (فقط ایشان مجاز به پاسخ است)\n"
+        f"🎯 بازیکن چالش: <b>{html.escape(user.first_name)}</b> (فرصت {current_attempt} از ۳)\n"
         f"⏱ مهلت پاسخ: <b>۴۵ ثانیه</b> ⏳\n"
         f"🌍 <b>ملیت:</b> {p['nation']}\n"
         f"📌 <b>پست تخصصی:</b> {p['pos']}\n\n"
         f"🏟 <b>مسیر باشگاهی:</b>\n{career_str}\n\n"
         f"⭐️ <b>سرنخ کلیدی:</b>\n{p['clue']}\n"
         "────────────────────\n"
-        "💰 پاداش پاسخ صحیح: <b>+25 امتیاز</b>\n"
+        "💰 پاداش پاسخ صحیح: <b>+10 امتیاز</b>\n"
         "👇 نام بازیکن را در گروه ارسال کنید:"
     )
     await update.message.reply_text(text, parse_mode="HTML")
@@ -804,6 +884,7 @@ async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, parse_mode="HTML")
 
+# مسابقه پنالتی: ۳ بار در روز + شرط ۱۵ امتیاز
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
@@ -823,13 +904,13 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
         return
 
     c_count = await get_penalty_count_db(challenger.id)
-    if c_count >= 2:
-        await update.message.reply_text(f"⛔️ <b>{html.escape(challenger.first_name)}</b> عزیز، شما سقف مجاز ۲ پنالتی در روز خود را مصرف کرده‌اید!", parse_mode="HTML")
+    if c_count >= 3:
+        await update.message.reply_text(f"⛔️ <b>{html.escape(challenger.first_name)}</b> عزیز، شما سقف مجاز ۳ پنالتی در روز خود را مصرف کرده‌اید!", parse_mode="HTML")
         return
 
     o_count = await get_penalty_count_db(opponent.id)
-    if o_count >= 2:
-        await update.message.reply_text(f"⛔️ حریف شما <b>{html.escape(opponent.first_name)}</b> امروز ۲ پنالتی خود را بازی کرده است!", parse_mode="HTML")
+    if o_count >= 3:
+        await update.message.reply_text(f"⛔️ حریف شما <b>{html.escape(opponent.first_name)}</b> امروز ۳ پنالتی خود را بازی کرده است!", parse_mode="HTML")
         return
 
     await ensure_user(challenger)
@@ -841,7 +922,7 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
         "p2": {"id": opponent.id, "name": opponent.first_name, "shot": None},
         "current_turn": challenger.id,
         "round": 1,
-        "stake": 25,
+        "stake": 15,  # تغییر به ۱۵ امتیاز
         "chat_id": update.effective_chat.id,
         "message_id": None
     }
@@ -857,9 +938,9 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
     text = (
         "🥅 <b>دوئل تک‌ضرب پنالتی (مرگ ناگهانی)!</b> ⚽️\n"
         "────────────────────\n"
-        f"👤 شوت‌زن اول: <b>{c_name}</b> ({c_count + 1}/2)\n"
-        f"👤 شوت‌زن دوم: <b>{o_name}</b> ({o_count + 1}/2)\n"
-        "💰 شرط مسابقه: <b>25 امتیاز</b> 🪙\n"
+        f"👤 شوت‌زن اول: <b>{c_name}</b> ({c_count + 1}/3)\n"
+        f"👤 شوت‌زن دوم: <b>{o_name}</b> ({o_count + 1}/3)\n"
+        "💰 شرط مسابقه: <b>15 امتیاز</b> 🪙\n"
         "────────────────────\n"
         f"آیا <b>{o_name}</b> چالش را می‌پذیرد؟"
     )
@@ -1387,7 +1468,6 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
                 ACTIVE_GUESS_GAME["is_active"] = False
                 return
 
-    # دستورات مسابقاتی
     if msg in ["دوئل", "duel", "چالش"]:
         if await is_action_allowed_in_chat(update):
             await trigger_duel(update, context)
@@ -1407,7 +1487,6 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
     elif msg in ["جکپات", "jackpot"]:
         await jackpot_cmd(update, context)
 
-    # دستورات عمومی
     elif msg in ["شروع", "منو", "فوتبال"]:
         await start(update, context)
     elif msg in ["جدول", "رنکینگ", "امتیازات"]:
@@ -1429,9 +1508,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
-    # فعال‌سازی جاب مانیتور زنده مسابقات (هر ۲۵ ثانیه)
     application.job_queue.run_repeating(monitor_real_barca_live_job, interval=25, first=3)
-    # فعال‌سازی جاب بررسی ماهانه تسویه سیزن
     application.job_queue.run_repeating(check_and_settle_monthly_season, interval=3600, first=10)
 
 def main():
@@ -1455,7 +1532,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully upgraded and online with Live Engine & Clean Match Cards!")
+    logger.info("Bot fully upgraded: 3x Guess (10 PTS) & 3x Penalty (15 PTS) online!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
