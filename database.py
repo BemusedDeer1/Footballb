@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 
 async def init_db():
     async with aiosqlite.connect(DATABASE_PATH) as db:
+        # جدول کاربران به همراه فیلدهای ثبت دائمی محدودیت‌های روزانه
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
@@ -15,9 +16,30 @@ async def init_db():
                 exact_predictions INTEGER DEFAULT 0,
                 correct_results INTEGER DEFAULT 0,
                 total_predictions INTEGER DEFAULT 0,
-                duel_wins INTEGER DEFAULT 0
+                duel_wins INTEGER DEFAULT 0,
+                last_daily_date TEXT DEFAULT '',
+                last_shoot_date TEXT DEFAULT '',
+                last_wheel_date TEXT DEFAULT '',
+                last_guess_date TEXT DEFAULT '',
+                penalty_date TEXT DEFAULT '',
+                penalty_count INTEGER DEFAULT 0
             )
         """)
+
+        # اطمینان از وجود ستون‌های جدید در صورت وجود قبلی دیتابیس
+        cols_to_add = [
+            ("last_daily_date", "TEXT DEFAULT ''"),
+            ("last_shoot_date", "TEXT DEFAULT ''"),
+            ("last_wheel_date", "TEXT DEFAULT ''"),
+            ("last_guess_date", "TEXT DEFAULT ''"),
+            ("penalty_date", "TEXT DEFAULT ''"),
+            ("penalty_count", "INTEGER DEFAULT 0")
+        ]
+        for col_name, col_type in cols_to_add:
+            try:
+                await db.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
+            except Exception:
+                pass
         
         await db.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
@@ -52,17 +74,5 @@ async def init_db():
             )
         """)
 
-        # جدول جک‌پات
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS jackpot_bets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                user_name TEXT,
-                combo_choices TEXT,
-                settled INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
         await db.commit()
-        logger.info("Database initialized successfully!")
+        logger.info("Database initialized successfully with persistent daily activity trackers!")
