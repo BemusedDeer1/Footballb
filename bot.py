@@ -98,6 +98,54 @@ LEAGUE_TITLES = {
     "all": "🌍 Top European Matches"
 }
 
+BANTER_TEXTS = {
+    "real": [
+        "⚪️ باختین فاجعه‌ها! حتی دروازه‌بانتونم دیگه رو نداره تو صورت هوادار نگاه کنه!",
+        "⚪️ تبدیل به تیم درجه سه شدین! ادعای پادشاهی اروپا داشتین ولی باختین، سکوت کنید لااقل!",
+        "⚪️ دوباره باختین؟ رئال فقط اسمش مونده؛ وقتی می‌بازید ناله نکنید و گردن داور نندازید!",
+        "⚪️ اینم از شاهکار جدیدتون! یه باخت خفت‌بار دیگه... تا اطلاع ثانوی نبینم رئالی کری بخونه!"
+    ],
+    "barca": [
+        "🔴🔵 باختین استادان بهانه‌تراشی! طبق معمول داوری بد بود یا چمن بلند بود؟ گریه نکنید دیگه!",
+        "🔴🔵 مسخره‌ترین نمایش ممکن! حتی تیم نونهالان هم از این خط دفاع بهتر بازی می‌کنه!",
+        "🔴🔵 دوباره تحقیر شدین؟ بارسا فقط ساخته شده واسه کامبک خوردن و اشک ریختن تو اروپا و لیگ!",
+        "🔴🔵 این باختتونم مثل همیشه مایه آبروریزی بود؛ حداقل تا هفته بعد یه جا قایم شین صداتون درنیاد!"
+    ],
+    "atletico": [
+        "🔴⚪️ باختین اتوبوس‌سوارها! این همه دفاع اتوبوسی و ضدفوتبال آخرش به همین باخت ختم شد؟",
+        "🔴⚪️ سیمئونه خودش هم دیگه از این سبک خسته‌کننده و ناله کردن خجالت می‌کشه!",
+        "🔴⚪️ دوباره باختین؟ اتلتیکو تیم نیس، کانون ناله و لگدزدنه؛ جمع کنید کاسه کوزه‌تونو!",
+        "🔴⚪️ اینم از اون باخت‌های کلاسیکتون! اون‌قدر دفاع کردین تا بالاخره تاوان پس دادین!"
+    ],
+    "liverpool": [
+        "🔴 باختین مدعی‌ها! این لیگه نه جام‌های شانسکی؛ باختین و رفتین پی کارتون!",
+        "🔴 تیم ناله‌کن لیگ جزیره! بعد باخت فقط بلدید بیانیه بدید و بگید داور حقمونو خورد!",
+        "🔴 دوباره باختین؟ آنفیلد شده کاروانسرا، روح کلوپ هم از این بازیتون خجالت می‌کشه!",
+        "🔴 این افتضاح رو کجای دلمون بذاریم؟ تا هفته بعد حق حرف زدن درباره قهرمانی ندارید!"
+    ],
+    "united": [
+        "🔴 باختین ارواح سرگردان! اولدترافورد دیگه تئاتر رویاها نیست، قبرستان آرزوهاست!",
+        "🔴 حتی روح سر الکس فرگوسن هم چشم‌هاشو می‌بنده تا این سیرک خنده‌دار رو نبینه!",
+        "🔴 دوباره باختین؟ یونایتد فقط برای تفریح و میم شدن رقبا تو اینترنت ساخته شده!",
+        "🔴 بازم یه شکست مفتضحانه دیگه! چند صد میلیون خرج کردین که اینجوری آبروریزی کنید؟"
+    ]
+}
+
+def identify_tracked_team(team_name: str):
+    name = team_name.lower()
+    if any(x in name for x in ["real madrid", "رئال مادرید", "madrid"]):
+        if "atletico" not in name and "اتلتیکو" not in name:
+            return "real"
+    if any(x in name for x in ["barcelona", "بارسلونا", "barca"]):
+        return "barca"
+    if any(x in name for x in ["atletico", "اتلتیکو", "atlético"]):
+        return "atletico"
+    if any(x in name for x in ["liverpool", "لیورپول"]):
+        return "liverpool"
+    if any(x in name for x in ["manchester united", "man utd", "منچستر یونایتد", "یونایتد"]):
+        return "united"
+    return None
+
 RAW_GUESS_PLAYERS = [
     {"nation": "آرژانتین 🇦🇷", "pos": "مهاجم کاذب / وینگر راست", "career": ["نیوولز اولد بویز 🇦🇷", "بارسلونا 🇪🇸", "پاری‌سن‌ژرمن 🇫🇷", "اینتر میامی 🇺🇸"], "clue": "ثبت ۹۱ گل رسمی در یک سال تقویمی (۲۰۱۲) و برنده ۸ توپ طلا", "names": ["مسی", "لیونل مسی", "messi"]},
     {"nation": "پرتغال 🇵🇹", "pos": "وینگر چپ / مهاجم هدف", "career": ["اسپورتینگ لیسبون 🇵🇹", "منچستریونایتد 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "رئال مادرید 🇪🇸", "یوونتوس 🇮🇹", "النصر 🇸🇦"], "clue": "تنها بازیکن با بیش از ۹۰۰ گل رسمی، ۵ قهرمانی UCL و فریاد شادی Siuuu", "names": ["رونالدو", "کریستیانو رونالدو", "کریس رونالدو", "ronaldo", "cr7"]},
@@ -219,7 +267,6 @@ async def ensure_escobar_ai():
     except Exception as e:
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
-# سیستم سهمیه پنالتی با ریست رأس ساعت ۱۲ شب ایران
 async def get_penalty_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -238,7 +285,6 @@ async def increment_penalty_count_db(user_id: int):
         """, (today_str, cur_count + 1, user_id))
         await db.commit()
 
-# سیستم سهمیه حدس با ریست رأس ساعت ۱۲ شب ایران
 async def get_guess_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -279,7 +325,7 @@ async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"✅ <b>این گروه به عنوان گروه اختصاصی مسابقات و گزارش زنده ثبت شد!</b> 🏟🔥\n"
             f"شناسه اختصاصی: <code>{chat.id}</code>\n"
-            "رویدادها و گزارش بازی‌های مهم در همین گروه ارسال خواهد شد.",
+            "رویدادها، استخرها و کوری‌خوانی بعد از باخت تیم‌های بزرگ در همین گروه فعال شد.",
             parse_mode="HTML"
         )
     else:
@@ -311,7 +357,7 @@ async def generate_pool_message_text(match_data, pool_participants=None):
     text += "\n👇 <b>پیش‌بینی خود را انتخاب کنید:</b>"
     return text
 
-async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
+async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
     target_chat_id = await get_live_chat_id()
     if not target_chat_id:
         return
@@ -325,7 +371,7 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
 
     matches = []
     for d in dates:
-        for l_code in ["esp.1", "uefa.champions"]:
+        for l_code in ["esp.1", "eng.1", "uefa.champions"]:
             try:
                 m_list = await provider.get_matches(d, league_code=l_code)
                 matches.extend(m_list)
@@ -338,9 +384,11 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
     for m_id, m in unique_matches.items():
         h_name = str(m.get("home_team", ""))
         a_name = str(m.get("away_team", ""))
-        combined = (h_name + " " + a_name).lower()
 
-        if not any(x in combined for x in ["barcelona", "barca", "بارسلونا", "real madrid", "madrid", "رئال"]):
+        home_tracked = identify_tracked_team(h_name)
+        away_tracked = identify_tracked_team(a_name)
+
+        if not home_tracked and not away_tracked:
             continue
 
         MATCH_CACHE[m_id] = m
@@ -362,7 +410,8 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                 "ht_announced": False,
                 "second_half_announced": False,
                 "pool_opened": False,
-                "pool_msg_id": None
+                "pool_msg_id": None,
+                "banter_sent": False
             }
             TRACKED_LIVE_MATCHES[m_id] = track
 
@@ -376,7 +425,8 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             except Exception:
                 pass
 
-        if raw_status in ["UPCOMING", "PRE"] and not track["pool_opened"] and (0 <= minutes_to_start <= 25):
+        is_el_clasico_teams = (home_tracked in ["real", "barca"]) or (away_tracked in ["real", "barca"])
+        if is_el_clasico_teams and raw_status in ["UPCOMING", "PRE"] and not track["pool_opened"] and (0 <= minutes_to_start <= 25):
             track["pool_opened"] = True
             pool_kb = InlineKeyboardMarkup([
                 [
@@ -411,8 +461,8 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             start_msg = (
                 f"📢 <b>سوت آغاز مسابقه به صدا درآمد!</b>\n"
                 "────────────────────\n"
-                f"⚪️ <b>{h_name}</b> 🆚 <b>{a_name}</b> 🔴\n\n"
-                f"🎙 گزارش زنده رویدادها و گل‌ها آغاز شد."
+                f"⚽️ <b>{h_name}</b> 🆚 <b>{a_name}</b>\n\n"
+                f"🎙 گزارش لحظه‌ای رویدادها فعال است."
             )
             await context.bot.send_message(chat_id=target_chat_id, text=start_msg, parse_mode="HTML")
 
@@ -423,7 +473,7 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                     f"⚽️🔥 <b>گـُـل برای {h_name}!</b>\n"
                     "────────────────────\n"
                     f"📊 نتیجه لحظه‌ای:\n"
-                    f"⚪️ <b>{h_name}</b> [{h_score}] - [{a_score}] <b>{a_name}</b> 🔴"
+                    f"▫️ <b>{h_name}</b> [{h_score}] - [{a_score}] <b>{a_name}</b>"
                 )
                 await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
 
@@ -433,7 +483,7 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
                     f"⚽️🔥 <b>گـُـل برای {a_name}!</b>\n"
                     "────────────────────\n"
                     f"📊 نتیجه لحظه‌ای:\n"
-                    f"⚪️ <b>{h_name}</b> [{h_score}] - [{a_score}] <b>{a_name}</b> 🔴"
+                    f"▫️ <b>{h_name}</b> [{h_score}] - [{a_score}] <b>{a_name}</b>"
                 )
                 await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
 
@@ -442,9 +492,9 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             cur_h = h_score if h_score is not None else track["home_score"]
             cur_a = a_score if a_score is not None else track["away_score"]
             ht_msg = (
-                f"⏸ <b>پایان نیمه اول مسابقه (HT)</b>\n"
+                f"⏸ <b>پایان نیمه اول (HT)</b>\n"
                 "────────────────────\n"
-                f"⚪️ <b>{h_name}</b> [{cur_h}] - [{cur_a}] <b>{a_name}</b> 🔴"
+                f"▫️ <b>{h_name}</b> [{cur_h}] - [{cur_a}] <b>{a_name}</b>"
             )
             await context.bot.send_message(chat_id=target_chat_id, text=ht_msg, parse_mode="HTML")
 
@@ -453,7 +503,7 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             sh_msg = (
                 f"▶️ <b>شروع نیمه دوم مسابقه</b>\n"
                 "────────────────────\n"
-                f"⚪️ <b>{h_name}</b> 🆚 <b>{a_name}</b> 🔴"
+                f"▫️ <b>{h_name}</b> 🆚 <b>{a_name}</b>"
             )
             await context.bot.send_message(chat_id=target_chat_id, text=sh_msg, parse_mode="HTML")
 
@@ -463,29 +513,47 @@ async def monitor_real_barca_live_job(context: ContextTypes.DEFAULT_TYPE):
             final_a = a_score if a_score is not None else track["away_score"]
             actual_outcome = "HOME" if final_h > final_a else ("AWAY" if final_a > final_h else "DRAW")
 
-            async with aiosqlite.connect(DATABASE_PATH) as db:
-                async with db.execute("SELECT user_id, user_name FROM special_pool_predictions WHERE match_id = ? AND choice = ?", (m_id, actual_outcome)) as cur:
-                    winners = await cur.fetchall()
+            winners_text = ""
+            if track.get("pool_opened"):
+                async with aiosqlite.connect(DATABASE_PATH) as db:
+                    async with db.execute("SELECT user_id, user_name FROM special_pool_predictions WHERE match_id = ? AND choice = ?", (m_id, actual_outcome)) as cur:
+                        winners = await cur.fetchall()
 
-                winners_text = ""
-                if winners:
-                    share = 300 // len(winners)
-                    winners_text = f"\n\n🎁 <b>برندگان استخر ۳۰۰ امتیازی (هر نفر +{share} PTS):</b>\n"
-                    for w_id, w_name in winners:
-                        await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (share, w_id))
-                        winners_text += f"▫️ <b>{html.escape(w_name)}</b>\n"
-                else:
-                    winners_text = "\n\n▫️ هیچ کاربری برنده نهایی را درست حدس نزد!"
+                    if winners:
+                        share = 300 // len(winners)
+                        winners_text = f"\n\n🎁 <b>برندگان استخر ۳۰۰ امتیازی (هر نفر +{share} PTS):</b>\n"
+                        for w_id, w_name in winners:
+                            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (share, w_id))
+                            winners_text += f"▫️ <b>{html.escape(w_name)}</b>\n"
+                    else:
+                        winners_text = "\n\n▫️ هیچ کاربری برنده نهایی را درست حدس نزد!"
 
-                await db.execute("UPDATE special_pool_predictions SET settled = 1 WHERE match_id = ?", (m_id,))
-                await db.commit()
+                    await db.execute("UPDATE special_pool_predictions SET settled = 1 WHERE match_id = ?", (m_id,))
+                    await db.commit()
 
             ft_msg = (
                 f"🏁 <b>سوت پایان مسابقه (FT)</b>\n"
                 "────────────────────\n"
-                f"نتیجه نهایی: <b>{h_name} [{final_h}] - [{final_a}] {a_name}</b>{winners_text}"
+                f"نتیجه قطعی: <b>{h_name} [{final_h}] - [{final_a}] {a_name}</b>{winners_text}"
             )
             await context.bot.send_message(chat_id=target_chat_id, text=ft_msg, parse_mode="HTML")
+
+            if not track.get("banter_sent") and final_h != final_a:
+                loser_key = None
+                if final_h < final_a and home_tracked:
+                    loser_key = home_tracked
+                elif final_a < final_h and away_tracked:
+                    loser_key = away_tracked
+
+                if loser_key and loser_key in BANTER_TEXTS:
+                    track["banter_sent"] = True
+                    banter_msg = random.choice(BANTER_TEXTS[loser_key])
+                    await asyncio.sleep(2)
+                    await context.bot.send_message(
+                        chat_id=target_chat_id,
+                        text=f"📢🔥 <b>کوری‌خوانی ویژه پایان بازی:</b>\n────────────────────\n{banter_msg}",
+                        parse_mode="HTML"
+                    )
 
 async def check_and_settle_monthly_season(context: ContextTypes.DEFAULT_TYPE):
     iran_now = get_iran_now()
@@ -575,7 +643,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, reply_markup=kb.get_main_menu(), parse_mode="HTML")
 
-# جدول رده‌بندی مینیمال: مدال و تاج فقط برای ۳ نفر اول
 async def show_leaderboard_text() -> str:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute(
@@ -776,12 +843,12 @@ async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
         ACTIVE_GUESS_GAME["is_active"] = False
         await context.bot.send_message(
             chat_id=chat_id,
-            text=f"⏰ <b>مهلت ۴۵ ثانیه‌ای پاسخ به پایان رسید!</b>\n"
+            text=f"⏰ <b>مهلت ۳۰ ثانیه‌ای پاسخ به پایان رسید!</b>\n"
                  f"👤 ستاره مورد نظر: <b>{main_name}</b> ({player_name}) بود.",
             parse_mode="HTML"
         )
 
-# چالش حدس: ۳ بار در روز، ۱۰ امتیاز برای هر پاسخ درست
+# چالش حدس: ۳ بار در روز، زمان ۳۰ ثانیه
 async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
@@ -803,7 +870,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         challenger_name = html.escape(ACTIVE_GUESS_GAME.get("challenger_name", "کاربر"))
         await update.effective_message.reply_text(
             f"⚠️ یک پرونده هم‌اکنون برای <b>{challenger_name}</b> در جریان است!\n"
-            "لطفاً تا پایان تایمر ۴۵ ثانیه‌ای شکیبا باشید.",
+            "لطفاً تا پایان تایمر ۳۰ ثانیه‌ای شکیبا باشید.",
             parse_mode="HTML"
         )
         return
@@ -828,7 +895,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🕵️‍♂️ <b>پرونده اطلاعاتی: ستاره فوتبال را شناسایی کنید!</b>\n"
         "────────────────────\n"
         f"🎯 بازیکن چالش: <b>{html.escape(user.first_name)}</b> (فرصت {current_attempt} از ۳)\n"
-        f"⏱ مهلت پاسخ: <b>۴۵ ثانیه</b> ⏳\n"
+        f"⏱ مهلت پاسخ: <b>۳۰ ثانیه</b> ⏳\n"
         f"🌍 <b>ملیت:</b> {p['nation']}\n"
         f"📌 <b>پست تخصصی:</b> {p['pos']}\n\n"
         f"🏟 <b>مسیر باشگاهی:</b>\n{career_str}\n\n"
@@ -838,7 +905,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👇 نام بازیکن را در گروه ارسال کنید:"
     )
     await update.message.reply_text(text, parse_mode="HTML")
-    context.job_queue.run_once(guess_timeout_job, 45, name=f"guess_timer_{user.id}")
+    context.job_queue.run_once(guess_timeout_job, 30, name=f"guess_timer_{user.id}")
 
 async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
@@ -854,7 +921,6 @@ async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, parse_mode="HTML")
 
-# پنالتی: ۳ بار در روز، شرط ۱۵ امتیاز
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
@@ -1484,7 +1550,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
-    application.job_queue.run_repeating(monitor_real_barca_live_job, interval=25, first=3)
+    application.job_queue.run_repeating(monitor_live_matches_and_banter, interval=25, first=3)
     application.job_queue.run_repeating(check_and_settle_monthly_season, interval=3600, first=10)
 
 def main():
@@ -1508,7 +1574,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully upgraded: Calendar Midnight Reset & Clean Minimal Leaderboard online!")
+    logger.info("Bot fully upgraded: 30s Guess Timer & All Features online!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
