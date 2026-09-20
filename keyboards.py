@@ -4,23 +4,24 @@ def get_main_menu():
     keyboard = [
         [InlineKeyboardButton("⚡ مسابقات امروز", callback_data="select_matches_today"),
          InlineKeyboardButton("📅 برنامه فردا", callback_data="select_matches_tomorrow")],
-        [InlineKeyboardButton("🎯 پیش‌بینی بازی‌ها", callback_data="predictions_hub"),
-         InlineKeyboardButton("🏆 جدول رده‌بندی", callback_data="select_standings_league")],
-        [InlineKeyboardButton("👤 کارت بازیکنی", callback_data="user_profile"),
-         InlineKeyboardButton("🎖 برترین‌ها", callback_data="leaderboard_hub")],
-        [InlineKeyboardButton("⚔️ راهنمای دوئل", callback_data="duel_help")]
+        [InlineKeyboardButton("🎯 تالار پیش‌بینی", callback_data="predictions_hub"),
+         InlineKeyboardButton("🏆 جدول لیگ‌ها", callback_data="select_standings_league")],
+        [InlineKeyboardButton("🎡 گردونه شانس", callback_data="spin_wheel"),
+         InlineKeyboardButton("🎰 جک‌پات کمبو", callback_data="jackpot_hub")],
+        [InlineKeyboardButton("👤 حساب کاربری", callback_data="user_profile"),
+         InlineKeyboardButton("🎖 برترین‌ها", callback_data="leaderboard_hub")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_matches_leagues_keyboard(action_prefix="today"):
     keyboard = [
-        [InlineKeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 لیگ برتر انگلیس", callback_data=f"{action_prefix}_eng.1"),
-         InlineKeyboardButton("🇪🇸 لالیگا اسپانیا", callback_data=f"{action_prefix}_esp.1")],
-        [InlineKeyboardButton("🇮🇹 سری آ ایتالیا", callback_data=f"{action_prefix}_ita.1"),
-         InlineKeyboardButton("🇩🇪 بوندسلیگا آلمان", callback_data=f"{action_prefix}_ger.1")],
-        [InlineKeyboardButton("🇫🇷 لوشامپیونه فرانسه", callback_data=f"{action_prefix}_fra.1")],
-        [InlineKeyboardButton("🌐 گلچین تمام لیگ‌ها", callback_data=f"{action_prefix}_all")],
-        [InlineKeyboardButton("‹ بازگشت به منو", callback_data="home")]
+        [InlineKeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 لیگ جزیره", callback_data=f"{action_prefix}_eng.1"),
+         InlineKeyboardButton("🇪🇸 لالیگا", callback_data=f"{action_prefix}_esp.1")],
+        [InlineKeyboardButton("🇮🇹 سری آ", callback_data=f"{action_prefix}_ita.1"),
+         InlineKeyboardButton("🇩🇪 بوندسلیگا", callback_data=f"{action_prefix}_ger.1")],
+        [InlineKeyboardButton("🇫🇷 لوشامپیونه", callback_data=f"{action_prefix}_fra.1"),
+         InlineKeyboardButton("🌐 گلچین اروپا", callback_data=f"{action_prefix}_all")],
+        [InlineKeyboardButton("‹ بازگشت", callback_data="home")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -31,13 +32,13 @@ def get_standings_leagues_keyboard():
         [InlineKeyboardButton("🇮🇹 Serie A", callback_data="table_ita.1"),
          InlineKeyboardButton("🇩🇪 Bundesliga", callback_data="table_ger.1")],
         [InlineKeyboardButton("🇫🇷 Ligue 1", callback_data="table_fra.1")],
-        [InlineKeyboardButton("‹ بازگشت به منو", callback_data="home")]
+        [InlineKeyboardButton("‹ بازگشت", callback_data="home")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_upcoming_matches_keyboard(matches):
     keyboard = []
-    for m in matches[:6]:
+    for m in matches[:8]:
         btn_text = f"⚽ {m['home_team']} ✕ {m['away_team']}"
         keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"select_pred_{m['id']}")])
     keyboard.append([InlineKeyboardButton("‹ بازگشت به منو", callback_data="home")])
@@ -48,11 +49,11 @@ def get_prediction_keyboard(match_id):
         [
             InlineKeyboardButton("⚪ برد میزبان", callback_data=f"pred_out_{match_id}_HOME"),
             InlineKeyboardButton("🤝 مساوی", callback_data=f"pred_out_{match_id}_DRAW"),
-            InlineKeyboardButton("🔵 برد میهمان", callback_data=f"pred_out_{match_id}_AWAY")
+            InlineKeyboardButton("🔴 برد میهمان", callback_data=f"pred_out_{match_id}_AWAY")
         ],
         [InlineKeyboardButton("‹ لیست مسابقات", callback_data="predictions_hub")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_back_button(target="home"):
-    return InlineKeyboardMarkup([[InlineKeyboardButton("‹ بازگشت به منو اصلی", callback_data=target)]])
+    return InlineKeyboardMarkup([[InlineKeyboardButton("‹ بازگشت به منو", callback_data=target)]])
