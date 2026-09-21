@@ -85,7 +85,7 @@ COUNTRIES = [
     "مراکش",
 ]
 
-PLAYERS = [
+PLAYERS = {
     "لیونل مسی": "آرژانتین",
     "کریستیانو رونالدو": "پرتغال",
     "کیلیان امباپه": "فرانسه",
@@ -106,7 +106,7 @@ PLAYERS = [
     "رونالدینیو": "برزیل",
     "کاکا": "برزیل",
     "آندرس اینیستا": "اسپانیا",
-]
+}
 
 
 WORLD_CUP_WINNERS = {
@@ -138,7 +138,7 @@ WORLD_CUP_WINNERS = {
 BALLON_DOR = {
     2000: "لوئیس فیگو",
     2001: "مایکل اوون",
-    2002: "رونالدو",
+    2002: "رونالدو نازاریو",
     2003: "پاول ندود",
     2004: "آندری شوچنکو",
     2005: "رونالدینیو",
@@ -296,7 +296,6 @@ def build_fallback_pool() -> List[str]:
     for _, answer in HISTORICAL_FACTS:
         pool.append(answer)
 
-    # حذف تکراری‌ها
     result = []
 
     for item in pool:
@@ -329,10 +328,6 @@ def make_options(
 
     candidates = []
 
-    # --------------------------------------------------------
-    # مرحله اول: استخر اختصاصی سؤال
-    # --------------------------------------------------------
-
     if pool:
 
         for item in pool:
@@ -345,10 +340,6 @@ def make_options(
                 and item not in candidates
             ):
                 candidates.append(item)
-
-    # --------------------------------------------------------
-    # مرحله دوم: بانک عمومی
-    # --------------------------------------------------------
 
     if len(candidates) < count - 1:
 
@@ -366,10 +357,6 @@ def make_options(
             if len(candidates) >= count - 1:
                 break
 
-    # --------------------------------------------------------
-    # مرحله سوم: گزینه‌های کاملاً امن
-    # --------------------------------------------------------
-
     if len(candidates) < count - 1:
 
         index = 1
@@ -385,10 +372,6 @@ def make_options(
                 candidates.append(fallback)
 
             index += 1
-
-    # --------------------------------------------------------
-    # ساخت گزینه‌ها
-    # --------------------------------------------------------
 
     wrong_options = random.sample(
         candidates,
@@ -434,7 +417,6 @@ def add_question(
         count=4,
     )
 
-    # اطمینان نهایی
     if answer not in options:
         raise RuntimeError(
             "گزینه صحیح در options قرار نگرفت."
@@ -469,7 +451,6 @@ def generate_easy_questions():
         )
     )
 
-    # WORLD CUP
     wc_templates = [
         "قهرمان جام جهانی سال {year} کدام کشور بود؟",
         "در جام جهانی {year} کدام تیم قهرمان شد؟",
@@ -497,7 +478,6 @@ def generate_easy_questions():
                 "world_cup",
             )
 
-    # BALLON D'OR
     ballon_pool = list(
         dict.fromkeys(
             BALLON_DOR.values()
@@ -531,7 +511,6 @@ def generate_easy_questions():
                 "ballon_dor",
             )
 
-    # UCL
     ucl_pool = list(
         dict.fromkeys(
             [x[0] for x in UCL_FINALS.values()]
@@ -567,7 +546,6 @@ def generate_easy_questions():
                 "ucl",
             )
 
-    # PLAYER NATIONALITY
     player_countries = list(
         dict.fromkeys(
             PLAYERS.values()
@@ -618,7 +596,6 @@ def generate_medium_questions():
         )
     )
 
-    # RUNNER-UP
     runner_templates = [
         "نایب‌قهرمان لیگ قهرمانان اروپا در سال {year} کدام تیم بود؟",
         "کدام تیم در فینال UCL سال {year} شکست خورد؟",
@@ -646,7 +623,6 @@ def generate_medium_questions():
                 "ucl_runner",
             )
 
-    # SCORE
     score_pool = list(
         dict.fromkeys(
             x[2] for x in UCL_FINALS.values()
@@ -680,7 +656,6 @@ def generate_medium_questions():
                 "ucl_score",
             )
 
-    # WORLD CUP
     country_pool = list(
         dict.fromkeys(
             WORLD_CUP_WINNERS.values()
@@ -712,7 +687,6 @@ def generate_medium_questions():
                 "world_cup",
             )
 
-    # BALLON
     ballon_pool = list(
         dict.fromkeys(
             BALLON_DOR.values()
@@ -744,7 +718,6 @@ def generate_medium_questions():
                 "ballon_dor",
             )
 
-    # PLAYER COUNTRY
     player_countries = list(
         dict.fromkeys(
             PLAYERS.values()
@@ -795,7 +768,6 @@ def generate_hard_questions():
         )
     )
 
-    # UCL COMBINATION
     for year, data in UCL_FINALS.items():
 
         winner, runner, score = data
@@ -829,7 +801,6 @@ def generate_hard_questions():
                 "ucl_analysis",
             )
 
-    # UCL YEAR
     year_pool = [
         str(x)
         for x in UCL_FINALS.keys()
@@ -872,7 +843,6 @@ def generate_hard_questions():
                     "ucl_year",
                 )
 
-    # BALLON YEAR/PLAYER
     ballon_players = list(
         dict.fromkeys(
             BALLON_DOR.values()
@@ -906,12 +876,6 @@ def generate_hard_questions():
                 "ballon_dor",
             )
 
-    # HISTORICAL
-    history_answers = [
-        answer
-        for _, answer in HISTORICAL_FACTS
-    ]
-
     for text, answer in HISTORICAL_FACTS:
 
         templates = [
@@ -930,12 +894,11 @@ def generate_hard_questions():
                 seen,
                 template,
                 answer,
-                history_answers,
+                [item for _, item in HISTORICAL_FACTS],
                 "hard",
                 "history",
             )
 
-    # PLAYER / COUNTRY HARD
     countries = list(
         dict.fromkeys(
             PLAYERS.values()
@@ -983,26 +946,13 @@ def fill_questions(
     difficulty: str,
     target: int,
 ):
-    """
-    این تابع فقط زمانی استفاده می‌شود که generator اصلی
-    به 1000 سؤال نرسیده باشد.
-
-    سؤال‌های جدید از ترکیب داده‌های واقعی ساخته می‌شوند
-    و قبل از اضافه‌شدن duplicate check می‌شوند.
-    """
-
     seen = {
         normalize(q.question)
         for q in questions
     }
 
-    # ========================================================
-    # EASY
-    # ========================================================
-
     if difficulty == "easy":
 
-        # ترکیب بازیکن + کشور
         countries = list(
             dict.fromkeys(
                 PLAYERS.values()
@@ -1040,10 +990,6 @@ def fill_questions(
                     difficulty,
                     "filler_easy",
                 )
-
-    # ========================================================
-    # MEDIUM
-    # ========================================================
 
     elif difficulty == "medium":
 
@@ -1083,13 +1029,8 @@ def fill_questions(
                     "filler_medium",
                 )
 
-    # ========================================================
-    # HARD
-    # ========================================================
-
     elif difficulty == "hard":
 
-        # ترکیب قهرمان + نایب‌قهرمان + نتیجه
         ucl_pool = list(
             dict.fromkeys(
                 [x[0] for x in UCL_FINALS.values()]
@@ -1140,7 +1081,6 @@ def build_question_deck() -> Dict[str, List[Question]]:
     medium = generate_medium_questions()
     hard = generate_hard_questions()
 
-    # تکمیل در صورت نیاز
     if len(easy) < TARGET_PER_DIFFICULTY:
         fill_questions(
             easy,
@@ -1162,10 +1102,6 @@ def build_question_deck() -> Dict[str, List[Question]]:
             TARGET_PER_DIFFICULTY,
         )
 
-    # --------------------------------------------------------
-    # بررسی تعداد
-    # --------------------------------------------------------
-
     if len(easy) < TARGET_PER_DIFFICULTY:
         raise RuntimeError(
             f"Easy فقط {len(easy)} سؤال دارد؛ "
@@ -1183,10 +1119,6 @@ def build_question_deck() -> Dict[str, List[Question]]:
             f"Hard فقط {len(hard)} سؤال دارد؛ "
             f"هدف {TARGET_PER_DIFFICULTY} است."
         )
-
-    # --------------------------------------------------------
-    # GLOBAL UNIQUE
-    # --------------------------------------------------------
 
     final = {
         "easy": [],
@@ -1215,8 +1147,6 @@ def build_question_deck() -> Dict[str, List[Question]]:
             if len(final[difficulty]) >= TARGET_PER_DIFFICULTY:
                 break
 
-    # اگر حذف duplicate باعث کم‌شدن شد،
-    # از خود generatorهای موجود سؤال‌های جدید می‌خواهیم.
     for difficulty in [
         "easy",
         "medium",
@@ -1230,10 +1160,6 @@ def build_question_deck() -> Dict[str, List[Question]]:
                 f"{difficulty} فقط "
                 f"{len(final[difficulty])} سؤال یکتا دارد."
             )
-
-    # --------------------------------------------------------
-    # SHUFFLE
-    # --------------------------------------------------------
 
     for difficulty in final:
         random.shuffle(
@@ -1287,8 +1213,6 @@ def get_random_question(
         not in USED_QUESTIONS[difficulty]
     ]
 
-    # اگر همه سؤال‌ها مصرف شده باشند،
-    # چرخه دوباره شروع می‌شود.
     if not available:
 
         USED_QUESTIONS[difficulty].clear()
@@ -1312,30 +1236,8 @@ def get_random_question(
 
 def get_random_duel_questions(count=3):
 
-    """
-    سازگار با bot.py
-
-    برای count=3:
-        1 Easy
-        1 Medium
-        1 Hard
-
-    سپس ترتیب آن‌ها کاملاً تصادفی می‌شود.
-
-    خروجی:
-    [
-        {
-            "question": "...",
-            "options": [...],
-            "correct_idx": 2
-        },
-        ...
-    ]
-    """
-
-    # --------------------------------------------------------
-    # حالت استاندارد ربات
-    # --------------------------------------------------------
+    if count <= 0:
+        return []
 
     if count == 3:
 
@@ -1357,14 +1259,9 @@ def get_random_duel_questions(count=3):
             hard_question,
         ]
 
-        # ترتیب سؤال‌ها تصادفی
         random.shuffle(
             duel
         )
-
-    # --------------------------------------------------------
-    # اگر bot.py تعداد دیگری درخواست کرد
-    # --------------------------------------------------------
 
     else:
 
@@ -1392,10 +1289,6 @@ def get_random_duel_questions(count=3):
             duel
         )
 
-    # --------------------------------------------------------
-    # EXACT bot.py FORMAT
-    # --------------------------------------------------------
-
     formatted_duel = []
 
     for q in duel:
@@ -1404,7 +1297,6 @@ def get_random_duel_questions(count=3):
             q.options
         )
 
-        # تضمین وجود جواب صحیح
         if q.answer not in options:
             raise RuntimeError(
                 "خطا: answer داخل options نیست."
@@ -1486,7 +1378,6 @@ def validate_question_engine():
         f"Total = {stats['total']}"
     )
 
-    # تست duplicate
     all_texts = []
 
     for pool in QUESTION_POOLS.values():
@@ -1505,7 +1396,6 @@ def validate_question_engine():
         set(normalized_texts)
     ), "Duplicate question detected."
 
-    # تست ساختار سؤال
     for difficulty, pool in QUESTION_POOLS.items():
 
         for q in pool:
