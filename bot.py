@@ -848,7 +848,6 @@ async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
-# چالش حدس: ۳ بار در روز، زمان ۳۰ ثانیه
 async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
         return
@@ -1451,12 +1450,18 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         duel = ACTIVE_DUELS.get(duel_id)
 
         if not duel:
-            await query.answer("این دوئل تمام شده است.", show_alert=True)
+            try:
+                await query.answer("این دوئل تمام شده است.", show_alert=True)
+            except Exception:
+                pass
             return
 
         user_id = query.from_user.id
         if user_id not in [duel["challenger"]["id"], duel["opponent"]["id"]] or user_id in duel["answered"]:
-            await query.answer("پاسخ قبلاً ثبت شده یا شما شرکت‌کننده نیستید!", show_alert=True)
+            try:
+                await query.answer("پاسخ قبلاً ثبت شده یا شما شرکت‌کننده نیستید!", show_alert=True)
+            except Exception:
+                pass
             return
 
         curr_q = duel["questions"][duel["current_q"]]
@@ -1469,14 +1474,25 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 duel["opponent"]["score"] += 1
 
+        try:
+            await query.answer("✅ پاسخ شما ثبت شد!", show_alert=False)
+        except Exception:
+            pass
+
         q_text = render_duel_question_text(duel, curr_q, duel["current_q"])
-        await safe_edit_message(query, q_text, reply_markup=query.message.reply_markup)
+        
+        try:
+            await query.message.edit_text(text=q_text, reply_markup=query.message.reply_markup, parse_mode="HTML")
+        except BadRequest:
+            pass
+        except Exception as e:
+            logger.warning(f"Duel edit warning: {e}")
 
         if len(duel["answered"]) >= 2:
             current_jobs = context.job_queue.get_jobs_by_name(f"duel_timer_{duel_id}_{duel['current_q']}")
             for j in current_jobs:
                 j.schedule_removal()
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
             duel["current_q"] += 1
             await proceed_duel(context, duel_id)
 
@@ -1574,7 +1590,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully upgraded: 30s Guess Timer & All Features online!")
+    logger.info("Bot fully upgraded: Duel Bug Fixed, 30s Guess Timer & All Features online!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
