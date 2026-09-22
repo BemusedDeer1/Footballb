@@ -1327,10 +1327,87 @@ async def team_duel_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     if not duel or duel.get("finished") or duel["current_q"] != data["q_idx"]:
         return
 
-    # Time expired: move to the next question. If this was the last question,
-    # proceed_team_duel() will settle the match and update points.
     duel["current_q"] += 1
     await proceed_team_duel(context, data["duel_id"])
+
+
+async def finish_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
+    """Settle a completed 2v2 battle exactly once and always send a result message."""
+    duel = ACTIVE_TEAM_DUELS.get(duel_id)
+    if not duel or duel.get("finished"):
+        return
+
+    duel["finished"] = True
+    t1 = duel["team1"]
+    t2 = duel["team2"]
+    t1_score = sum(duel["scores"].get(p["id"], 0) for p in t1)
+    t2_score = sum(duel["scores"].get(p["id"], 0) for p in t2)
+    stake = duel["stake"]
+
+    t1_name = " + ".join(html.escape(p["name"]) for p in t1)
+    t2_name = " + ".join(html.escape(p["name"]) for p in t2)
+    text = (
+        "🏁 <b>پایان بتل ۲ به ۲!</b>\n"
+        "────────────────────\n"
+        f"🟦 {t1_name}: <b>{t1_score}/3</b>\n"
+        f"🟥 {t2_name}: <b>{t2_score}/3</b>\n"
+        "────────────────────\n"
+    )
+
+    try:
+        # Make sure every participant has a DB row before settlement.
+        for player in t1 + t2:
+            await ensure_user(type("User", (), {
+                "id": player["id"],
+                "first_name": player["name"],
+                "username": ""
+            })())
+
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            if t1_score > t2_score:
+                for p in t1:
+                    await db.execute(
+                        "UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?",
+                        (stake * 2, p["id"])
+                    )
+                for p in t2:
+                    await db.execute(
+                        "UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?",
+                        (stake, p["id"])
+                    )
+                text += f"🎉 <b>تیم ۱</b> برنده شد؛ هر برنده +{stake * 2} PTS و هر بازنده -{stake} PTS"
+            elif t2_score > t1_score:
+                for p in t2:
+                    await db.execute(
+                        "UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?",
+                        (stake * 2, p["id"])
+                    )
+                for p in t1:
+                    await db.execute(
+                        "UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?",
+                        (stake, p["id"])
+                    )
+                text += f"🎉 <b>تیم ۲</b> برنده شد؛ هر برنده +{stake * 2} PTS و هر بازنده -{stake} PTS"
+            else:
+                text += "🤝 بازی مساوی شد؛ هیچ امتیازی کسر یا اضافه نشد."
+
+            await db.commit()
+
+    except Exception as exc:
+        logger.exception("team duel settlement failed: %s", exc)
+        text += "\n\n⚠️ نتیجه ثبت شد، اما هنگام به‌روزرسانی امتیازها خطایی رخ داد. لاگ سرور را بررسی کن."
+
+    # Do NOT depend on editing the old question message. Always send a fresh result.
+    try:
+        await context.bot.send_message(
+            chat_id=duel["chat_id"],
+            text=text,
+            parse_mode="HTML"
+        )
+    except Exception as exc:
+        logger.exception("team duel result message failed: %s", exc)
+    finally:
+        ACTIVE_TEAM_DUELS.pop(duel_id, None)
 
 
 async def proceed_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
@@ -1339,68 +1416,29 @@ async def proceed_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
         return
 
     if duel["current_q"] >= len(duel["questions"]):
-        # Lock settlement so simultaneous callbacks/timers cannot settle twice.
-        duel["finished"] = True
-        t1_score = sum(duel["scores"][p["id"]] for p in duel["team1"])
-        t2_score = sum(duel["scores"][p["id"]] for p in duel["team2"])
-        stake = duel["stake"]
-        t1 = duel["team1"]
-        t2 = duel["team2"]
-        t1_name = " + ".join(html.escape(p["name"]) for p in t1)
-        t2_name = " + ".join(html.escape(p["name"]) for p in t2)
-        text = (
-            "🏁 <b>پایان دوئل ۲ به ۲!</b>\n"
-            "────────────────────\n"
-            f"🟦 {t1_name}: <b>{t1_score}</b>\n"
-            f"🟥 {t2_name}: <b>{t2_score}</b>\n"
-            "────────────────────\n"
-        )
-        async with aiosqlite.connect(DATABASE_PATH) as db:
-            if t1_score > t2_score:
-                for p in t1:
-                    await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake * 2, p["id"]))
-                for p in t2:
-                    await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p["id"]))
-                text += f"🎉 <b>تیم ۱</b> برنده شد؛ هر برنده +{stake * 2} PTS و هر بازنده -{stake} PTS"
-            elif t2_score > t1_score:
-                for p in t2:
-                    await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake * 2, p["id"]))
-                for p in t1:
-                    await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p["id"]))
-                text += f"🎉 <b>تیم ۲</b> برنده شد؛ هر برنده +{stake * 2} PTS و هر بازنده -{stake} PTS"
-            else:
-                text += "🤝 بازی مساوی شد؛ هیچ امتیازی کسر یا اضافه نشد."
-            await db.commit()
-        # Keep the result even if Telegram rejects editing the old question message.
-        try:
-            edited = await safe_edit_message(
-                context.bot, text,
-                chat_id=duel["chat_id"],
-                message_id=duel["message_id"]
-            )
-            if not edited:
-                await context.bot.send_message(
-                    chat_id=duel["chat_id"],
-                    text=text,
-                    parse_mode="HTML"
-                )
-        except Exception as exc:
-            logger.exception("team duel result delivery failed: %s", exc)
-        finally:
-            ACTIVE_TEAM_DUELS.pop(duel_id, None)
+        await finish_team_duel(context, duel_id)
         return
 
     q = duel["questions"][duel["current_q"]]
     duel["answered"] = {}
     option_buttons = [
-        InlineKeyboardButton(f"{['1️⃣','2️⃣','3️⃣','4️⃣'][i]} {opt}", callback_data=f"tad_{duel_id}_{i}")
+        InlineKeyboardButton(
+            f"{['1️⃣','2️⃣','3️⃣','4️⃣'][i]} {opt}",
+            callback_data=f"tad_{duel_id}_{i}"
+        )
         for i, opt in enumerate(q["options"])
     ]
     buttons = [option_buttons[:2], option_buttons[2:]]
     text = render_team_duel_question_text(duel, q, duel["current_q"])
-    await safe_edit_message(context.bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=duel["chat_id"], message_id=duel["message_id"])
+    await safe_edit_message(
+        context.bot, text,
+        reply_markup=InlineKeyboardMarkup(buttons),
+        chat_id=duel["chat_id"],
+        message_id=duel["message_id"]
+    )
     context.job_queue.run_once(
-        team_duel_timeout_job, 15,
+        team_duel_timeout_job,
+        15,
         data={"duel_id": duel_id, "q_idx": duel["current_q"]},
         name=f"team_duel_timer_{duel_id}_{duel['current_q']}"
     )
@@ -1886,6 +1924,17 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             duel["scores"][uid] += 1
         await query.answer("✅ پاسخ ثبت شد!", show_alert=False)
 
+        participant_ids = {p["id"] for p in participants}
+        answered_ids = set(duel["answered"].keys()) & participant_ids
+        if answered_ids == participant_ids:
+            q_idx = duel["current_q"]
+            for j in context.job_queue.get_jobs_by_name(f"team_duel_timer_{duel_id}_{q_idx}"):
+                j.schedule_removal()
+            duel["current_q"] += 1
+            await proceed_team_duel(context, duel_id)
+            return
+
+        # Only refresh the status while the question is still active.
         try:
             await query.message.edit_text(
                 render_team_duel_question_text(duel, q, duel["current_q"]),
@@ -1894,17 +1943,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as exc:
             logger.warning("team duel status update failed: %s", exc)
-
-        participant_ids = {p["id"] for p in participants}
-        answered_ids = set(duel["answered"].keys()) & participant_ids
-        if answered_ids == participant_ids:
-            q_idx = duel["current_q"]
-            jobs = context.job_queue.get_jobs_by_name(f"team_duel_timer_{duel_id}_{q_idx}")
-            for j in jobs:
-                j.schedule_removal()
-            # Do not sleep here: on the third question the result should appear immediately.
-            duel["current_q"] += 1
-            await proceed_team_duel(context, duel_id)
 
     elif data.startswith("acd_"):
         duel_id = data.replace("acd_", "")
