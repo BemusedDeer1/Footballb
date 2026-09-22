@@ -74,10 +74,6 @@ def format_bidi_name(name: str, max_len: int = 15) -> str:
     return f"{LRM}{safe_name}{LRM}"
 
 def calculate_level_and_progress(xp: int):
-    """
-    محاسبه سطح (Level) و نوار پیشرفت (Progress Bar) بر اساس XP
-    فرمول: required_xp = 100 * level + 50 * (level - 1)
-    """
     level = 1
     required_xp_for_next = 100
     
@@ -188,7 +184,7 @@ RAW_GUESS_PLAYERS = [
     {"nation": "کرواسی 🇭🇷", "pos": "پلی‌میکر مرکزی با پاس بیرون پا", "career": ["دینامو زاگرب 🇭🇷", "تاتنهام 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "رئال مادرید 🇪🇸"], "clue": "پایان‌دهنده سلطه مسی و رونالدو بر توپ طلا با دریافت جایزه سال ۲۰۱۸", "names": ["مودریچ", "لوکا مودریچ", "modric"]},
     {"nation": "بلژیک 🇧🇪", "pos": "هافبک میانی طراح خط کشی", "career": ["خنک 🇧🇪", "چلسی 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "ولفسبورگ 🇩🇪", "منچسترسیتی 🏴󠁧󠁢󠁥󠁮󠁧󠁿"], "clue": "رکورددار ۲۰ پاس گل در یک فصل لیگ جزیره و معمار سه‌گانه سیتیزن‌ها", "names": ["دی بروینه", "کوین دی بروینه", "دیبروینه", "de bruyne"]},
     {"nation": "فرانسه 🇫🇷", "pos": "هافبک هجومی / شماره ۱۰ فانتزی", "career": ["کن 🇫🇷", "بوردو 🇫🇷", "یوونتوس 🇮🇹", "رئال مادرید 🇪🇸"], "clue": "والیه پای چپ افسانه‌ای گلاسکو ۲۰۰۲ و دو گل با سر در فینال جام جهانی ۹۸", "names": ["زیدان", "زین الدین زیدان", "zidane"]},
-    {"nation": "برزیل 🇧🇷", "pos": "مهاجم نوک زهرآگین", "career": ["کروزیرو 🇧🇷", "پی‌اس‌وی 🇳🇱", "بارسلونا 🇪🇸", "اینتر مایلان 🇮🇹", "رئال مادرید 🇪🇸", "میلان 🇮🇹"], "clue": "ال فنومنو؛ زدن دو گل در فینال ۲۰۰۲ پس از دو سال مصدومیت شدید رباط", "names": ["رونالدو برزیلی", "رونالدو نازاریو", "نازاریو", "r9"]},
+    {"nation": "برزیل 🇧🇷", "pos": "مهاجم نوک زهرآگین", "career": ["کروزیرو 🇧🇷", "پی‌اس‌وی 🇳🇱", "بارسلونا 🇪🇸", "اینتر میلان 🇮🇹", "رئال مادرید 🇪🇸", "میلان 🇮🇹"], "clue": "ال فنومنو؛ زدن دو گل در فینال ۲۰۰۲ پس از دو سال مصدومیت شدید رباط", "names": ["رونالدو برزیلی", "رونالدو نازاریو", "نازاریو", "r9"]},
     {"nation": "فرانسه 🇫🇷", "pos": "وینگر چپ / مهاجم", "career": ["موناکو 🇫🇷", "یوونتوس 🇮🇹", "آرسنال 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "بارسلونا 🇪🇸", "نیویورک ردبولز 🇺🇸"], "clue": "بهترین گلزن تاریخ توپچی‌های لندن با مجسمه اختصاصی بیرون ورزشگاه امارات", "names": ["آنری", "تیری آنری", "هنری", "تیری هنری", "henry"]},
     {"nation": "هلند 🇳🇱", "pos": "مهاجم سایه تکنیکی", "career": ["آژاکس 🇳🇱", "اینتر 🇮🇹", "آرسنال 🏴󠁧󠁢󠁥󠁮󠁧󠁿"], "clue": "ملقب به هلندی غیرپروازی به خاطر فوبیای هواپیما و صاحب زیباترین استپ‌های تاریخ", "names": ["برکمپ", "دنیس برکمپ", "bergkamp"]},
     {"nation": "سوئد 🇸🇪", "pos": "مهاجم آکروباتیک تنومند", "career": ["مالمو 🇸🇪", "آژاکس 🇳🇱", "یوونتوس 🇮🇹", "اینتر 🇮🇹", "بارسلونا 🇪🇸", "میلان 🇮🇹", "پی‌اس‌جی 🇫🇷", "منچستریونایتد 🏴󠁧󠁢󠁥󠁮󠁧󠁿"], "clue": "کمربند مشکی تکواندو و سوپرگل برگردان از فاصله ۳۲ متری به انگلیس", "names": ["زلاتان", "ابراهیموویچ", "زلاتان ابراهیموویچ", "ibrahimovic"]},
@@ -724,20 +720,27 @@ async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = await show_leaderboard_text()
     await update.message.reply_text(text, parse_mode="HTML")
 
-async def user_profile_handler(query):
-    user_id = query.from_user.id
-    await ensure_user(query.from_user)
+async def user_profile_handler(update_or_query):
+    # پشتیبانی کامل از هم CallBackQuery و هم Message معمولی (دکمه پایین صفحه)
+    if hasattr(update_or_query, "from_user"):
+        user = update_or_query.from_user
+        message = getattr(update_or_query, "message", None)
+    else:
+        user = update_or_query.effective_user
+        message = update_or_query.effective_message
+
+    await ensure_user(user)
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
             async with db.execute("""
                 SELECT points, xp, duel_wins, total_answers, correct_answers, penalty_wins, guess_wins, first_name
                 FROM users WHERE user_id = ?
-            """, (user_id,)) as cur:
+            """, (user.id,)) as cur:
                 row = await cur.fetchone()
 
         if not row:
             pts, xp, dw, total_ans, correct_ans, pen_wins, guess_wins = 100, 0, 0, 0, 0, 0, 0
-            f_name = query.from_user.first_name
+            f_name = user.first_name
         else:
             pts, xp, dw, total_ans, correct_ans, pen_wins, guess_wins, f_name = row
             
@@ -763,17 +766,20 @@ async def user_profile_handler(query):
             f"🕵️ {guess_wins} Guess Wins"
         )
         
-        # استفاده از ارسال پیام جدید برای جلوگیری از خطای تلگرام در ویرایش تکراری
-        await query.message.reply_text(text, reply_markup=kb.get_back_button(), parse_mode="HTML")
-        try:
-            await query.message.delete()
-        except Exception:
-            pass
+        if hasattr(update_or_query, "message") and update_or_query.message:
+            await update_or_query.message.reply_text(text, reply_markup=kb.get_back_button(), parse_mode="HTML")
+            try:
+                await update_or_query.message.delete()
+            except Exception:
+                pass
+        else:
+            await message.reply_text(text, reply_markup=kb.get_back_button(), parse_mode="HTML")
         
     except Exception as e:
         logger.error(f"Error in user_profile_handler: {e}")
         try:
-            await query.answer("⚠️ خطا در بارگذاری پروفایل. لطفاً دوباره تلاش کنید.", show_alert=True)
+            if hasattr(update_or_query, "answer"):
+                await update_or_query.answer("⚠️ خطا در بارگذاری پروفایل.", show_alert=True)
         except Exception:
             pass
 
@@ -1557,6 +1563,30 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message.text.strip() if update.message and update.message.text else ""
     if not msg:
+        return
+
+    # هندل کردن کلیک روی دکمه‌های کیبورد پایین صفحه (مثل حساب کاربری، رنکینگ و...)
+    if msg in ["حساب کاربری", "👤 حساب کاربری"]:
+        await user_profile_handler(update)
+        return
+    elif msg in ["رنکینگ سیزن", "🎖 رنکینگ سیزن", "امتیازات"]:
+        await leaderboard_cmd(update, context)
+        return
+    elif msg in ["گردونه شانس", "🎡 گردونه شانس"]:
+        await spin_wheel_cmd(update, context)
+        return
+    elif msg in ["جک‌پات کمبو", "🎰 جک‌پات کمبو"]:
+        await jackpot_cmd(update, context)
+        return
+    elif msg in ["تالار پیش‌بینی", "🎯 تالار پیش‌بینی"]:
+        # شبیه‌سازی تالار پیش‌بینی
+        class FakeQuery:
+            def __init__(self, msg, user):
+                self.from_user = user
+                self.message = msg
+            async def answer(self, *args, **kwargs):
+                pass
+        await predictions_hub_handler(FakeQuery(update.message, update.effective_user))
         return
 
     global ACTIVE_GUESS_GAME
