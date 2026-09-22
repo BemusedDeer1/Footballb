@@ -252,6 +252,10 @@ ACTIVE_GUESS_GAME = None
 MATCH_CACHE = {}
 ACTIVE_DUELS = {}
 ACTIVE_SHOOTOUTS = {}
+
+# Owner-only duel test/cheat mode.
+# Enabled only from the owner's private chat with the bot.
+CHEAT_MODE_USERS = set()
 TRACKED_LIVE_MATCHES = {}
 
 async def get_live_chat_id():
@@ -1331,6 +1335,40 @@ async def predictions_hub_handler(query):
     )
     await safe_edit_message(query, text, reply_markup=kb.get_upcoming_matches_keyboard(upcoming_list))
 
+async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Owner-only duel test mode. /Ch_on enables and /Ch_off disables it.
+
+    The command is accepted only in the bot's private chat and only for ADMIN_ID.
+    While enabled, every answer selected by the owner in a duel is treated as correct.
+    """
+    user = update.effective_user
+    chat = update.effective_chat
+
+    if chat is None or chat.type != "private":
+        return
+
+    if str(user.id) != str(ADMIN_ID):
+        await update.effective_message.reply_text("⛔️ این قابلیت فقط برای مالک ربات فعال است.")
+        return
+
+    command = (update.effective_message.text or "").split()[0].split("@")[0].lower()
+
+    if command == "/ch_on":
+        CHEAT_MODE_USERS.add(user.id)
+        await update.effective_message.reply_text(
+            "🟢 <b>Ch Mode روشن شد.</b>\n\n"
+            "در دوئل، هر گزینه‌ای که انتخاب کنی به‌عنوان پاسخ درست ثبت می‌شود.\n"
+            "برای برگشت به حالت عادی: <code>/Ch_off</code>",
+            parse_mode="HTML"
+        )
+    elif command == "/ch_off":
+        CHEAT_MODE_USERS.discard(user.id)
+        await update.effective_message.reply_text(
+            "🔴 <b>Ch Mode خاموش شد.</b>\n\n"
+            "دوئل دوباره پاسخ واقعی گزینه‌ها را بررسی می‌کند.",
+            parse_mode="HTML"
+        )
+
 async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -1549,7 +1587,13 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         curr_q = duel["questions"][duel["current_q"]]
-        is_correct = (chosen_idx == curr_q["correct_idx"])
+
+        # Owner-only test mode: any selected option is counted as correct.
+        if user_id == int(ADMIN_ID) and user_id in CHEAT_MODE_USERS:
+            is_correct = True
+        else:
+            is_correct = (chosen_idx == curr_q["correct_idx"])
+
         await profile_record_answer(user_id, is_correct)
         duel["answered"][user_id] = is_correct
 
@@ -1674,6 +1718,8 @@ def main():
     app.add_handler(CommandHandler("jackpot", jackpot_cmd))
     app.add_handler(CommandHandler("reset_points", reset_points_cmd))
     app.add_handler(CommandHandler("set_live", set_live_group))
+    app.add_handler(CommandHandler("Ch_on", cheat_mode_command))
+    app.add_handler(CommandHandler("Ch_off", cheat_mode_command))
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
