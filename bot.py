@@ -1170,13 +1170,41 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(challenger)
     await ensure_user(opponent)
 
+    # A duel costs 25 PTS for the loser, so both players must have at least 25 PTS.
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute(
+            "SELECT user_id, points FROM users WHERE user_id IN (?, ?)",
+            (challenger.id, opponent.id)
+        ) as cur:
+            balances = {row[0]: row[1] for row in await cur.fetchall()}
+
+    stake = 25
+    challenger_points = balances.get(challenger.id, 0)
+    opponent_points = balances.get(opponent.id, 0)
+
+    if challenger_points < stake:
+        await update.message.reply_text(
+            f"⛔️ شما برای دوئل حداقل <b>{stake} PTS</b> لازم دارید.\n"
+            f"💰 موجودی شما: <b>{challenger_points} PTS</b>",
+            parse_mode="HTML"
+        )
+        return
+
+    if opponent_points < stake:
+        await update.message.reply_text(
+            f"⛔️ <b>{html.escape(opponent.first_name)}</b> برای دوئل حداقل <b>{stake} PTS</b> لازم دارد.\n"
+            f"💰 موجودی فعلی: <b>{opponent_points} PTS</b>",
+            parse_mode="HTML"
+        )
+        return
+
     duel_id = str(random.randint(10000, 99999))
     ACTIVE_DUELS[duel_id] = {
         "challenger": {"id": challenger.id, "name": challenger.first_name, "score": 0},
         "opponent": {"id": opponent.id, "name": opponent.first_name, "score": 0},
         "questions": get_random_duel_questions(3),
         "current_q": 0,
-        "stake": 25,
+        "stake": stake,
         "answered": {},
         "chat_id": update.effective_chat.id,
         "message_id": None
@@ -1556,6 +1584,31 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not duel or query.from_user.id != duel["opponent"]["id"]:
             await query.answer("خطا یا عدم دسترسی به دوئل!", show_alert=True)
             return
+
+        # Re-check balances at acceptance time too, because points may have changed
+        # after the challenge was created.
+        c_id = duel["challenger"]["id"]
+        o_id = duel["opponent"]["id"]
+        stake = duel["stake"]
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with db.execute(
+                "SELECT user_id, points FROM users WHERE user_id IN (?, ?)",
+                (c_id, o_id)
+            ) as cur:
+                balances = {row[0]: row[1] for row in await cur.fetchall()}
+
+        c_points = balances.get(c_id, 0)
+        o_points = balances.get(o_id, 0)
+        if c_points < stake or o_points < stake:
+            del ACTIVE_DUELS[duel_id]
+            await safe_edit_message(
+                query,
+                f"⛔️ دوئل لغو شد؛ هر دو بازیکن باید حداقل <b>{stake} PTS</b> داشته باشند.\n\n"
+                f"💰 موجودی چلنجر: <b>{c_points} PTS</b>\n"
+                f"💰 موجودی هماورد: <b>{o_points} PTS</b>"
+            )
+            return
+
         await proceed_duel(context, duel_id)
 
     elif data.startswith("rjd_"):
