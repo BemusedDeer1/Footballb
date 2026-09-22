@@ -283,24 +283,22 @@ async def is_action_allowed_in_chat(update: Update) -> bool:
 
 async def safe_edit_message(query_or_bot, text, reply_markup=None, chat_id=None, message_id=None):
     try:
-        if chat_id and message_id:
+        if chat_id is not None and message_id is not None:
             await query_or_bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message_id,
-                text=text,
-                reply_markup=reply_markup,
-                parse_mode="HTML"
+                chat_id=chat_id, message_id=message_id, text=text,
+                reply_markup=reply_markup, parse_mode="HTML"
             )
         else:
             await query_or_bot.message.edit_text(
-                text=text,
-                reply_markup=reply_markup,
-                parse_mode="HTML"
+                text=text, reply_markup=reply_markup, parse_mode="HTML"
             )
+        return True
     except BadRequest as e:
         logger.warning(f"Bad request in safe_edit_message: {e}")
+        return False
     except Exception as e:
-        logger.warning(f"Unexpected edit warning: {e}")
+        logger.exception(f"Unexpected edit warning: {e}")
+        return False
 
 async def ensure_user(user):
     try:
@@ -1770,8 +1768,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if len(duel["team1"]) == 2 and len(duel["team2"]) == 2:
             duel["started"] = True
-            await safe_edit_message(query, render_team_duel_lobby(duel) + "\n\n🚀 <b>هر دو تیم کامل شدند؛ بتل شروع شد!</b>", reply_markup=None)
-            await query.answer("✅ شما به تیم پیوستید. بتل شروع شد!", show_alert=False)
+            # Start the first question directly. Do not perform a separate lobby edit first;
+            # two consecutive edits can race on Telegram and leave the lobby message stuck.
+            await query.answer("🚀 بتل شروع شد!", show_alert=False)
             await proceed_team_duel(context, duel_id)
         else:
             await safe_edit_message(query, render_team_duel_lobby(duel), reply_markup=keyboard)
