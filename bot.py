@@ -1302,20 +1302,21 @@ def render_team_duel_lobby(duel):
 
 def render_team_duel_question_text(duel, q_data, q_idx):
     def player_status(player):
-        return "✅" if player["id"] in duel["answered"] else "⏳"
-    t1 = duel["team1"]
-    t2 = duel["team2"]
-    s1 = sum(duel["scores"][p["id"]] for p in t1)
-    s2 = sum(duel["scores"][p["id"]] for p in t2)
+        return "✅ ثبت کرد" if player["id"] in duel["answered"] else "⏳ در حال پاسخ..."
+
+    participants = [p for team in (duel["team1"], duel["team2"]) for p in team]
+    status_lines = "\n".join(
+        f"👤 {html.escape(p['name'])}: {player_status(p)}"
+        for p in participants
+    )
+
     return (
-        f"❓ <b>سوال {q_idx + 1} از 3</b>\n"
+        f"❓ <b>سوال {q_idx + 1} از 3:</b>\n"
         "────────────────────\n"
         f"📌 <b>{html.escape(q_data['question'])}</b>\n\n"
         "⏱ مهلت پاسخ: <b>15 ثانیه</b>\n"
-        f"🟦 {player_status(t1[0])} {html.escape(t1[0]['name'])} | {player_status(t1[1])} {html.escape(t1[1]['name'])}\n"
-        f"🟥 {player_status(t2[0])} {html.escape(t2[0]['name'])} | {player_status(t2[1])} {html.escape(t2[1]['name'])}\n"
         "────────────────────\n"
-        f"🟦 امتیاز تیم ۱: <b>{s1}</b>   🟥 امتیاز تیم ۲: <b>{s2}</b>"
+        f"{status_lines}"
     )
 
 
@@ -1369,7 +1370,11 @@ async def proceed_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
 
     q = duel["questions"][duel["current_q"]]
     duel["answered"] = {}
-    buttons = [[InlineKeyboardButton(f"🔘 {opt}", callback_data=f"tad_{duel_id}_{i}")] for i, opt in enumerate(q["options"])]
+    option_buttons = [
+        InlineKeyboardButton(f"{['1️⃣','2️⃣','3️⃣','4️⃣'][i]} {opt}", callback_data=f"tad_{duel_id}_{i}")
+        for i, opt in enumerate(q["options"])
+    ]
+    buttons = [option_buttons[:2], option_buttons[2:]]
     text = render_team_duel_question_text(duel, q, duel["current_q"])
     await safe_edit_message(context.bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=duel["chat_id"], message_id=duel["message_id"])
     context.job_queue.run_once(
@@ -1744,11 +1749,20 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("شما همین حالا عضو این بتل هستید.", show_alert=True)
             return
 
-        team_key = "team1" if data.startswith("bt1_") else "team2"
-        team = duel[team_key]
-        if len(team) >= 2:
-            await query.answer("این اسلات قبلاً پر شده است.", show_alert=True)
-            return
+        requested_team_key = "team1" if data.startswith("bt1_") else "team2"
+        other_team_key = "team2" if requested_team_key == "team1" else "team1"
+
+        # A stale inline button can still be clicked after another player filled
+        # that team. If the other team has an open slot, put the player there
+        # instead of making the 4th player unable to join.
+        if len(duel[requested_team_key]) >= 2:
+            if len(duel[other_team_key]) < 2:
+                requested_team_key = other_team_key
+            else:
+                await query.answer("هر دو تیم کامل شده‌اند.", show_alert=True)
+                return
+
+        team = duel[requested_team_key]
 
         await ensure_user(user)
         async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -1760,21 +1774,30 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         team.append({"id": uid, "name": user.first_name})
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("➕ یار تیم ۱", callback_data=f"bt1_{duel_id}") if len(duel["team1"]) < 2 else InlineKeyboardButton("🟦 تیم ۱ کامل", callback_data=f"noop_{duel_id}"),
-             InlineKeyboardButton("➕ یار تیم ۲", callback_data=f"bt2_{duel_id}") if len(duel["team2"]) < 2 else InlineKeyboardButton("🟥 تیم ۲ کامل", callback_data=f"noop_{duel_id}")],
-            [InlineKeyboardButton("❌ لغو بتل", callback_data=f"r2d_{duel_id}")]
-        ])
 
         if len(duel["team1"]) == 2 and len(duel["team2"]) == 2:
+            # Mark started before any network call so a second fast callback
+            # cannot add another player. Then replace the lobby directly with Q1.
             duel["started"] = True
-            # Start the first question directly. Do not perform a separate lobby edit first;
-            # two consecutive edits can race on Telegram and leave the lobby message stuck.
-            await query.answer("🚀 بتل شروع شد!", show_alert=False)
+            await query.answer("🚀 نفر چهارم وارد شد؛ بتل شروع شد!", show_alert=False)
             await proceed_team_duel(context, duel_id)
+            return
+
+        keyboard_rows = []
+        if len(duel["team1"]) < 2:
+            keyboard_rows.append(InlineKeyboardButton("➕ یار تیم ۱", callback_data=f"bt1_{duel_id}"))
         else:
-            await safe_edit_message(query, render_team_duel_lobby(duel), reply_markup=keyboard)
-            await query.answer("✅ شما یار این تیم شدید!", show_alert=False)
+            keyboard_rows.append(InlineKeyboardButton("🟦 تیم ۱ کامل", callback_data=f"noop_{duel_id}"))
+        if len(duel["team2"]) < 2:
+            keyboard_rows.append(InlineKeyboardButton("➕ یار تیم ۲", callback_data=f"bt2_{duel_id}"))
+        else:
+            keyboard_rows.append(InlineKeyboardButton("🟥 تیم ۲ کامل", callback_data=f"noop_{duel_id}"))
+        keyboard = InlineKeyboardMarkup([
+            keyboard_rows,
+            [InlineKeyboardButton("❌ لغو بتل", callback_data=f"r2d_{duel_id}")]
+        ])
+        await safe_edit_message(query, render_team_duel_lobby(duel), reply_markup=keyboard)
+        await query.answer("✅ شما یار این تیم شدید!", show_alert=False)
 
     elif data.startswith("noop_"):
         await query.answer("این تیم کامل است.", show_alert=False)
@@ -1846,8 +1869,8 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=query.message.reply_markup,
                 parse_mode="HTML"
             )
-        except BadRequest:
-            pass
+        except Exception as exc:
+            logger.warning("team duel status update failed: %s", exc)
         if len(duel["answered"]) >= 4:
             jobs = context.job_queue.get_jobs_by_name(f"team_duel_timer_{duel_id}_{duel['current_q']}")
             for j in jobs:
