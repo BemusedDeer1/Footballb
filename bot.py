@@ -763,7 +763,12 @@ async def user_profile_handler(query):
             f"🕵️ {guess_wins} Guess Wins"
         )
         
-        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
+        # استفاده از ارسال پیام جدید برای جلوگیری از خطای تلگرام در ویرایش تکراری
+        await query.message.reply_text(text, reply_markup=kb.get_back_button(), parse_mode="HTML")
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         
     except Exception as e:
         logger.error(f"Error in user_profile_handler: {e}")
