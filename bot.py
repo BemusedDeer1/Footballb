@@ -251,6 +251,7 @@ def get_next_guess_player():
 ACTIVE_GUESS_GAME = None
 MATCH_CACHE = {}
 ACTIVE_DUELS = {}
+ACTIVE_TEAM_DUELS = {}
 ACTIVE_SHOOTOUTS = {}
 
 # Owner-only duel test/cheat mode.
@@ -1230,6 +1231,155 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sent_msg = await update.message.reply_text(text, reply_markup=duel_kb, parse_mode="HTML")
     ACTIVE_DUELS[duel_id]["message_id"] = sent_msg.message_id
 
+
+async def trigger_team_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start a 2v2 battle by replying to an opponent's message with /battle."""
+    if not await is_action_allowed_in_chat(update):
+        return
+    if not update.message.reply_to_message:
+        await update.message.reply_text(
+            "⚔️ برای شروع بتل ۲ به ۲، روی پیام حریفت ریپلای کن و فقط بنویس:\n"
+            "<code>بتل</code> یا <code>/battle</code>", parse_mode="HTML"
+        )
+        return
+    challenger = update.effective_user
+    opponent = update.message.reply_to_message.from_user
+    if opponent.is_bot or challenger.id == opponent.id:
+        await update.message.reply_text("⚠️ امکان بتل با این کاربر نیست.")
+        return
+    await ensure_user(challenger)
+    await ensure_user(opponent)
+    stake = 30
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute(
+            "SELECT user_id, points FROM users WHERE user_id IN (?, ?)",
+            (challenger.id, opponent.id)
+        ) as cur:
+            balances = {int(uid): int(points or 0) for uid, points in await cur.fetchall()}
+    low = [(challenger.first_name, balances.get(challenger.id, 0)),
+           (opponent.first_name, balances.get(opponent.id, 0))]
+    low = [(name, pts) for name, pts in low if pts < stake]
+    if low:
+        details = "\n".join(f"• {html.escape(name)}: {pts} PTS" for name, pts in low)
+        await update.message.reply_text(
+            f"⛔️ برای بتل، هر بازیکن باید حداقل <b>{stake} PTS</b> داشته باشد.\n\n{details}",
+            parse_mode="HTML"
+        )
+        return
+    duel_id = str(random.randint(10000, 99999))
+    ACTIVE_TEAM_DUELS[duel_id] = {
+        "team1": [{"id": challenger.id, "name": challenger.first_name}],
+        "team2": [{"id": opponent.id, "name": opponent.first_name}],
+        "questions": get_random_duel_questions(3),
+        "current_q": 0, "stake": stake, "answered": {},
+        "scores": {challenger.id: 0, opponent.id: 0},
+        "accepted": {challenger.id, opponent.id},
+        "chat_id": update.effective_chat.id, "message_id": None,
+        "started": False,
+    }
+    text = render_team_duel_lobby(ACTIVE_TEAM_DUELS[duel_id])
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("➕ یار تیم ۱", callback_data=f"bt1_{duel_id}"),
+         InlineKeyboardButton("➕ یار تیم ۲", callback_data=f"bt2_{duel_id}")],
+        [InlineKeyboardButton("❌ لغو بتل", callback_data=f"r2d_{duel_id}")]
+    ])
+    sent = await update.message.reply_text(text, reply_markup=kb, parse_mode="HTML")
+    ACTIVE_TEAM_DUELS[duel_id]["message_id"] = sent.message_id
+
+
+def render_team_duel_lobby(duel):
+    def player_line(team):
+        return "👤 " + " + ".join(html.escape(p["name"]) for p in team) if team else "▫️ <i>اسلات خالی</i>"
+    return (
+        "⚔️ <b>بتل ۲ به ۲!</b> 🔥\n"
+        "────────────────────\n"
+        f"🟦 <b>تیم ۱</b>\n{player_line(duel['team1'])}\n\n"
+        f"🟥 <b>تیم ۲</b>\n{player_line(duel['team2'])}\n"
+        "────────────────────\n"
+        "هر بازیکن <b>۳۰ PTS</b> می‌گذارد وسط.\n"
+        "🏆 مجموع جایزه: <b>۱۲۰ PTS</b>\n\n"
+        "👇 برای یار شدن، روی اسلات خالی تیم موردنظر بزن."
+    )
+
+
+def render_team_duel_question_text(duel, q_data, q_idx):
+    def player_status(player):
+        return "✅" if player["id"] in duel["answered"] else "⏳"
+    t1 = duel["team1"]
+    t2 = duel["team2"]
+    s1 = sum(duel["scores"][p["id"]] for p in t1)
+    s2 = sum(duel["scores"][p["id"]] for p in t2)
+    return (
+        f"❓ <b>سوال {q_idx + 1} از 3</b>\n"
+        "────────────────────\n"
+        f"📌 <b>{html.escape(q_data['question'])}</b>\n\n"
+        "⏱ مهلت پاسخ: <b>15 ثانیه</b>\n"
+        f"🟦 {player_status(t1[0])} {html.escape(t1[0]['name'])} | {player_status(t1[1])} {html.escape(t1[1]['name'])}\n"
+        f"🟥 {player_status(t2[0])} {html.escape(t2[0]['name'])} | {player_status(t2[1])} {html.escape(t2[1]['name'])}\n"
+        "────────────────────\n"
+        f"🟦 امتیاز تیم ۱: <b>{s1}</b>   🟥 امتیاز تیم ۲: <b>{s2}</b>"
+    )
+
+
+async def team_duel_timeout_job(context: ContextTypes.DEFAULT_TYPE):
+    data = context.job.data
+    duel = ACTIVE_TEAM_DUELS.get(data["duel_id"])
+    if duel and duel["current_q"] == data["q_idx"]:
+        duel["current_q"] += 1
+        await proceed_team_duel(context, data["duel_id"])
+
+
+async def proceed_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
+    duel = ACTIVE_TEAM_DUELS.get(duel_id)
+    if not duel:
+        return
+
+    if duel["current_q"] >= len(duel["questions"]):
+        t1_score = sum(duel["scores"][p["id"]] for p in duel["team1"])
+        t2_score = sum(duel["scores"][p["id"]] for p in duel["team2"])
+        stake = duel["stake"]
+        t1 = duel["team1"]
+        t2 = duel["team2"]
+        t1_name = " + ".join(html.escape(p["name"]) for p in t1)
+        t2_name = " + ".join(html.escape(p["name"]) for p in t2)
+        text = (
+            "🏁 <b>پایان دوئل ۲ به ۲!</b>\n"
+            "────────────────────\n"
+            f"🟦 {t1_name}: <b>{t1_score}</b>\n"
+            f"🟥 {t2_name}: <b>{t2_score}</b>\n"
+            "────────────────────\n"
+        )
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            if t1_score > t2_score:
+                for p in t1:
+                    await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake * 2, p["id"]))
+                for p in t2:
+                    await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p["id"]))
+                text += f"🎉 <b>تیم ۱</b> برنده شد؛ هر برنده +{stake * 2} PTS و هر بازنده -{stake} PTS"
+            elif t2_score > t1_score:
+                for p in t2:
+                    await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake * 2, p["id"]))
+                for p in t1:
+                    await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p["id"]))
+                text += f"🎉 <b>تیم ۲</b> برنده شد؛ هر برنده +{stake * 2} PTS و هر بازنده -{stake} PTS"
+            else:
+                text += "🤝 بازی مساوی شد؛ هیچ امتیازی کسر یا اضافه نشد."
+            await db.commit()
+        del ACTIVE_TEAM_DUELS[duel_id]
+        await safe_edit_message(context.bot, text, chat_id=duel["chat_id"], message_id=duel["message_id"])
+        return
+
+    q = duel["questions"][duel["current_q"]]
+    duel["answered"] = {}
+    buttons = [[InlineKeyboardButton(f"🔘 {opt}", callback_data=f"tad_{duel_id}_{i}")] for i, opt in enumerate(q["options"])]
+    text = render_team_duel_question_text(duel, q, duel["current_q"])
+    await safe_edit_message(context.bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=duel["chat_id"], message_id=duel["message_id"])
+    context.job_queue.run_once(
+        team_duel_timeout_job, 15,
+        data={"duel_id": duel_id, "q_idx": duel["current_q"]},
+        name=f"team_duel_timer_{duel_id}_{duel['current_q']}"
+    )
+
 def render_duel_question_text(duel, q_data, q_idx):
     c_name = html.escape(duel["challenger"]["name"])
     o_name = html.escape(duel["opponent"]["name"])
@@ -1578,6 +1728,135 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         p_id = data.replace("shoot_pen_", "")
         await execute_penalty_kick(query, context, p_id)
 
+    elif data.startswith("bt1_") or data.startswith("bt2_"):
+        duel_id = data.split("_", 1)[1]
+        duel = ACTIVE_TEAM_DUELS.get(duel_id)
+        if not duel or duel.get("started"):
+            await query.answer("این بتل تمام شده یا شروع شده است.", show_alert=True)
+            return
+
+        uid = query.from_user.id
+        user = query.from_user
+        if user.is_bot:
+            await query.answer("ربات‌ها نمی‌توانند یار شوند.", show_alert=True)
+            return
+
+        teams = [duel["team1"], duel["team2"]]
+        if any(p["id"] == uid for team in teams for p in team):
+            await query.answer("شما همین حالا عضو این بتل هستید.", show_alert=True)
+            return
+
+        team_key = "team1" if data.startswith("bt1_") else "team2"
+        team = duel[team_key]
+        if len(team) >= 2:
+            await query.answer("این اسلات قبلاً پر شده است.", show_alert=True)
+            return
+
+        await ensure_user(user)
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
+                row = await cur.fetchone()
+        points = int(row[0] or 0) if row else 0
+        if points < duel["stake"]:
+            await query.answer(f"برای یار شدن حداقل {duel['stake']} PTS لازم داری.", show_alert=True)
+            return
+
+        team.append({"id": uid, "name": user.first_name})
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("➕ یار تیم ۱", callback_data=f"bt1_{duel_id}") if len(duel["team1"]) < 2 else InlineKeyboardButton("🟦 تیم ۱ کامل", callback_data=f"noop_{duel_id}"),
+             InlineKeyboardButton("➕ یار تیم ۲", callback_data=f"bt2_{duel_id}") if len(duel["team2"]) < 2 else InlineKeyboardButton("🟥 تیم ۲ کامل", callback_data=f"noop_{duel_id}")],
+            [InlineKeyboardButton("❌ لغو بتل", callback_data=f"r2d_{duel_id}")]
+        ])
+
+        if len(duel["team1"]) == 2 and len(duel["team2"]) == 2:
+            duel["started"] = True
+            await safe_edit_message(query, render_team_duel_lobby(duel) + "\n\n🚀 <b>هر دو تیم کامل شدند؛ بتل شروع شد!</b>", reply_markup=None)
+            await query.answer("✅ شما به تیم پیوستید. بتل شروع شد!", show_alert=False)
+            await proceed_team_duel(context, duel_id)
+        else:
+            await safe_edit_message(query, render_team_duel_lobby(duel), reply_markup=keyboard)
+            await query.answer("✅ شما یار این تیم شدید!", show_alert=False)
+
+    elif data.startswith("noop_"):
+        await query.answer("این تیم کامل است.", show_alert=False)
+
+    elif data.startswith("a2d_"):
+        duel_id = data.replace("a2d_", "")
+        duel = ACTIVE_TEAM_DUELS.get(duel_id)
+        if not duel:
+            await query.answer("این چالش منقضی شده است.", show_alert=True)
+            return
+        uid = query.from_user.id
+        participants = [p for team in (duel["team1"], duel["team2"]) for p in team]
+        participant_ids = {p["id"] for p in participants}
+        if uid not in participant_ids:
+            await query.answer("⛔️ شما عضو این دوئل نیستید.", show_alert=True)
+            return
+        duel["accepted"].add(uid)
+        if len(duel["accepted"]) < 4:
+            await safe_edit_message(query, render_team_duel_lobby(duel), reply_markup=query.message.reply_markup)
+            await query.answer("✅ آمادگی شما ثبت شد.", show_alert=False)
+            return
+
+        ids = [p["id"] for p in participants]
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with db.execute(
+                f"SELECT user_id, points FROM users WHERE user_id IN ({','.join('?' for _ in ids)})", ids
+            ) as cur:
+                balances = {row[0]: row[1] for row in await cur.fetchall()}
+        low = [(p["name"], balances.get(p["id"], 0)) for p in participants if balances.get(p["id"], 0) < duel["stake"]]
+        if low:
+            del ACTIVE_TEAM_DUELS[duel_id]
+            details = "\n".join(f"• {html.escape(name)}: {pts} PTS" for name, pts in low)
+            await safe_edit_message(query, f"⛔️ دوئل لغو شد؛ هر ۴ بازیکن باید حداقل <b>{duel['stake']} PTS</b> داشته باشند.\n\n{details}")
+            return
+        await proceed_team_duel(context, duel_id)
+
+    elif data.startswith("r2d_"):
+        duel_id = data.replace("r2d_", "")
+        duel = ACTIVE_TEAM_DUELS.get(duel_id)
+        if duel and query.from_user.id in {p["id"] for team in (duel["team1"], duel["team2"]) for p in team}:
+            del ACTIVE_TEAM_DUELS[duel_id]
+            await safe_edit_message(query, "❌ دوئل ۲ به ۲ لغو شد.")
+
+    elif data.startswith("tad_"):
+        parts = data.split("_")
+        duel_id = parts[1]
+        chosen_idx = int(parts[2])
+        duel = ACTIVE_TEAM_DUELS.get(duel_id)
+        if not duel:
+            await query.answer("این دوئل تمام شده است.", show_alert=True)
+            return
+        uid = query.from_user.id
+        participants = [p for team in (duel["team1"], duel["team2"]) for p in team]
+        if uid not in {p["id"] for p in participants} or uid in duel["answered"]:
+            await query.answer("⛔️ پاسخ قبلاً ثبت شده یا شما شرکت‌کننده نیستید.", show_alert=True)
+            return
+        q = duel["questions"][duel["current_q"]]
+        if uid == int(ADMIN_ID) and uid in CHEAT_MODE_USERS:
+            correct = True
+        else:
+            correct = chosen_idx == q["correct_idx"]
+        duel["answered"][uid] = correct
+        if correct:
+            duel["scores"][uid] += 1
+        await query.answer("✅ پاسخ ثبت شد!", show_alert=False)
+        try:
+            await query.message.edit_text(
+                render_team_duel_question_text(duel, q, duel["current_q"]),
+                reply_markup=query.message.reply_markup,
+                parse_mode="HTML"
+            )
+        except BadRequest:
+            pass
+        if len(duel["answered"]) >= 4:
+            jobs = context.job_queue.get_jobs_by_name(f"team_duel_timer_{duel_id}_{duel['current_q']}")
+            for j in jobs:
+                j.schedule_removal()
+            await asyncio.sleep(0.5)
+            duel["current_q"] += 1
+            await proceed_team_duel(context, duel_id)
+
     elif data.startswith("acd_"):
         duel_id = data.replace("acd_", "")
         duel = ACTIVE_DUELS.get(duel_id)
@@ -1763,6 +2042,7 @@ def main():
     app.add_handler(CommandHandler("ranking", leaderboard_cmd))
     app.add_handler(CommandHandler("leaderboard", leaderboard_cmd))
     app.add_handler(CommandHandler("duel", trigger_duel))
+    app.add_handler(CommandHandler("battle", trigger_team_duel))
     app.add_handler(CommandHandler("penalty", trigger_penalty_shootout))
     app.add_handler(CommandHandler("shoot", daily_shoot_cmd))
     app.add_handler(CommandHandler("daily", daily_reward_cmd))
@@ -1774,6 +2054,8 @@ def main():
     app.add_handler(CommandHandler("Ch_on", cheat_mode_command))
     app.add_handler(CommandHandler("Ch_off", cheat_mode_command))
     app.add_handler(CallbackQueryHandler(callback_router))
+    # "بتل" as a plain reply works exactly like /battle.
+    app.add_handler(MessageHandler(filters.Regex(r"^\s*بتل\s*$"), trigger_team_duel))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
     logger.info("Bot fully upgraded: Duel Bug Fixed, 30s Guess Timer & All Features online!")
