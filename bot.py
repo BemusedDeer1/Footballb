@@ -721,10 +721,13 @@ async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode="HTML")
 
 async def user_profile_handler(update_or_query):
-    # پشتیبانی کامل از هم CallBackQuery و هم Message معمولی (دکمه پایین صفحه)
-    if hasattr(update_or_query, "from_user"):
+    # این تابع کاملاً بهینه شده تا چه از طریق دکمه شیشه‌ای و چه متن پایین صفحه صدا زده شود، پروفایل را بفرستد
+    if hasattr(update_or_query, "from_user") and not hasattr(update_or_query, "message"):
         user = update_or_query.from_user
-        message = getattr(update_or_query, "message", None)
+        message = update_or_query.effective_message
+    elif hasattr(update_or_query, "message"):
+        user = update_or_query.from_user
+        message = update_or_query.message
     else:
         user = update_or_query.effective_user
         message = update_or_query.effective_message
@@ -766,20 +769,24 @@ async def user_profile_handler(update_or_query):
             f"🕵️ {guess_wins} Guess Wins"
         )
         
-        if hasattr(update_or_query, "message") and update_or_query.message:
+        if message:
+            await message.reply_text(text, reply_markup=kb.get_back_button(), parse_mode="HTML")
+        elif hasattr(update_or_query, "message") and update_or_query.message:
             await update_or_query.message.reply_text(text, reply_markup=kb.get_back_button(), parse_mode="HTML")
+            
+        if hasattr(update_or_query, "answer"):
             try:
-                await update_or_query.message.delete()
+                await update_or_query.answer()
             except Exception:
                 pass
-        else:
-            await message.reply_text(text, reply_markup=kb.get_back_button(), parse_mode="HTML")
         
     except Exception as e:
         logger.error(f"Error in user_profile_handler: {e}")
         try:
             if hasattr(update_or_query, "answer"):
                 await update_or_query.answer("⚠️ خطا در بارگذاری پروفایل.", show_alert=True)
+            elif message:
+                await message.reply_text("⚠️ خطا در بارگذاری پروفایل.")
         except Exception:
             pass
 
@@ -1565,21 +1572,20 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
     if not msg:
         return
 
-    # هندل کردن کلیک روی دکمه‌های کیبورد پایین صفحه (مثل حساب کاربری، رنکینگ و...)
-    if msg in ["حساب کاربری", "👤 حساب کاربری"]:
+    # هندل کردن کامل متن کلیدهای منوی اصلی
+    if any(k in msg for k in ["حساب کاربری", "👤 حساب کاربری"]):
         await user_profile_handler(update)
         return
-    elif msg in ["رنکینگ سیزن", "🎖 رنکینگ سیزن", "امتیازات"]:
+    elif any(k in msg for k in ["رنکینگ سیزن", "🎖 رنکینگ سیزن", "امتیازات"]):
         await leaderboard_cmd(update, context)
         return
-    elif msg in ["گردونه شانس", "🎡 گردونه شانس"]:
+    elif any(k in msg for k in ["گردونه شانس", "🎡 گردونه شانس"]):
         await spin_wheel_cmd(update, context)
         return
-    elif msg in ["جک‌پات کمبو", "🎰 جک‌پات کمبو"]:
+    elif any(k in msg for k in ["جک‌پات کمبو", "🎰 جک‌پات کمبو"]):
         await jackpot_cmd(update, context)
         return
-    elif msg in ["تالار پیش‌بینی", "🎯 تالار پیش‌بینی"]:
-        # شبیه‌سازی تالار پیش‌بینی
+    elif any(k in msg for k in ["تالار پیش‌بینی", "🎯 تالار پیش‌بینی"]):
         class FakeQuery:
             def __init__(self, msg, user):
                 self.from_user = user
