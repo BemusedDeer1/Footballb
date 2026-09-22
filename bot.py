@@ -209,7 +209,7 @@ RAW_GUESS_PLAYERS = [
     {"nation": "آلمان 🇩🇪", "pos": "مترونوم خط میانی", "career": ["بایر لورکوزن 🇩🇪", "بایرن مونیخ 🇩🇪", "رئال مادرید 🇪🇸"], "clue": "خداحافظی در اوج با فتح ششمین لیگ قهرمانان و دقت پاس ۹۵ درصدی", "names": ["کروس", "تونی کروس", "kroos"]},
     {"nation": "پرتغال 🇵🇹", "pos": "وینگر فانتزی نمایشی", "career": ["اسپورتینگ 🇵🇹", "بارسلونا 🇪🇸", "پورتو 🇵🇹", "اینتر 🇮🇹", "بشیکتاش 🇹🇷"], "clue": "استاد شوت‌ها و سانترهای بیرون پای تریولا (Trivela) و حرکات رابونا", "names": ["کوارشما", "ریکاردو کوارشما", "quaresma"]},
     {"nation": "گرجستان 🇬🇪", "pos": "وینگر کلاسیک دریبل‌زن", "career": ["دینامو باتومی 🇬🇪", "روبین کازان 🇷🇺", "ناپولی 🇮🇹"], "clue": "ملقب به کوارادونا با تکنیک سنتی ناب در کسب اسکودتوی ۲۰۲۳ ناپولی", "names": ["کواراتسخلیا", "خویچا", "خویچا کواراتسخلیا", "kvaratskhelia"]},
-    {"nation": "ایران 🇮🇷", "pos": "مهاجم باهوش چارچوب‌شناس", "career": ["شاهین بوشهر 🇮🇷", "پرسپولیس 🇮🇷", "الغرافیه 🇶🇦", "ریو آوه 🇵🇹", "پورتو 🇵🇹", "اینتر ملان 🇮🇹"], "clue": "سوپرگل قیچی برگردان برتر سال یوفا به چلسی و آقای گل لیگ پرتغال", "names": ["طارمی", "مهدی طارمی", "taremi"]},
+    {"nation": "ایران 🇮🇷", "pos": "مهاجم باهوش چارچوب‌شناس", "career": ["شاهین بوشهر 🇮🇷", "پرسپولیس 🇮🇷", "الغرافیه 🇶🇦", "ریو آوه 🇵🇹", "پورتو 🇵🇹", "اینتر میلان 🇮🇹"], "clue": "سوپرگل قیچی برگردان برتر سال یوفا به چلسی و آقای گل لیگ پرتغال", "names": ["طارمی", "مهدی طارمی", "taremi"]},
     {"nation": "غنا 🇬🇭", "pos": "هافبک فیزیکی شوت‌زن", "career": ["باستیا 🇫🇷", "لیون 🇫🇷", "چلسی 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "رئال مادرید 🇪🇸", "میلان 🇮🇹"], "clue": "ملقب به قطار بوفالو با شوت وحشتناک پای چپ از ۳۵ متری به بارسلونا در ۲۰۰۹", "names": ["اسین", "مایکل اسین", "essien"]}
 ]
 
@@ -726,38 +726,50 @@ async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def user_profile_handler(query):
     user_id = query.from_user.id
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        async with db.execute("""
-            SELECT points, xp, duel_wins, total_answers, correct_answers, penalty_wins, guess_wins, first_name
-            FROM users WHERE user_id = ?
-        """, (user_id,)) as cur:
-            row = await cur.fetchone()
+    try:
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with db.execute("""
+                SELECT points, xp, duel_wins, total_answers, correct_answers, penalty_wins, guess_wins, first_name
+                FROM users WHERE user_id = ?
+            """, (user_id,)) as cur:
+                row = await cur.fetchone()
 
-    pts, xp, dw, total_ans, correct_ans, pen_wins, guess_wins, f_name = row if row else (100, 0, 0, 0, 0, 0, 0, query.from_user.first_name)
-    
-    lvl, progress_bar, percentage = calculate_level_and_progress(xp)
-    
-    if total_ans > 0:
-        accuracy = int((correct_ans / total_ans) * 100)
-    else:
-        accuracy = 0
+        if not row:
+            pts, xp, dw, total_ans, correct_ans, pen_wins, guess_wins = 100, 0, 0, 0, 0, 0, 0
+            f_name = query.from_user.first_name
+        else:
+            pts, xp, dw, total_ans, correct_ans, pen_wins, guess_wins, f_name = row
+            
+        lvl, progress_bar, percentage = calculate_level_and_progress(xp if xp else 0)
+        
+        if total_ans and total_ans > 0:
+            accuracy = int((correct_ans / total_ans) * 100)
+        else:
+            accuracy = 0
 
-    _, tier = get_user_tier(pts)
-    safe_name = html.escape(f_name)
-    
-    text = (
-        f"⚽ <b>{safe_name}</b>\n\n"
-        f"🏆 <b>{tier}</b>\n"
-        f"LVL {lvl}\n"
-        f"{progress_bar} {percentage}%\n\n"
-        f"💰 {pts:,} PTS\n"
-        f"⚔️ {dw} Wins\n"
-        f"🧠 {accuracy}% Accuracy\n"
-        f"🥅 {pen_wins} Penalty Wins\n"
-        f"🕵️ {guess_wins} Guess Wins"
-    )
-    
-    await safe_edit_message(query, text, reply_markup=kb.get_back_button())
+        _, tier = get_user_tier(pts if pts else 100)
+        safe_name = html.escape(f_name if f_name else "بازیکن")
+        
+        text = (
+            f"⚽ <b>{safe_name}</b>\n\n"
+            f"🏆 <b>{tier}</b>\n"
+            f"LVL {lvl}\n"
+            f"{progress_bar} {percentage}%\n\n"
+            f"💰 {pts:,} PTS\n"
+            f"⚔️ {dw} Wins\n"
+            f"🧠 {accuracy}% Accuracy\n"
+            f"🥅 {pen_wins} Penalty Wins\n"
+            f"🕵️ {guess_wins} Guess Wins"
+        )
+        
+        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
+        
+    except Exception as e:
+        logger.error(f"Error in user_profile_handler: {e}")
+        try:
+            await query.answer("⚠️ خطا در بارگذاری پروفایل. لطفاً دوباره تلاش کنید.", show_alert=True)
+        except Exception:
+            pass
 
 async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update):
@@ -778,7 +790,6 @@ async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
 
         reward = 20
-        # اضافه کردن امتیاز و XP به همراه آپدیت
         await db.execute("UPDATE users SET points = points + ?, xp = xp + 30, last_daily_date = ? WHERE user_id = ?", (reward, today_str, user.id))
         await db.commit()
 
@@ -1502,7 +1513,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_correct = (chosen_idx == curr_q["correct_idx"])
         duel["answered"][user_id] = is_correct
 
-        # آپدیت آمار پاسخ‌ها برای محاسبه دقیق Accuracy و XP در پایگاه داده
         async with aiosqlite.connect(DATABASE_PATH) as db:
             if is_correct:
                 await db.execute("UPDATE users SET total_answers = total_answers + 1, correct_answers = correct_answers + 1, xp = xp + 15 WHERE user_id = ?", (user_id,))
