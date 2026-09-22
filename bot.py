@@ -1274,6 +1274,7 @@ async def trigger_team_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "accepted": {challenger.id, opponent.id},
         "chat_id": update.effective_chat.id, "message_id": None,
         "started": False,
+        "finished": False,
     }
     text = render_team_duel_lobby(ACTIVE_TEAM_DUELS[duel_id])
     kb = InlineKeyboardMarkup([
@@ -1323,17 +1324,23 @@ def render_team_duel_question_text(duel, q_data, q_idx):
 async def team_duel_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     data = context.job.data
     duel = ACTIVE_TEAM_DUELS.get(data["duel_id"])
-    if duel and duel["current_q"] == data["q_idx"]:
-        duel["current_q"] += 1
-        await proceed_team_duel(context, data["duel_id"])
+    if not duel or duel.get("finished") or duel["current_q"] != data["q_idx"]:
+        return
+
+    # Time expired: move to the next question. If this was the last question,
+    # proceed_team_duel() will settle the match and update points.
+    duel["current_q"] += 1
+    await proceed_team_duel(context, data["duel_id"])
 
 
 async def proceed_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     duel = ACTIVE_TEAM_DUELS.get(duel_id)
-    if not duel:
+    if not duel or duel.get("finished"):
         return
 
     if duel["current_q"] >= len(duel["questions"]):
+        # Lock settlement so simultaneous callbacks/timers cannot settle twice.
+        duel["finished"] = True
         t1_score = sum(duel["scores"][p["id"]] for p in duel["team1"])
         t2_score = sum(duel["scores"][p["id"]] for p in duel["team2"])
         stake = duel["stake"]
@@ -1364,8 +1371,23 @@ async def proceed_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
             else:
                 text += "🤝 بازی مساوی شد؛ هیچ امتیازی کسر یا اضافه نشد."
             await db.commit()
-        del ACTIVE_TEAM_DUELS[duel_id]
-        await safe_edit_message(context.bot, text, chat_id=duel["chat_id"], message_id=duel["message_id"])
+        # Keep the result even if Telegram rejects editing the old question message.
+        try:
+            edited = await safe_edit_message(
+                context.bot, text,
+                chat_id=duel["chat_id"],
+                message_id=duel["message_id"]
+            )
+            if not edited:
+                await context.bot.send_message(
+                    chat_id=duel["chat_id"],
+                    text=text,
+                    parse_mode="HTML"
+                )
+        except Exception as exc:
+            logger.exception("team duel result delivery failed: %s", exc)
+        finally:
+            ACTIVE_TEAM_DUELS.pop(duel_id, None)
         return
 
     q = duel["questions"][duel["current_q"]]
@@ -1538,7 +1560,7 @@ async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         CHEAT_MODE_USERS.add(user.id)
         await update.effective_message.reply_text(
             "🟢 <b>Ch Mode روشن شد.</b>\n\n"
-            "در دوئل، هر گزینه‌ای که انتخاب کنی به‌عنوان پاسخ درست ثبت می‌شود.\n"
+            "در دوئل و بتل ۲ به ۲، هر گزینه‌ای که انتخاب کنی به‌عنوان پاسخ درست ثبت می‌شود.\n"
             "برای برگشت به حالت عادی: <code>/Ch_off</code>",
             parse_mode="HTML"
         )
@@ -1546,7 +1568,7 @@ async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         CHEAT_MODE_USERS.discard(user.id)
         await update.effective_message.reply_text(
             "🔴 <b>Ch Mode خاموش شد.</b>\n\n"
-            "دوئل دوباره پاسخ واقعی گزینه‌ها را بررسی می‌کند.",
+            "دوئل و بتل دوباره پاسخ واقعی گزینه‌ها را بررسی می‌کنند.",
             parse_mode="HTML"
         )
 
@@ -1863,6 +1885,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if correct:
             duel["scores"][uid] += 1
         await query.answer("✅ پاسخ ثبت شد!", show_alert=False)
+
         try:
             await query.message.edit_text(
                 render_team_duel_question_text(duel, q, duel["current_q"]),
@@ -1871,11 +1894,15 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as exc:
             logger.warning("team duel status update failed: %s", exc)
-        if len(duel["answered"]) >= 4:
-            jobs = context.job_queue.get_jobs_by_name(f"team_duel_timer_{duel_id}_{duel['current_q']}")
+
+        participant_ids = {p["id"] for p in participants}
+        answered_ids = set(duel["answered"].keys()) & participant_ids
+        if answered_ids == participant_ids:
+            q_idx = duel["current_q"]
+            jobs = context.job_queue.get_jobs_by_name(f"team_duel_timer_{duel_id}_{q_idx}")
             for j in jobs:
                 j.schedule_removal()
-            await asyncio.sleep(0.5)
+            # Do not sleep here: on the third question the result should appear immediately.
             duel["current_q"] += 1
             await proceed_team_duel(context, duel_id)
 
