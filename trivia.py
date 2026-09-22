@@ -10,6 +10,7 @@ def clean_nickname_options(question, options):
         def _clean(value):
             value = re.sub(r"[\U0001F1E6-\U0001F1FF]{2}", "", value)
             value = re.sub(r"[\U000E0061-\U000E007A\U000E007F]+", "", value)
+            value = value.replace("🏴", "").replace("🏳️", "").replace("🏁", "")
             return value.replace("\ufe0f", "").strip()
         return [_clean(x) for x in options]
     return options
