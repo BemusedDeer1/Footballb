@@ -73,6 +73,35 @@ def format_bidi_name(name: str, max_len: int = 15) -> str:
         safe_name = safe_name[:max_len] + "…"
     return f"{LRM}{safe_name}{LRM}"
 
+def calculate_level_and_progress(xp: int):
+    """
+    محاسبه سطح (Level) و نوار پیشرفت (Progress Bar) بر اساس XP
+    فرمول: required_xp = 100 * level + 50 * (level - 1)
+    """
+    level = 1
+    required_xp_for_next = 100
+    
+    while xp >= required_xp_for_next:
+        xp -= required_xp_for_next
+        level += 1
+        required_xp_for_next = 100 * level + 50 * (level - 1)
+
+    current_level_xp = xp
+    needed_xp = required_xp_for_next
+    
+    if needed_xp > 0:
+        percentage = int((current_level_xp / needed_xp) * 100)
+    else:
+        percentage = 100
+        
+    percentage = max(0, min(100, percentage))
+    
+    filled_blocks = percentage // 10
+    empty_blocks = 10 - filled_blocks
+    progress_bar = "█" * filled_blocks + "░" * empty_blocks
+    
+    return level, progress_bar, percentage
+
 class SimpleHealthServer(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -164,7 +193,7 @@ RAW_GUESS_PLAYERS = [
     {"nation": "هلند 🇳🇱", "pos": "مهاجم سایه تکنیکی", "career": ["آژاکس 🇳🇱", "اینتر 🇮🇹", "آرسنال 🏴󠁧󠁢󠁥󠁮󠁧󠁿"], "clue": "ملقب به هلندی غیرپروازی به خاطر فوبیای هواپیما و صاحب زیباترین استپ‌های تاریخ", "names": ["برکمپ", "دنیس برکمپ", "bergkamp"]},
     {"nation": "سوئد 🇸🇪", "pos": "مهاجم آکروباتیک تنومند", "career": ["مالمو 🇸🇪", "آژاکس 🇳🇱", "یوونتوس 🇮🇹", "اینتر 🇮🇹", "بارسلونا 🇪🇸", "میلان 🇮🇹", "پی‌اس‌جی 🇫🇷", "منچستریونایتد 🏴󠁧󠁢󠁥󠁮󠁧󠁿"], "clue": "کمربند مشکی تکواندو و سوپرگل برگردان از فاصله ۳۲ متری به انگلیس", "names": ["زلاتان", "ابراهیموویچ", "زلاتان ابراهیموویچ", "ibrahimovic"]},
     {"nation": "آلمان 🇩🇪", "pos": "سوئیپر کیپر مدرن", "career": ["شالکه ۰۴ 🇩🇪", "بایرن مونیخ 🇩🇪"], "clue": "انقلاب در شیوه بازی سنگربان‌ها با خروج از محوطه و نامزد توپ طلای ۲۰۱۴", "names": ["نویر", "مانوئل نویر", "neuer"]},
-    {"nation": "ایتالیا 🇮🇹", "pos": "رجیستا (طراح عقب‌زمین)", "career": ["برشا 🇮🇹", "اینتر 🇮🇹", "میلان 🇮🇹", "یوونتوس 🇮🇹", "نیویورک سیتی 🇺🇸"], "clue": "معروف به موزارت و مهندس با پاس‌های قوسی و ایستگاهی‌های کات‌دار", "names": ["پیرلو", "آندریا پیرلو", "pirlo"]},
+    {"nation": "ایتالیا 🇮🇹", "pos": "رجیستا (طراح عقب‌زمین)", "career": ["برشا 🇮🇹", "اینتر 🇮🇹", "میلان 🇮🇹", "یوونتوس 🇮🇹", "نیویورک سیتی 🇺🇸"], "clue": "معروف به موزارت و مهندس با پاس‌های قوسی و ایستگاهی‌های کات‌دار", "names": ["پیرلو", "آندریا پیرلو", "pirلو"]},
     {"nation": "اروگوئه 🇺🇾", "pos": "مهاجم فرصت‌طلب درگیر", "career": ["ناسیونال 🇺🇾", "خرونینگن 🇳🇱", "آژاکس 🇳🇱", "لیورپول 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "بارسلونا 🇪🇸", "اتلتیکو مادرید 🇪🇸"], "clue": "کفش طلای اروپا بدون حتی یک گل از روی نقطه پنالتی و اخراج مقابل غنا ۲۰۱۰", "names": ["سوارز", "لوییس سوارز", "لویز سوارز", "suarez"]},
     {"nation": "ساحل عاج 🇨🇮", "pos": "مهاجم قدرتی سرزن", "career": ["مارسی 🇫🇷", "چلسی 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "گالاتاسرای 🇹🇷", "مونترال 🇨🇦"], "clue": "متوقف‌کننده جنگ داخلی کشورش و زننده پنالتی قهرمانی فینال مونیخ ۲۰۱۲", "names": ["دروگبا", "دیدیه دروگبا", "drogba"]},
     {"nation": "آلمان 🇩🇪", "pos": "فضاشناس (رائوم‌دویتر)", "career": ["بایرن مونیخ 🇩🇪"], "clue": "بیش از ۷۰۰ بازی برای باواریایی‌ها و زدن ۵ گل در جام جهانی ۲۰۱۰ در جوانی", "names": ["مولر", "توماس مولر", "muller"]},
@@ -180,7 +209,7 @@ RAW_GUESS_PLAYERS = [
     {"nation": "آلمان 🇩🇪", "pos": "مترونوم خط میانی", "career": ["بایر لورکوزن 🇩🇪", "بایرن مونیخ 🇩🇪", "رئال مادرید 🇪🇸"], "clue": "خداحافظی در اوج با فتح ششمین لیگ قهرمانان و دقت پاس ۹۵ درصدی", "names": ["کروس", "تونی کروس", "kroos"]},
     {"nation": "پرتغال 🇵🇹", "pos": "وینگر فانتزی نمایشی", "career": ["اسپورتینگ 🇵🇹", "بارسلونا 🇪🇸", "پورتو 🇵🇹", "اینتر 🇮🇹", "بشیکتاش 🇹🇷"], "clue": "استاد شوت‌ها و سانترهای بیرون پای تریولا (Trivela) و حرکات رابونا", "names": ["کوارشما", "ریکاردو کوارشما", "quaresma"]},
     {"nation": "گرجستان 🇬🇪", "pos": "وینگر کلاسیک دریبل‌زن", "career": ["دینامو باتومی 🇬🇪", "روبین کازان 🇷🇺", "ناپولی 🇮🇹"], "clue": "ملقب به کوارادونا با تکنیک سنتی ناب در کسب اسکودتوی ۲۰۲۳ ناپولی", "names": ["کواراتسخلیا", "خویچا", "خویچا کواراتسخلیا", "kvaratskhelia"]},
-    {"nation": "ایران 🇮🇷", "pos": "مهاجم باهوش چارچوب‌شناس", "career": ["شاهین بوشهر 🇮🇷", "پرسپولیس 🇮🇷", "الغرافیه 🇶🇦", "ریو آوه 🇵🇹", "پورتو 🇵🇹", "اینتر میلان 🇮🇹"], "clue": "سوپرگل قیچی برگردان برتر سال یوفا به چلسی و آقای گل لیگ پرتغال", "names": ["طارمی", "مهدی طارمی", "taremi"]},
+    {"nation": "ایران 🇮🇷", "pos": "مهاجم باهوش چارچوب‌شناس", "career": ["شاهین بوشهر 🇮🇷", "پرسپولیس 🇮🇷", "الغرافیه 🇶🇦", "ریو آوه 🇵🇹", "پورتو 🇵🇹", "اینتر ملان 🇮🇹"], "clue": "سوپرگل قیچی برگردان برتر سال یوفا به چلسی و آقای گل لیگ پرتغال", "names": ["طارمی", "مهدی طارمی", "taremi"]},
     {"nation": "غنا 🇬🇭", "pos": "هافبک فیزیکی شوت‌زن", "career": ["باستیا 🇫🇷", "لیون 🇫🇷", "چلسی 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "رئال مادرید 🇪🇸", "میلان 🇮🇹"], "clue": "ملقب به قطار بوفالو با شوت وحشتناک پای چپ از ۳۵ متری به بارسلونا در ۲۰۰۹", "names": ["اسین", "مایکل اسین", "essien"]}
 ]
 
@@ -699,31 +728,35 @@ async def user_profile_handler(query):
     user_id = query.from_user.id
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("""
-            SELECT points, duel_wins, total_predictions, correct_results, exact_predictions, season_gold, season_silver, season_bronze
+            SELECT points, xp, duel_wins, total_answers, correct_answers, penalty_wins, guess_wins, first_name
             FROM users WHERE user_id = ?
         """, (user_id,)) as cur:
-            u = await cur.fetchone()
+            row = await cur.fetchone()
 
-    pts, dw, total, correct, exact, g, s, b = u if u else (100, 0, 0, 0, 0, 0, 0, 0)
-    icon, tier = get_user_tier(pts)
-    safe_name = html.escape(query.from_user.first_name)
-    p_today = await get_penalty_count_db(user_id)
-    g_today = await get_guess_count_db(user_id)
+    pts, xp, dw, total_ans, correct_ans, pen_wins, guess_wins, f_name = row if row else (100, 0, 0, 0, 0, 0, 0, query.from_user.first_name)
+    
+    lvl, progress_bar, percentage = calculate_level_and_progress(xp)
+    
+    if total_ans > 0:
+        accuracy = int((correct_ans / total_ans) * 100)
+    else:
+        accuracy = 0
 
-    trophies = ""
-    if g > 0 or s > 0 or b > 0:
-        trophies = f"\n🏆 <b>ویترین مدال‌های سیزن:</b>\n🥇 طلا: {g}  ▫️  🥈 نقره: {s}  ▫️  🥉 برنز: {b}\n"
-
+    _, tier = get_user_tier(pts)
+    safe_name = html.escape(f_name)
+    
     text = (
-        f"👤 <b>پروفایل بازیکن: {safe_name}</b>\n"
-        f"────────────────────\n"
-        f"🌟 رتبه: {icon} <b>{tier}</b>\n"
-        f"⚡️ موجودی: <code>{pts} PTS</code>  ▫️  ⚔️ بردها: <code>{dw}</code>\n"
-        f"🥅 پنالتی‌های امروز: <code>{p_today}/3</code>\n"
-        f"🕵️‍♂️ پرونده‌های حدس امروز: <code>{g_today}/3</code>\n"
-        f"{trophies}"
-        f"────────────────────"
+        f"⚽ <b>{safe_name}</b>\n\n"
+        f"🏆 <b>{tier}</b>\n"
+        f"LVL {lvl}\n"
+        f"{progress_bar} {percentage}%\n\n"
+        f"💰 {pts:,} PTS\n"
+        f"⚔️ {dw} Wins\n"
+        f"🧠 {accuracy}% Accuracy\n"
+        f"🥅 {pen_wins} Penalty Wins\n"
+        f"🕵️ {guess_wins} Guess Wins"
     )
+    
     await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
 async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -745,12 +778,13 @@ async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
 
         reward = 20
-        await db.execute("UPDATE users SET points = points + ?, last_daily_date = ? WHERE user_id = ?", (reward, today_str, user.id))
+        # اضافه کردن امتیاز و XP به همراه آپدیت
+        await db.execute("UPDATE users SET points = points + ?, xp = xp + 30, last_daily_date = ? WHERE user_id = ?", (reward, today_str, user.id))
         await db.commit()
 
     await update.effective_message.reply_text(
         f"🎁 <b>پاداش روزانه با موفقیت واریز شد!</b>\n"
-        f"💰 <b>+{reward} امتیاز</b> به حساب شما اضافه شد.",
+        f"💰 <b>+{reward} امتیاز</b> و <b>+30 XP</b> به حساب شما اضافه شد.",
         parse_mode="HTML"
     )
 
@@ -783,12 +817,12 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if dice_val in [3, 4, 5]:
         reward = 15
         async with aiosqlite.connect(DATABASE_PATH) as db:
-            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, user.id))
+            await db.execute("UPDATE users SET points = points + ?, xp = xp + 25 WHERE user_id = ?", (reward, user.id))
             await db.commit()
 
         await update.effective_message.reply_text(
             f"⚽️🔥 <b>گـُـل شد! ضربه مهارنشدنی!</b>\n"
-            f"💰 پاداش: <b>+{reward} امتیاز</b> دریافت کردید.",
+            f"💰 پاداش: <b>+{reward} امتیاز</b> و <b>+25 XP</b> دریافت کردید.",
             parse_mode="HTML"
         )
     else:
@@ -824,11 +858,11 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         if win > 0:
-            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (win, user.id))
+            await db.execute("UPDATE users SET points = points + ?, xp = xp + ? WHERE user_id = ?", (win, win * 2, user.id))
             await db.commit()
 
     if win > 0:
-        msg = f"🎡 <b>گردونه متوقف شد!</b>\n🎉 تبریک <b>{html.escape(user.first_name)}</b>، شما برنده <b>+{win} امتیاز</b> شدید!"
+        msg = f"🎡 <b>گردونه متوقف شد!</b>\n🎉 تبریک <b>{html.escape(user.first_name)}</b>، شما برنده <b>+{win} امتیاز</b> و <b>+{win*2} XP</b> شدید!"
     else:
         msg = f"🎡 <b>گردونه متوقف شد!</b>\n❌ این‌بار پوچ بود! امشب بعد از ساعت ۱۲ دوباره شانس‌ات را امتحان کن."
 
@@ -900,7 +934,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🏟 <b>مسیر باشگاهی:</b>\n{career_str}\n\n"
         f"⭐️ <b>سرنخ کلیدی:</b>\n{p['clue']}\n"
         "────────────────────\n"
-        "💰 پاداش پاسخ صحیح: <b>+10 امتیاز</b>\n"
+        "💰 پاداش پاسخ صحیح: <b>+10 امتیاز و +20 XP</b>\n"
         "👇 نام بازیکن را در گروه ارسال کنید:"
     )
     await update.message.reply_text(text, parse_mode="HTML")
@@ -1043,21 +1077,21 @@ async def execute_penalty_kick(query, context, p_id):
             await increment_penalty_count_db(shootout["p1"]["id"])
             await increment_penalty_count_db(shootout["p2"]["id"])
             async with aiosqlite.connect(DATABASE_PATH) as db:
-                await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p1"]["id"]))
+                await db.execute("UPDATE users SET points = points + ?, xp = xp + 40, duel_wins = duel_wins + 1, penalty_wins = penalty_wins + 1 WHERE user_id = ?", (stake, shootout["p1"]["id"]))
                 await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, shootout["p2"]["id"]))
                 await db.commit()
             del ACTIVE_SHOOTOUTS[p_id]
-            await context.bot.send_message(chat_id=chat_id, text=f"🏁 <b>پایان مسابقه!</b>\n🎉 تبریک به <b>{p1_name}</b>! برنده <b>{stake} امتیاز</b> شد.", parse_mode="HTML")
+            await context.bot.send_message(chat_id=chat_id, text=f"🏁 <b>پایان مسابقه پنالتی!</b>\n🎉 تبریک به <b>{p1_name}</b>! برنده <b>{stake} امتیاز</b> و <b>+40 XP</b> شد.", parse_mode="HTML")
 
         elif p2_goal and not p1_goal:
             await increment_penalty_count_db(shootout["p1"]["id"])
             await increment_penalty_count_db(shootout["p2"]["id"])
             async with aiosqlite.connect(DATABASE_PATH) as db:
-                await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, shootout["p2"]["id"]))
+                await db.execute("UPDATE users SET points = points + ?, xp = xp + 40, duel_wins = duel_wins + 1, penalty_wins = penalty_wins + 1 WHERE user_id = ?", (stake, shootout["p2"]["id"]))
                 await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, shootout["p1"]["id"]))
                 await db.commit()
             del ACTIVE_SHOOTOUTS[p_id]
-            await context.bot.send_message(chat_id=chat_id, text=f"🏁 <b>پایان مسابقه!</b>\n🎉 تبریک به <b>{p2_name}</b>! برنده <b>{stake} امتیاز</b> شد.", parse_mode="HTML")
+            await context.bot.send_message(chat_id=chat_id, text=f"🏁 <b>پایان مسابقه پنالتی!</b>\n🎉 تبریک به <b>{p2_name}</b>! برنده <b>{stake} امتیاز</b> و <b>+40 XP</b> شد.", parse_mode="HTML")
 
         else:
             shootout["round"] += 1
@@ -1176,13 +1210,13 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
 
         async with aiosqlite.connect(DATABASE_PATH) as db:
             if c_score > o_score:
-                await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, c_id))
+                await db.execute("UPDATE users SET points = points + ?, xp = xp + 50, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, c_id))
                 await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, o_id))
-                res_text += f"🎉 تبریک به <b>{c_name}</b>! برنده {stake} امتیاز شد."
+                res_text += f"🎉 تبریک به <b>{c_name}</b>! برنده {stake} امتیاز و +50 XP شد."
             elif o_score > c_score:
-                await db.execute("UPDATE users SET points = points + ?, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, o_id))
+                await db.execute("UPDATE users SET points = points + ?, xp = xp + 50, duel_wins = duel_wins + 1 WHERE user_id = ?", (stake, o_id))
                 await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, c_id))
-                res_text += f"🎉 تبریک به <b>{o_name}</b>! برنده {stake} امتیاز شد."
+                res_text += f"🎉 تبریک به <b>{o_name}</b>! برنده {stake} امتیاز و +50 XP شد."
             else:
                 res_text += "🤝 رقابت مساوی شد! هیچ امتیازی کسر نگردید."
             await db.commit()
@@ -1240,7 +1274,7 @@ async def predictions_hub_handler(query):
     text = (
         "🎯 <b>انتخاب مسابقه جهت ثبت پیش‌بینی:</b>\n"
         "────────────────────\n"
-        "▫️ ثبت پیش‌بینی: <b>+10 امتیاز قطعی</b>\n"
+        "▫️ ثبت پیش‌بینی: <b>+10 امتیاز و +15 XP قطعی</b>\n"
         "▫️ حدس برنده درست: <b>+10 امتیاز</b> | نتیجه دقیق: <b>+15 امتیاز</b>\n"
         "🤖 <i>Escobar AI نیز در این مسابقات شرکت می‌کند!</i>\n"
         "────────────────────"
@@ -1295,9 +1329,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     INSERT INTO predictions (user_id, match_id, outcome_choice, predicted_home, predicted_away)
                     VALUES (?, ?, ?, 0, 0)
                 """, (user_id, match_id, choice))
-                await db.execute("UPDATE users SET points = points + 10, total_predictions = total_predictions + 1 WHERE user_id = ?", (user_id,))
+                await db.execute("UPDATE users SET points = points + 10, xp = xp + 15, total_predictions = total_predictions + 1 WHERE user_id = ?", (user_id,))
                 await db.commit()
-                await safe_edit_message(query, "✅ <b>پیش‌بینی شما ثبت شد! (+10 امتیاز هدیه شرکت)</b>", reply_markup=kb.get_back_button())
+                await safe_edit_message(query, "✅ <b>پیش‌بینی شما ثبت شد! (+10 امتیاز و +15 XP هدیه شرکت)</b>", reply_markup=kb.get_back_button())
             except Exception:
                 await safe_edit_message(query, "⚠️ شما قبلاً این بازی را پیش‌بینی کرده‌اید.", reply_markup=kb.get_back_button())
 
@@ -1468,6 +1502,14 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_correct = (chosen_idx == curr_q["correct_idx"])
         duel["answered"][user_id] = is_correct
 
+        # آپدیت آمار پاسخ‌ها برای محاسبه دقیق Accuracy و XP در پایگاه داده
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            if is_correct:
+                await db.execute("UPDATE users SET total_answers = total_answers + 1, correct_answers = correct_answers + 1, xp = xp + 15 WHERE user_id = ?", (user_id,))
+            else:
+                await db.execute("UPDATE users SET total_answers = total_answers + 1, xp = xp + 5 WHERE user_id = ?", (user_id,))
+            await db.commit()
+
         if is_correct:
             if user_id == duel["challenger"]["id"]:
                 duel["challenger"]["score"] += 1
@@ -1514,13 +1556,13 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
                     j.schedule_removal()
 
                 async with aiosqlite.connect(DATABASE_PATH) as db:
-                    await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, winner.id))
+                    await db.execute("UPDATE users SET points = points + ?, xp = xp + 20, guess_wins = guess_wins + 1 WHERE user_id = ?", (reward, winner.id))
                     await db.commit()
                 
                 await update.message.reply_text(
                     f"🎉🔥 <b>پاسخ کاملاً صحیح! هویت ستاره به درستی تشخیص داده شد!</b>\n"
                     f"👤 برنده چالش: <b>{html.escape(winner.first_name)}</b>\n"
-                    f"💰 پاداش: <b>+{reward} امتیاز</b> به حساب شما اضافه شد.",
+                    f"💰 پاداش: <b>+{reward} امتیاز</b> و <b>+20 XP</b> به حساب شما اضافه شد.",
                     parse_mode="HTML"
                 )
                 ACTIVE_GUESS_GAME["is_active"] = False
@@ -1590,7 +1632,7 @@ def main():
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Bot fully upgraded: 3000+ Questions Engine, Duel Bug Fixed, 30s Guess Timer & All Features online!")
+    logger.info("Bot fully upgraded with XP, Level & Profile stats online!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
