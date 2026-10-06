@@ -73,6 +73,68 @@ CHEAT_MODE_USERS = set() # admin user_ids with cheat on
 TRACKED_LIVE_MATCHES = {}
 USER_JACKPOT_DRAFTS = {} # user_id -> {"round_id": ..., "picks": {}}
 
+ACTIVE_ASYNCIO_TIMERS = {}
+
+def schedule_timer(context, callback_coro, delay_seconds, data, name=None):
+    """Schedules a timer safely, using PTB JobQueue if available or asyncio task fallback."""
+    if getattr(context, 'job_queue', None):
+        return context.job_queue.run_once(callback_coro, delay_seconds, data=data, name=name)
+
+    async def _timer_runner():
+        try:
+            await asyncio.sleep(delay_seconds)
+            class SimpleJob:
+                def __init__(self, d):
+                    self.data = d
+            class SimpleContext:
+                def __init__(self, c, d):
+                    self.bot = c.bot
+                    self.application = getattr(c, 'application', None)
+                    self.job_queue = None
+                    self.job = SimpleJob(d)
+            await callback_coro(SimpleContext(context, data))
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f'Error in timer {name}: {e}')
+        finally:
+            if name:
+                ACTIVE_ASYNCIO_TIMERS.pop(name, None)
+
+    task = asyncio.create_task(_timer_runner())
+    if name:
+        cancel_timer(context, name)
+        ACTIVE_ASYNCIO_TIMERS[name] = task
+    return task
+
+def cancel_timer(context, name):
+    """Cancels a timer safely across both JobQueue and asyncio task fallback."""
+    if getattr(context, 'job_queue', None):
+        for j in context.job_queue.get_jobs_by_name(name):
+            j.schedule_removal()
+    if name in ACTIVE_ASYNCIO_TIMERS:
+        task = ACTIVE_ASYNCIO_TIMERS.pop(name, None)
+        if task and not task.done():
+            task.cancel()
+
+async def run_repeating_task(coro_fn, app, interval_sec, initial_delay_sec=5):
+    """Runs repeating background tasks when PTB JobQueue is unavailable."""
+    class SimpleContext:
+        def __init__(self, application):
+            self.bot = application.bot
+            self.application = application
+            self.job_queue = None
+
+    await asyncio.sleep(initial_delay_sec)
+    ctx = SimpleContext(app)
+    while True:
+        try:
+            await coro_fn(ctx)
+        except Exception as e:
+            logger.error(f'Error in background task {coro_fn.__name__}: {e}')
+        await asyncio.sleep(interval_sec)
+
+
 LEAGUE_TITLES = {
     "eng.1": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 لیگ برتر انگلیس",
     "esp.1": "🇪🇸 لالیگا اسپانیا",
@@ -1027,8 +1089,8 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👇 نام بازیکن را در چت ارسال کنید:"
     )
     await update.effective_message.reply_text(text, parse_mode="HTML")
-    context.job_queue.run_once(
-        guess_timeout_job, 30,
+    schedule_timer(
+        context, guess_timeout_job, 30,
         data={"chat_id": chat_id, "user_id": user.id},
         name=f"guess_timer_{chat_id}"
     )
@@ -1465,7 +1527,8 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     text = render_duel_question_text(duel, q_data, q_idx)
     await safe_edit_message(context.bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=chat_id, message_id=msg_id)
 
-    context.job_queue.run_once(
+    schedule_timer(
+        context,
         question_timeout_job,
         15,
         data={"duel_id": duel_id, "q_idx": q_idx},
@@ -1629,7 +1692,8 @@ async def proceed_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     text = render_team_duel_question_text(duel, q_data, q_idx)
     await safe_edit_message(context.bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=duel["chat_id"], message_id=duel["message_id"])
 
-    context.job_queue.run_once(
+    schedule_timer(
+        context,
         team_duel_timeout_job, 15,
         data={"duel_id": duel_id, "q_idx": q_idx},
         name=f"team_duel_timer_{duel_id}_{q_idx}"
@@ -2014,9 +2078,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("❌ پاسخ اشتباه بود!", show_alert=False)
 
         if len(duel["answered"]) == 2:
-            current_jobs = context.job_queue.get_jobs_by_name(f"duel_timer_{duel_id}_{q_idx}")
-            for j in current_jobs:
-                j.schedule_removal()
+            cancel_timer(context, f"duel_timer_{duel_id}_{q_idx}")
             duel["current_q"] += 1
             await proceed_duel(context, duel_id)
 
@@ -2109,9 +2171,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("❌ اشتباه!", show_alert=False)
 
         if len(duel["answered"]) == len(all_players):
-            current_jobs = context.job_queue.get_jobs_by_name(f"team_duel_timer_{duel_id}_{q_idx}")
-            for j in current_jobs:
-                j.schedule_removal()
+            cancel_timer(context, f"team_duel_timer_{duel_id}_{q_idx}")
             duel["current_q"] += 1
             await proceed_team_duel(context, duel_id)
 
@@ -2132,9 +2192,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
             reward = game["reward"]
             game["is_active"] = False
 
-            current_jobs = context.job_queue.get_jobs_by_name(f"guess_timer_{chat_id}")
-            for j in current_jobs:
-                j.schedule_removal()
+            cancel_timer(context, f"guess_timer_{chat_id}")
 
             async with aiosqlite.connect(DATABASE_PATH) as db:
                 await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, winner.id))
@@ -2199,10 +2257,15 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     await ensure_escobar_ai()
-    # مانیتور مسابقات هر ۹۰ ثانیه برای بهینه‌سازی ترافیک و سشن
-    application.job_queue.run_repeating(monitor_live_matches_and_banter, interval=90, first=5)
-    # تسویه سیزن ماهانه
-    application.job_queue.run_repeating(check_and_settle_monthly_season, interval=3600, first=15)
+    # مانیتور مسابقات و تسویه ماهانه با پشتیبانی از JobQueue و Asyncio Fallback
+    if getattr(application, "job_queue", None):
+        application.job_queue.run_repeating(monitor_live_matches_and_banter, interval=90, first=5)
+        application.job_queue.run_repeating(check_and_settle_monthly_season, interval=3600, first=15)
+        logger.info("PTB JobQueue is active and running background tasks.")
+    else:
+        logger.warning("PTB JobQueue is None (python-telegram-bot[job-queue] not installed). Falling back to native asyncio background tasks.")
+        asyncio.create_task(run_repeating_task(monitor_live_matches_and_banter, application, 90, 5))
+        asyncio.create_task(run_repeating_task(check_and_settle_monthly_season, application, 3600, 15))
 
 def main():
     # راه‌اندازی سرور پایش سلامت
