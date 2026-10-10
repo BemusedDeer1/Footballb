@@ -33,7 +33,6 @@ ESCOBAR_AI_ID = 999999999
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 LRM = "\u200E"
 
-# بارگذاری دیتای غنی بازیکنان برای چالش حدس از فایل JSON
 GUESS_PLAYERS_FILE = os.path.join(os.path.dirname(__file__), "guess_players.json")
 try:
     with open(GUESS_PLAYERS_FILE, "r", encoding="utf-8") as f:
@@ -63,18 +62,16 @@ def get_next_guess_player():
         }
     return GUESS_DECK.pop()
 
-# ساختارهای داده در حافظه
-ACTIVE_GUESS_GAMES = {}  # chat_id -> game_data
-MATCH_CACHE = {}         # match_id -> match_dict
-ACTIVE_DUELS = {}        # duel_id -> duel_dict
-ACTIVE_TEAM_DUELS = {}   # duel_id -> team_duel_dict
-ACTIVE_SHOOTOUTS = {}    # shootout_id -> shootout_dict
-CHEAT_MODE_USERS = set() # admin user_ids with cheat on
+ACTIVE_GUESS_GAMES = {}
+MATCH_CACHE = {}
+ACTIVE_DUELS = {}
+ACTIVE_TEAM_DUELS = {}
+ACTIVE_SHOOTOUTS = {}
+CHEAT_MODE_USERS = set()
 TRACKED_LIVE_MATCHES = {}
-USER_JACKPOT_DRAFTS = {} # user_id -> {"round_id": ..., "picks": {}}
+USER_JACKPOT_DRAFTS = {}
 ACTIVE_ASYNCIO_TIMERS = {}
 
-# سیستم مدیریت تایمرها با پشتیبانی از هر دو حالت JobQueue و Asyncio Fallback
 def schedule_timer(context, callback_coro, delay_seconds, data, name=None):
     if getattr(context, 'job_queue', None):
         return context.job_queue.run_once(callback_coro, delay_seconds, data=data, name=name)
@@ -1461,20 +1458,24 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sent_msg = await update.message.reply_text(text, reply_markup=duel_kb, parse_mode="HTML")
     ACTIVE_DUELS[duel_id]["message_id"] = sent_msg.message_id
 
+# استایل اصیل، کلاسیک و تمیز دوئل دقیقا مطابق درخواست تو
 def render_duel_question_text(duel, q_data, q_idx):
+    c_id = duel["challenger"]["id"]
+    o_id = duel["opponent"]["id"]
     c_name = html.escape(duel["challenger"]["name"])
     o_name = html.escape(duel["opponent"]["name"])
-    c_score = duel["challenger"]["score"]
-    o_score = duel["opponent"]["score"]
+
+    c_status = "✅ پاسخ داده شد" if c_id in duel.get("answered", {}) else "⏳ در حال پاسخ..."
+    o_status = "✅ پاسخ داده شد" if o_id in duel.get("answered", {}) else "⏳ در حال پاسخ..."
 
     return (
-        f"⚔️ <b>دوئل اطلاعات عمومی (سوال {q_idx + 1} از ۳)</b>\n"
+        f"❓ <b>سوال {q_idx + 1} از ۳:</b>\n"
         "────────────────────\n"
-        f"▫️ <b>{c_name}</b>: <code>{c_score}</code> امتیاز\n"
-        f"▫️ <b>{o_name}</b>: <code>{o_score}</code> امتیاز\n"
+        f"📌 <b>{q_data['question']}</b>\n\n"
+        "⏱ مهلت پاسخ: <b>۱۵ ثانیه</b>\n"
         "────────────────────\n"
-        f"❓ <b>{q_data['question']}</b>\n\n"
-        "⏱ مهلت پاسخ: <b>۱۵ ثانیه</b>"
+        f"👤 {c_name}: {c_status}\n"
+        f"👤 {o_name}: {o_status}"
     )
 
 async def question_timeout_job(context: ContextTypes.DEFAULT_TYPE):
@@ -1507,8 +1508,8 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
         res_text = (
             "🏁 <b>پایان دوئل اطلاعات عمومی!</b>\n"
             "────────────────────\n"
-            f"▫️ <b>{c_name}</b>: {c_score} پاسخ درست\n"
-            f"▫️ <b>{o_name}</b>: {o_score} پاسخ درست\n"
+            f"👤 {c_name}: <code>{c_score}/3</code>\n"
+            f"👤 {o_name}: <code>{o_score}/3</code>\n"
             "────────────────────\n"
         )
 
@@ -1755,8 +1756,8 @@ async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if chat is None or chat.type != "private":
         return
 
+    # امنیت فوق‌العاده سخت‌گیرانه: فقط مالک ربات اجازه استفاده دارد
     if str(user.id) != str(ADMIN_ID):
-        await update.effective_message.reply_text("⛔️ این قابلیت فقط برای مالک ربات فعال است.")
         return
 
     command = (update.effective_message.text or "").split()[0].split("@")[0].lower()
@@ -1764,16 +1765,14 @@ async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if command == "/ch_on":
         CHEAT_MODE_USERS.add(user.id)
         await update.effective_message.reply_text(
-            "🟢 <b>Ch Mode فعال شد.</b>\n\n"
-            "در دوئل و بتل ۲ به ۲، هر گزینه‌ای که انتخاب کنی به عنوان پاسخ درست ثبت می‌شود.\n"
-            "برای برگشت به حالت عادی: <code>/Ch_off</code>",
+            "🟢 <b>Ch Mode اختصاصی شما فعال شد.</b>\n"
+            "پاسخ دوئل و بتل برای شما همیشه درست ثبت می‌شود.",
             parse_mode="HTML"
         )
     elif command == "/ch_off":
         CHEAT_MODE_USERS.discard(user.id)
         await update.effective_message.reply_text(
-            "🔴 <b>Ch Mode غیرفعال شد.</b>\n\n"
-            "دوئل و بتل دوباره پاسخ واقعی را بررسی می‌کنند.",
+            "🔴 <b>Ch Mode غیرفعال شد.</b>",
             parse_mode="HTML"
         )
 
@@ -2081,6 +2080,15 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.answer("❌ اشتباه!", show_alert=False)
 
+        # به‌روزرسانی فوری پیام دوئل برای نمایش تیک پاسخ
+        await safe_edit_message(
+            context.bot,
+            render_duel_question_text(duel, q_data, q_idx),
+            reply_markup=query.message.reply_markup,
+            chat_id=duel["chat_id"],
+            message_id=duel["message_id"]
+        )
+
         if len(duel["answered"]) == 2:
             cancel_timer(context, f"duel_timer_{duel_id}_{q_idx}")
             duel["current_q"] += 1
@@ -2172,6 +2180,14 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("✅ پاسخ درست!", show_alert=False)
         else:
             await query.answer("❌ اشتباه!", show_alert=False)
+
+        await safe_edit_message(
+            context.bot,
+            render_team_duel_question_text(duel, q_data, q_idx),
+            reply_markup=query.message.reply_markup,
+            chat_id=duel["chat_id"],
+            message_id=duel["message_id"]
+        )
 
         if len(duel["answered"]) == len(all_players):
             cancel_timer(context, f"team_duel_timer_{duel_id}_{q_idx}")
@@ -2284,8 +2300,8 @@ def main():
     app.add_handler(CommandHandler("jackpot", jackpot_cmd))
     app.add_handler(CommandHandler("reset_points", reset_points_cmd))
     app.add_handler(CommandHandler("set_live", set_live_group))
-    app.add_handler(CommandHandler("Ch_on", cheat_mode_command))
-    app.add_handler(CommandHandler("Ch_off", cheat_mode_command))
+    app.add_handler(CommandHandler("ch_on", cheat_mode_command))
+    app.add_handler(CommandHandler("ch_off", cheat_mode_command))
     app.add_handler(CommandHandler("info", lambda u, c: handle_group_messages(u, c)))
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.Regex(r"^\s*بتل\s*$"), trigger_team_duel))
