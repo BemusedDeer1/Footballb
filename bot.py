@@ -185,7 +185,6 @@ def format_iran_time(dt_str: str) -> str:
     except Exception:
         return "نامشخص"
 
-# سیستم رنکینگ تمیز و اصیل مطابق سلیقه کاربر
 def get_user_tier(points: int) -> tuple[str, str]:
     pts = max(0, int(points or 0))
     if pts >= 3000:
@@ -719,7 +718,6 @@ async def check_and_settle_monthly_season(context: ContextTypes.DEFAULT_TYPE):
                 await db.execute("UPDATE bot_settings SET value = ? WHERE key = 'last_settled_month'", (cur_month_str,))
                 await db.commit()
 
-# دستور استارت و منوی اصلی (طراحی مینیمال و شیک)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
@@ -751,7 +749,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, reply_markup=kb.get_main_menu(), parse_mode="HTML")
 
-# جدول رده‌بندی سیزن دقیقا با استایل اصیل و مورد علاقه کاربر
 async def show_leaderboard_text(requesting_user_id: int = None) -> str:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute(
@@ -809,7 +806,6 @@ async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(text, parse_mode="HTML")
 
-# حساب کاربری و کارت اطلاعات بازیکن (ساده، شیک، با افتخارات سیزن)
 async def user_profile_handler(query, target_user=None):
     user = target_user or query.from_user
     user_id = user.id
@@ -835,7 +831,6 @@ async def user_profile_handler(query, target_user=None):
     safe_name = html.escape(user.first_name)
     bar = render_xp_bar(percent, width=10)
 
-    # نمایش تمیز و شیک افتخارات سیزن (در صورت وجود)
     medals_lines = []
     if gold:
         medals_lines.append(f"🥇 {gold} بار رتبه اول")
@@ -863,7 +858,7 @@ async def user_profile_handler(query, target_user=None):
         f"{medals_text}"
     )
 
-    if hasattr(query, "message"):
+    if hasattr(query, "message") and query.message:
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
     else:
         await query.reply_text(text, parse_mode="HTML")
@@ -1058,7 +1053,6 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         name=f"guess_timer_{chat_id}"
     )
 
-# اعتبارسنجی قطعی بازی‌های آینده برای جک‌پات (جلوگیری ۱۰۰٪ از مسابقات شروع‌شده یا تمام‌شده)
 def is_valid_future_match(m):
     if m.get("status") != "UPCOMING":
         return False
@@ -1068,7 +1062,6 @@ def is_valid_future_match(m):
     try:
         clean_time = dt_str.replace("Z", "+00:00")
         dt = datetime.fromisoformat(clean_time)
-        # حداقل ۲۰ دقیقه مانده به سوت شروع
         return dt > datetime.now(timezone.utc) + timedelta(minutes=20)
     except Exception:
         return False
@@ -1077,7 +1070,6 @@ async def get_or_create_jackpot_round():
     now_utc = datetime.now(timezone.utc)
     iran_now = get_iran_now()
 
-    # ۱. بررسی راند فعال در دیتابیس
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("""
             SELECT round_id, title, matches_json, pool_amount, is_active, is_settled
@@ -1088,7 +1080,6 @@ async def get_or_create_jackpot_round():
                 round_id, title, matches_json, pool_amount, is_active, is_settled = row
                 matches = json.loads(matches_json)
 
-                # چک کردن اینکه هیچ‌کدام از بازی‌های این راند شروع نشده باشند
                 has_started = False
                 for m in matches:
                     dt_str = m.get("date")
@@ -1101,7 +1092,6 @@ async def get_or_create_jackpot_round():
                         except Exception:
                             pass
 
-                # اگر هیچ بازی هنوز شروع نشده، این راند معتبر و آماده دریافت پیش‌بینی است
                 if not has_started:
                     return {
                         "round_id": round_id,
@@ -1111,15 +1101,13 @@ async def get_or_create_jackpot_round():
                         "is_open": True
                     }
                 else:
-                    # راند قبلی مسابقاتش آغاز شده؛ آن را می‌بندیم تا راند جدید فقط با بازی‌های آینده بسازیم
                     await db.execute("UPDATE jackpot_rounds SET is_active = 0 WHERE round_id = ?", (round_id,))
                     await db.commit()
 
-    # ۲. جستجوی دقیق بازی‌های کاملاً آینده برای راند جدید
     future_candidates = []
     for day_offset in range(0, 4):
         date_str = (iran_now + timedelta(days=day_offset)).strftime("%Y%m%d")
-        for l_code in ["uefa.champions", "eng.1", "esp.1", "fifa.friendly", "uefa.nations", "fifa.worldq.afc", "ita.1", "ger.1"]:
+        for l_code in ACTIVE_MONITOR_LEAGUES:
             try:
                 m_list = await provider.get_matches(date_str, league_code=l_code)
                 for m in m_list:
@@ -1139,7 +1127,6 @@ async def get_or_create_jackpot_round():
         if len(future_candidates) >= 5:
             break
 
-    # در صورتی که ۵ بازی واقعی در آینده نزدیک یافت نشد، مسابقات معتبر روزهای بعد اضافه می‌شوند
     if len(future_candidates) < 5:
         tmrw = iran_now + timedelta(days=1)
         tmrw_iso = tmrw.replace(hour=21, minute=0).astimezone(timezone.utc).isoformat()
@@ -1981,7 +1968,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += "────────────────────"
         await safe_edit_message(query, text, reply_markup=kb.get_back_button())
 
-    # جدول رده‌بندی کاملاً هم‌تراز، خوانا و تفکیک‌شده (P: بازی‌ها | Pts: امتیاز)
     elif data.startswith("table_"):
         league_code = data.replace("table_", "")
         standings = await provider.get_standings(league_code)
@@ -2224,7 +2210,6 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
             )
             return
 
-    # قابلیت استعلام اطلاعات با ریپلای
     if msg.lower() in ["اطلاعات", "info", "پروفایل", "stats"] or msg.lower().startswith(("/info", "اطلاعات")):
         target_user = update.effective_user
         if update.message.reply_to_message:
