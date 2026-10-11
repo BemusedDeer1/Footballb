@@ -1287,11 +1287,11 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
     o_name = html.escape(opponent.first_name)
 
     text = (
-        "🥅 <b>دوئل تک‌ضرب پنالتی (مرگ ناگهانی)!</b> ⚽️\n"
+        "🥅 <b>دوئل تک‌ضرب پنالتی!</b> ⚽️\n"
         "────────────────────\n"
         f"👤 شوت‌زن اول: <b>{c_name}</b> ({c_count + 1}/3)\n"
         f"👤 شوت‌زن دوم: <b>{o_name}</b> ({o_count + 1}/3)\n"
-        f"💰 مبلغ شرط: <b>{stake} PTS</b> (مجموع جایزه: <b>{stake * 2} PTS</b>)\n"
+        f"💰 مبلغ شرط: <b>{stake} PTS</b>\n"
         "────────────────────\n"
         f"آیا <b>{o_name}</b> چالش پنالتی را می‌پذیرد؟"
     )
@@ -1302,10 +1302,8 @@ def render_shootout_board(shootout_id: str, shooter_name: str, shot_number: int)
     text = (
         "🥅 <b>نوبت ضربه پنالتی!</b> ⚽️\n"
         "────────────────────\n"
-        f"👤 زننده ضربه: <b>{html.escape(shooter_name)}</b> (شوت {shot_number})\n"
-        "گوشه شوت خود را انتخاب کنید:\n"
-        "  [بالا چپ ↖️]  [مرکز طاق ⬆️]  [بالا راست ↗️]\n"
-        "  [پایین چپ ↙️]   [مرکز زمینی ⬇️]   [پایین راست ↘️]"
+        f"👤 زننده ضربه: <b>{html.escape(shooter_name)}</b>\n"
+        "گوشه شوت خود را انتخاب کنید:"
     )
     buttons = [
         [
@@ -1374,6 +1372,7 @@ async def execute_penalty_kick(context: ContextTypes.DEFAULT_TYPE, shootout_id: 
         "────────────────────\n"
     )
 
+    # قانون جدید: اگر مساوی شود، بدون مرگ ناگهانی پرونده پنالتی بسته می‌شود
     async with aiosqlite.connect(DATABASE_PATH) as db:
         if p1_goal and not p2_goal:
             await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, p1_id))
@@ -1388,7 +1387,7 @@ async def execute_penalty_kick(context: ContextTypes.DEFAULT_TYPE, shootout_id: 
             await profile_record_penalty_win(p2_id)
             summary += f"🎉 تبریک! <b>{html.escape(p2_name)}</b> برنده <b>+{stake} امتیاز</b> شد!"
         else:
-            summary += "🤝 هر دو پنالتی مشابه شد (تساوی)! هیچ امتیازی کسر نگردید."
+            summary += "🤝 مساوی شد! هیچ امتیازی کسر یا اضافه نگردید."
 
     del ACTIVE_SHOOTOUTS[shootout_id]
     await safe_edit_message(context.bot, summary, chat_id=chat_id, message_id=msg_id)
@@ -1458,7 +1457,6 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sent_msg = await update.message.reply_text(text, reply_markup=duel_kb, parse_mode="HTML")
     ACTIVE_DUELS[duel_id]["message_id"] = sent_msg.message_id
 
-# استایل اصیل، کلاسیک و تمیز دوئل دقیقا مطابق درخواست تو
 def render_duel_question_text(duel, q_data, q_idx):
     c_id = duel["challenger"]["id"]
     o_id = duel["opponent"]["id"]
@@ -1483,7 +1481,7 @@ async def question_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     duel_id = job_data["duel_id"]
     q_idx = job_data["q_idx"]
     duel = ACTIVE_DUELS.get(duel_id)
-    if duel and duel["current_q"] == q_idx:
+    if duel and duel.get("current_q") == q_idx:
         duel["current_q"] += 1
         await proceed_duel(context, duel_id)
 
@@ -1756,7 +1754,7 @@ async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if chat is None or chat.type != "private":
         return
 
-    # امنیت فوق‌العاده سخت‌گیرانه: فقط مالک ربات اجازه استفاده دارد
+    # امنیت کامل: فقط و فقط ادمین اصلی (تایید شده با ADMIN_ID)
     if str(user.id) != str(ADMIN_ID):
         return
 
@@ -2080,7 +2078,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.answer("❌ اشتباه!", show_alert=False)
 
-        # به‌روزرسانی فوری پیام دوئل برای نمایش تیک پاسخ
         await safe_edit_message(
             context.bot,
             render_duel_question_text(duel, q_data, q_idx),
