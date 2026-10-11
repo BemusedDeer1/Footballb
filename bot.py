@@ -33,6 +33,69 @@ ESCOBAR_AI_ID = 999999999
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 LRM = "\u200E"
 
+# --- FC CARDS DATABASE POOL ---
+FC_CATALOG = [
+    # ICONS & GOATs (90+)
+    {"name": "پله", "pos": "FWD", "ovr": 95, "rarity": "ICON"},
+    {"name": "زین‌الدین زیدان", "pos": "MID", "ovr": 94, "rarity": "ICON"},
+    {"name": "پائولو مالدینی", "pos": "DEF", "ovr": 94, "rarity": "ICON"},
+    {"name": "لو یاشین", "pos": "GK", "ovr": 94, "rarity": "ICON"},
+    {"name": "رونالدو نازاریو", "pos": "FWD", "ovr": 94, "rarity": "ICON"},
+    {"name": "لیونل مسی", "pos": "FWD", "ovr": 93, "rarity": "ICON"},
+    {"name": "کریستیانو رونالدو", "pos": "FWD", "ovr": 92, "rarity": "ICON"},
+    {"name": "کیلیان امباپه", "pos": "FWD", "ovr": 91, "rarity": "ICON"},
+    {"name": "ارلینگ هالند", "pos": "FWD", "ovr": 91, "rarity": "ICON"},
+    {"name": "کوین دی‌بروینه", "pos": "MID", "ovr": 91, "rarity": "ICON"},
+    {"name": "ایکر کاسیاس", "pos": "GK", "ovr": 91, "rarity": "ICON"},
+    {"name": "ویرجیل فن‌دایک", "pos": "DEF", "ovr": 90, "rarity": "ICON"},
+    {"name": "روبرتو کارلوس", "pos": "DEF", "ovr": 91, "rarity": "ICON"},
+    {"name": "مانوئل نویر", "pos": "GK", "ovr": 90, "rarity": "ICON"},
+
+    # WALKOUT / ELITE (86 - 89)
+    {"name": "وینیسیوس جونیور", "pos": "FWD", "ovr": 89, "rarity": "ELITE"},
+    {"name": "جود بلینگهام", "pos": "MID", "ovr": 89, "rarity": "ELITE"},
+    {"name": "رودری", "pos": "MID", "ovr": 89, "rarity": "ELITE"},
+    {"name": "تیبو کورتوا", "pos": "GK", "ovr": 89, "rarity": "ELITE"},
+    {"name": "آلیسون بکر", "pos": "GK", "ovr": 89, "rarity": "ELITE"},
+    {"name": "هری کین", "pos": "FWD", "ovr": 89, "rarity": "ELITE"},
+    {"name": "روبن دیاز", "pos": "DEF", "ovr": 88, "rarity": "ELITE"},
+    {"name": "روبرت لواندوفسکی", "pos": "FWD", "ovr": 88, "rarity": "ELITE"},
+    {"name": "فدریکو والورده", "pos": "MID", "ovr": 88, "rarity": "ELITE"},
+    {"name": "یان اوبلاک", "pos": "GK", "ovr": 88, "rarity": "ELITE"},
+    {"name": "آنتونیو رودیگر", "pos": "DEF", "ovr": 87, "rarity": "ELITE"},
+    {"name": "تئو ارناندز", "pos": "DEF", "ovr": 87, "rarity": "ELITE"},
+    {"name": "مارتین اودگارد", "pos": "MID", "ovr": 87, "rarity": "ELITE"},
+    {"name": "مارکینیوس", "pos": "DEF", "ovr": 86, "rarity": "ELITE"},
+
+    # RARE GOLD (82 - 85)
+    {"name": "فرنکی دی‌یونگ", "pos": "MID", "ovr": 85, "rarity": "RARE"},
+    {"name": "رافائل لیائو", "pos": "FWD", "ovr": 85, "rarity": "RARE"},
+    {"name": "پدری", "pos": "MID", "ovr": 85, "rarity": "RARE"},
+    {"name": "دوناروما", "pos": "GK", "ovr": 85, "rarity": "RARE"},
+    {"name": "امیلیانو مارتینز", "pos": "GK", "ovr": 85, "rarity": "RARE"},
+    {"name": "باستونی", "pos": "DEF", "ovr": 85, "rarity": "RARE"},
+    {"name": "اشرف حکیمی", "pos": "DEF", "ovr": 84, "rarity": "RARE"},
+    {"name": "ادر میلیتائو", "pos": "DEF", "ovr": 84, "rarity": "RARE"},
+    {"name": "اورلین شوامنی", "pos": "MID", "ovr": 84, "rarity": "RARE"},
+    {"name": "داروین نونیز", "pos": "FWD", "ovr": 83, "rarity": "RARE"},
+    {"name": "مهدی طارمی", "pos": "FWD", "ovr": 82, "rarity": "RARE"},
+    {"name": "سردار آزمون", "pos": "FWD", "ovr": 82, "rarity": "RARE"},
+
+    # COMMON (75 - 81)
+    {"name": "داوید رایا", "pos": "GK", "ovr": 81, "rarity": "COMMON"},
+    {"name": "آندره اونانا", "pos": "GK", "ovr": 81, "rarity": "COMMON"},
+    {"name": "اسکات مک‌تامینی", "pos": "MID", "ovr": 80, "rarity": "COMMON"},
+    {"name": "ریچارلیسون", "pos": "FWD", "ovr": 80, "rarity": "COMMON"},
+    {"name": "هری مگوایر", "pos": "DEF", "ovr": 79, "rarity": "COMMON"},
+    {"name": "واتارو اندو", "pos": "MID", "ovr": 79, "rarity": "COMMON"},
+    {"name": "علیرضا جهانبخش", "pos": "FWD", "ovr": 77, "rarity": "COMMON"},
+    {"name": "رامین رضاییان", "pos": "DEF", "ovr": 77, "rarity": "COMMON"},
+    {"name": "علیرضا بیرانوند", "pos": "GK", "ovr": 77, "rarity": "COMMON"},
+    {"name": "سامان قدوس", "pos": "MID", "ovr": 76, "rarity": "COMMON"},
+    {"name": "سید حسین حسینی", "pos": "GK", "ovr": 76, "rarity": "COMMON"},
+    {"name": "شجاع خلیل‌زاده", "pos": "DEF", "ovr": 75, "rarity": "COMMON"}
+]
+
 GUESS_PLAYERS_FILE = os.path.join(os.path.dirname(__file__), "guess_players.json")
 try:
     with open(GUESS_PLAYERS_FILE, "r", encoding="utf-8") as f:
@@ -67,6 +130,7 @@ MATCH_CACHE = {}
 ACTIVE_DUELS = {}
 ACTIVE_TEAM_DUELS = {}
 ACTIVE_SHOOTOUTS = {}
+ACTIVE_CARD_MATCHES = {}
 CHEAT_MODE_USERS = set()
 TRACKED_LIVE_MATCHES = {}
 USER_JACKPOT_DRAFTS = {}
@@ -80,8 +144,7 @@ def schedule_timer(context, callback_coro, delay_seconds, data, name=None):
         try:
             await asyncio.sleep(delay_seconds)
             class SimpleJob:
-                def __init__(self, d):
-                    self.data = d
+                def __init__(self, d): self.data = d
             class SimpleContext:
                 def __init__(self, c, d):
                     self.bot = c.bot
@@ -94,8 +157,7 @@ def schedule_timer(context, callback_coro, delay_seconds, data, name=None):
         except Exception as e:
             logger.error(f'Error in timer {name}: {e}')
         finally:
-            if name:
-                ACTIVE_ASYNCIO_TIMERS.pop(name, None)
+            if name: ACTIVE_ASYNCIO_TIMERS.pop(name, None)
 
     task = asyncio.create_task(_timer_runner())
     if name:
@@ -105,12 +167,10 @@ def schedule_timer(context, callback_coro, delay_seconds, data, name=None):
 
 def cancel_timer(context, name):
     if getattr(context, 'job_queue', None):
-        for j in context.job_queue.get_jobs_by_name(name):
-            j.schedule_removal()
+        for j in context.job_queue.get_jobs_by_name(name): j.schedule_removal()
     if name in ACTIVE_ASYNCIO_TIMERS:
         task = ACTIVE_ASYNCIO_TIMERS.pop(name, None)
-        if task and not task.done():
-            task.cancel()
+        if task and not task.done(): task.cancel()
 
 async def run_repeating_task(coro_fn, app, interval_sec, initial_delay_sec=5):
     class SimpleContext:
@@ -172,38 +232,26 @@ def get_iran_now():
     return datetime.now(IRAN_TZ)
 
 def format_iran_time(dt_str: str) -> str:
-    if not dt_str:
-        return "نامشخص"
+    if not dt_str: return "نامشخص"
     try:
         clean_time = dt_str.replace("Z", "+00:00")
         dt = datetime.fromisoformat(clean_time)
         dt_iran = dt.astimezone(IRAN_TZ)
         return dt_iran.strftime("%H:%M")
-    except Exception:
-        return "نامشخص"
+    except Exception: return "نامشخص"
 
 def get_user_tier(points: int) -> tuple[str, str]:
     pts = max(0, int(points or 0))
-    if pts >= 3000:
-        return "🌌", "Football Immortal"
-    elif pts >= 2200:
-        return "🐐", "G.O.A.T"
-    elif pts >= 1600:
-        return "⚡️", "Galactico"
-    elif pts >= 1100:
-        return "👑", "Ballon d'Or"
-    elif pts >= 800:
-        return "💎", "Legend"
-    elif pts >= 550:
-        return "🔮", "World Class"
-    elif pts >= 350:
-        return "🎖", "Captain"
-    elif pts >= 200:
-        return "🌟", "First Team"
-    elif pts >= 100:
-        return "⚡️", "Semi-Pro"
-    else:
-        return "🔰", "Academy"
+    if pts >= 3000: return "🌌", "Football Immortal"
+    elif pts >= 2200: return "🐐", "G.O.A.T"
+    elif pts >= 1600: return "⚡️", "Galactico"
+    elif pts >= 1100: return "👑", "Ballon d'Or"
+    elif pts >= 800: return "💎", "Legend"
+    elif pts >= 550: return "🔮", "World Class"
+    elif pts >= 350: return "🎖", "Captain"
+    elif pts >= 200: return "🌟", "First Team"
+    elif pts >= 100: return "⚡️", "Semi-Pro"
+    else: return "🔰", "Academy"
 
 def xp_for_next_level(level: int) -> int:
     return 100 + max(0, level - 1) * 25
@@ -214,8 +262,7 @@ def calculate_level(xp: int):
     while remaining >= xp_for_next_level(level):
         remaining -= xp_for_next_level(level)
         level += 1
-        if level >= 1000:
-            break
+        if level >= 1000: break
     needed = xp_for_next_level(level)
     percent = int((remaining / needed) * 100) if needed else 100
     return level, remaining, needed, percent
@@ -226,8 +273,7 @@ def render_xp_bar(percent: int, width: int = 10) -> str:
     return "█" * filled + "░" * (width - filled)
 
 async def profile_add_xp(user_id: int, amount: int):
-    if amount <= 0:
-        return
+    if amount <= 0: return
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
             async with db.execute("SELECT profile_xp FROM users WHERE user_id = ?", (user_id,)) as cur:
@@ -281,8 +327,7 @@ class SimpleHealthServer(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"Football Hub Online! 200 OK")
 
-    def log_message(self, format, *args):
-        return
+    def log_message(self, format, *args): return
 
 def start_health_server():
     port = int(os.getenv("PORT", 8080))
@@ -311,17 +356,14 @@ async def get_live_chat_id():
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT value FROM bot_settings WHERE key = 'live_chat_id'") as cur:
             row = await cur.fetchone()
-            if row and row[0]:
-                return int(row[0])
+            if row and row[0]: return int(row[0])
     return None
 
 async def is_action_allowed_in_chat(update: Update) -> bool:
     chat = update.effective_chat
-    if not chat or chat.type == "private":
-        return True
+    if not chat or chat.type == "private": return True
     target_chat_id = await get_live_chat_id()
-    if not target_chat_id or chat.id == target_chat_id:
-        return True
+    if not target_chat_id or chat.id == target_chat_id: return True
     await update.effective_message.reply_text(
         "⛔️ <b>بخش‌های مسابقاتی و امتیازی فقط در گروه اختصاصی ربات فعال است!</b>",
         parse_mode="HTML"
@@ -378,8 +420,7 @@ async def get_penalty_count_db(user_id: int) -> int:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT penalty_date, penalty_count FROM users WHERE user_id = ?", (user_id,)) as cur:
             row = await cur.fetchone()
-            if row and row[0] == today_str:
-                return row[1] or 0
+            if row and row[0] == today_str: return row[1] or 0
     return 0
 
 async def increment_penalty_count_db(user_id: int):
@@ -396,8 +437,7 @@ async def get_guess_count_db(user_id: int) -> int:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT last_guess_date, guess_count FROM users WHERE user_id = ?", (user_id,)) as cur:
             row = await cur.fetchone()
-            if row and row[0] == today_str:
-                return row[1] or 0
+            if row and row[0] == today_str: return row[1] or 0
     return 0
 
 async def increment_guess_count_db(user_id: int):
@@ -408,6 +448,45 @@ async def increment_guess_count_db(user_id: int):
             UPDATE users SET last_guess_date = ?, guess_count = ? WHERE user_id = ?
         """, (today_str, cur_count + 1, user_id))
         await db.commit()
+
+# --- BACKUP & RESTORE DATABASE ---
+
+async def backup_db_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if user_id != str(ADMIN_ID):
+        await update.message.reply_text("⛔️ دسترسی غیرمجاز!")
+        return
+
+    if os.path.exists(DATABASE_PATH):
+        with open(DATABASE_PATH, "rb") as doc:
+            await update.message.reply_document(
+                document=doc,
+                filename=f"backup_{get_iran_now().strftime('%Y%m%d_%H%M')}.db",
+                caption="💾 <b>نسخه کامل پشتیبان دیتابیس ربات</b>\nجهت بازگردانی روی هاست جدید، همین فایل را به ربات بفرستید و روی آن بنویسید: <code>/restore</code>",
+                parse_mode="HTML"
+            )
+    else:
+        await update.message.reply_text("⚠️ فایل دیتابیس یافت نشد.")
+
+async def restore_db_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if user_id != str(ADMIN_ID):
+        await update.message.reply_text("⛔️ دسترسی غیرمجاز!")
+        return
+
+    target_msg = update.message.reply_to_message
+    if not target_msg or not target_msg.document:
+        await update.message.reply_text("⚠️ برای بازگردانی، این دستور را روی فایل دیتابیس ریپلای کن:\n<code>/restore</code>", parse_mode="HTML")
+        return
+
+    try:
+        doc = target_msg.document
+        file = await context.bot.get_file(doc.file_id)
+        await file.download_to_drive(DATABASE_PATH)
+        await update.message.reply_text("✅ <b>دیتابیس با موفقیت جایگزین شد!</b> تمامی اطلاعات کاربران بازگردانی گردید.", parse_mode="HTML")
+    except Exception as e:
+        logger.error(f"Error restoring DB: {e}")
+        await update.message.reply_text(f"❌ خطا در بازگردانی فایل دیتابیس: {e}")
 
 async def reset_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -472,8 +551,7 @@ async def generate_pool_message_text(match, participants):
 
 async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
     target_chat_id = await get_live_chat_id()
-    if not target_chat_id:
-        return
+    if not target_chat_id: return
 
     iran_now = get_iran_now()
     today_str = iran_now.strftime("%Y%m%d")
@@ -482,8 +560,7 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
     for l_code in ACTIVE_MONITOR_LEAGUES:
         try:
             m_list = await provider.get_matches(today_str, league_code=l_code)
-            if m_list:
-                matches.extend(m_list)
+            if m_list: matches.extend(m_list)
         except Exception as e:
             logger.debug(f"Monitor error for {l_code}: {e}")
 
@@ -531,8 +608,7 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
             try:
                 dt_match = datetime.fromisoformat(match_date_str.replace("Z", "+00:00"))
                 minutes_to_start = (dt_match - utc_now).total_seconds() / 60
-            except Exception:
-                pass
+            except Exception: pass
 
         if 0 < minutes_to_start <= 45 and not track.get("pool_opened") and raw_status == "UPCOMING":
             track["pool_opened"] = True
@@ -545,12 +621,7 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
             ])
             msg_text = await generate_pool_message_text(m, [])
             try:
-                sent = await context.bot.send_message(
-                    chat_id=target_chat_id,
-                    text=msg_text,
-                    reply_markup=pool_kb,
-                    parse_mode="HTML"
-                )
+                sent = await context.bot.send_message(chat_id=target_chat_id, text=msg_text, reply_markup=pool_kb, parse_mode="HTML")
                 track["pool_msg_id"] = sent.message_id
             except Exception as e:
                 logger.error(f"Error opening pool: {e}")
@@ -624,10 +695,8 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
 
             if not track.get("banter_sent") and final_h != final_a:
                 loser_key = None
-                if final_h < final_a and home_tracked:
-                    loser_key = home_tracked
-                elif final_a < final_h and away_tracked:
-                    loser_key = away_tracked
+                if final_h < final_a and home_tracked: loser_key = home_tracked
+                elif final_a < final_h and away_tracked: loser_key = away_tracked
 
                 if loser_key and loser_key in BANTER_TEXTS:
                     track["banter_sent"] = True
@@ -667,18 +736,12 @@ async def check_and_settle_monthly_season(context: ContextTypes.DEFAULT_TYPE):
             if top4 and len(top4) >= 1:
                 p1 = top4[0]
                 await db.execute("UPDATE users SET season_gold = season_gold + 1 WHERE user_id = ?", (p1[0],))
-                
                 p2 = top4[1] if len(top4) >= 2 else None
-                if p2:
-                    await db.execute("UPDATE users SET season_silver = season_silver + 1 WHERE user_id = ?", (p2[0],))
-                
+                if p2: await db.execute("UPDATE users SET season_silver = season_silver + 1 WHERE user_id = ?", (p2[0],))
                 p3 = top4[2] if len(top4) >= 3 else None
-                if p3:
-                    await db.execute("UPDATE users SET season_bronze = season_bronze + 1 WHERE user_id = ?", (p3[0],))
-                
+                if p3: await db.execute("UPDATE users SET season_bronze = season_bronze + 1 WHERE user_id = ?", (p3[0],))
                 p4 = top4[3] if len(top4) >= 4 else None
-                if p4:
-                    await db.execute("UPDATE users SET season_fourth = season_fourth + 1 WHERE user_id = ?", (p4[0],))
+                if p4: await db.execute("UPDATE users SET season_fourth = season_fourth + 1 WHERE user_id = ?", (p4[0],))
 
                 target_chat_id = await get_live_chat_id()
                 if target_chat_id:
@@ -688,12 +751,9 @@ async def check_and_settle_monthly_season(context: ContextTypes.DEFAULT_TYPE):
                         "👑 <b>تالار قهرمانان ماه:</b>\n\n"
                         f"🥇 قهرمان سیزن: <b>{html.escape(p1[1])}</b> (رتبه ۱)\n"
                     )
-                    if p2:
-                        msg += f"🥈 نایب قهرمان: <b>{html.escape(p2[1])}</b> (رتبه ۲)\n"
-                    if p3:
-                        msg += f"🥉 مقام سوم: <b>{html.escape(p3[1])}</b> (رتبه ۳)\n"
-                    if p4:
-                        msg += f"🎖 مقام چهارم: <b>{html.escape(p4[1])}</b> (رتبه ۴)\n"
+                    if p2: msg += f"🥈 نایب قهرمان: <b>{html.escape(p2[1])}</b> (رتبه ۲)\n"
+                    if p3: msg += f"🥉 مقام سوم: <b>{html.escape(p3[1])}</b> (رتبه ۳)\n"
+                    if p4: msg += f"🎖 مقام چهارم: <b>{html.escape(p4[1])}</b> (رتبه ۴)\n"
 
                     msg += (
                         "\n⚡️ افتخارات در کارنامه بازیکنان ثبت شد!\n"
@@ -754,12 +814,9 @@ async def show_leaderboard_text(requesting_user_id: int = None) -> str:
         ) as cur:
             all_users = await cur.fetchall()
 
-    text = "🏆 <b>جدول رده‌بندی سیزن</b> 🔥\n"
-    text += "────────────────────\n\n"
-
+    text = "🏆 <b>جدول رده‌بندی سیزن</b> 🔥\n────────────────────\n\n"
     if not all_users:
-        text += "هنوز کاربری ثبت نشده است.\n"
-        text += "────────────────────"
+        text += "هنوز کاربری ثبت نشده است.\n────────────────────"
         return text
 
     top_list = all_users[:15]
@@ -770,17 +827,12 @@ async def show_leaderboard_text(requesting_user_id: int = None) -> str:
         _, tier = get_user_tier(pts)
         display_name = format_bidi_name(name)
 
-        if idx == 1:
-            rank_prefix = "🥇 👑"
-        elif idx == 2:
-            rank_prefix = "🥈 👑"
-        elif idx == 3:
-            rank_prefix = "🥉 👑"
-        else:
-            rank_prefix = f"<code>{idx:02d}.</code>"
+        if idx == 1: rank_prefix = "🥇 👑"
+        elif idx == 2: rank_prefix = "🥈 👑"
+        elif idx == 3: rank_prefix = "🥉 👑"
+        else: rank_prefix = f"<code>{idx:02d}.</code>"
 
-        text += f"{rank_prefix} <b>{display_name}</b> ({tier})\n"
-        text += f"    └ 💰 <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
+        text += f"{rank_prefix} <b>{display_name}</b> ({tier})\n    └ 💰 <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
 
     if remaining_list:
         text += "────────────────────\n\n"
@@ -788,9 +840,7 @@ async def show_leaderboard_text(requesting_user_id: int = None) -> str:
             name, pts, wins = u[1], max(0, u[2]), u[3]
             _, tier = get_user_tier(pts)
             display_name = format_bidi_name(name)
-
-            text += f"<code>{idx:02d}.</code> <b>{display_name}</b> ({tier})\n"
-            text += f"    └ 💰 <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
+            text += f"<code>{idx:02d}.</code> <b>{display_name}</b> ({tier})\n    └ 💰 <code>{pts} PTS</code>  ▫️  ⚔️ <code>{wins}</code>\n\n"
 
     text += "────────────────────"
     return text
@@ -817,8 +867,13 @@ async def user_profile_handler(query, target_user=None):
         """, (user_id,)) as cur:
             row = await cur.fetchone()
 
-    if not row:
-        return
+        # کارت‌های ترکیب
+        async with db.execute("SELECT AVG(rating), COUNT(*) FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:
+            lineup_stat = await cur.fetchone()
+            team_ovr = round(lineup_stat[0], 1) if lineup_stat and lineup_stat[0] else 0
+            lineup_count = lineup_stat[1] if lineup_stat else 0
+
+    if not row: return
 
     pts, xp, level, correct, answered, d_wins, p_wins, g_wins, gold, silver, bronze, fourth = row
     pts = max(0, pts or 0)
@@ -829,14 +884,10 @@ async def user_profile_handler(query, target_user=None):
     bar = render_xp_bar(percent, width=10)
 
     medals_lines = []
-    if gold:
-        medals_lines.append(f"🥇 {gold} بار رتبه اول")
-    if silver:
-        medals_lines.append(f"🥈 {silver} بار رتبه دوم")
-    if bronze:
-        medals_lines.append(f"🥉 {bronze} بار رتبه سوم")
-    if fourth:
-        medals_lines.append(f"🎖 {fourth} بار رتبه چهارم")
+    if gold: medals_lines.append(f"🥇 {gold} بار رتبه اول")
+    if silver: medals_lines.append(f"🥈 {silver} بار رتبه دوم")
+    if bronze: medals_lines.append(f"🥉 {bronze} بار رتبه سوم")
+    if fourth: medals_lines.append(f"🎖 {fourth} بار رتبه چهارم")
 
     medals_text = ""
     if medals_lines:
@@ -848,6 +899,7 @@ async def user_profile_handler(query, target_user=None):
         f"<b>LVL {level}</b>\n"
         f"{bar} <code>{percent}%</code>\n\n"
         f"💰 <b>{pts:,} PTS</b>\n"
+        f"🛡 <b>ریتینگ تیم کارت‌ها:</b> <code>{team_ovr} OVR</code> ({lineup_count}/5)\n"
         f"⚔️ <b>{d_wins or 0}</b> Wins\n"
         f"🧠 <b>{accuracy}%</b> Accuracy\n"
         f"🥅 <b>{p_wins or 0}</b> Penalty Wins\n"
@@ -861,9 +913,7 @@ async def user_profile_handler(query, target_user=None):
         await query.reply_text(text, parse_mode="HTML")
 
 async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_action_allowed_in_chat(update):
-        return
-
+    if not await is_action_allowed_in_chat(update): return
     user = update.effective_user
     await ensure_user(user)
     today_str = get_iran_now().strftime("%Y-%m-%d")
@@ -884,15 +934,12 @@ async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await profile_add_xp(user.id, 20)
     await update.effective_message.reply_text(
-        f"🎁 <b>پاداش روزانه واریز شد!</b>\n"
-        f"💰 <b>+{reward} امتیاز</b> دریافت کردید.",
+        f"🎁 <b>پاداش روزانه واریز شد!</b>\n💰 <b>+{reward} امتیاز</b> دریافت کردید.",
         parse_mode="HTML"
     )
 
 async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_action_allowed_in_chat(update):
-        return
-
+    if not await is_action_allowed_in_chat(update): return
     user = update.effective_user
     await ensure_user(user)
     today_str = get_iran_now().strftime("%Y-%m-%d")
@@ -912,7 +959,6 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = await update.effective_message.reply_dice(emoji="⚽")
     dice_val = msg.dice.value
-
     await asyncio.sleep(2.5)
 
     if dice_val in [3, 4, 5]:
@@ -921,10 +967,8 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, user.id))
             await db.commit()
         await profile_add_xp(user.id, 25)
-
         await update.effective_message.reply_text(
-            f"⚽️🔥 <b>گـُـل شد! ضربه غیرقابل مهار!</b>\n"
-            f"💰 پاداش: <b>+{reward} امتیاز</b> دریافت کردید.",
+            f"⚽️🔥 <b>گـُـل شد! ضربه غیرقابل مهار!</b>\n💰 پاداش: <b>+{reward} امتیاز</b> دریافت کردید.",
             parse_mode="HTML"
         )
     else:
@@ -934,9 +978,7 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_action_allowed_in_chat(update):
-        return
-
+    if not await is_action_allowed_in_chat(update): return
     user = update.effective_user
     await ensure_user(user)
     today_str = get_iran_now().strftime("%Y-%m-%d")
@@ -967,12 +1009,10 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await profile_add_xp(user.id, win)
         msg = f"🎡 <b>گردونه شانس متوقف شد!</b>\n🎉 تبریک، شما برنده <b>+{win} امتیاز</b> شدید!"
     else:
-        msg = f"🎡 <b>گردونه شانس متوقف شد!</b>\n❌ این‌بار پوچ بود! امشب بعد از ساعت ۱۲ دوباره شانس‌ات را امتحان کن."
+        msg = "🎡 <b>گردونه شانس متوقف شد!</b>\n❌ این‌بار پوچ بود! امشب بعد از ساعت ۱۲ دوباره شانس‌ات را امتحان کن."
 
-    if update.callback_query:
-        await update.callback_query.message.reply_text(msg, parse_mode="HTML")
-    else:
-        await update.effective_message.reply_text(msg, parse_mode="HTML")
+    if update.callback_query: await update.callback_query.message.reply_text(msg, parse_mode="HTML")
+    else: await update.effective_message.reply_text(msg, parse_mode="HTML")
 
 async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     job_data = context.job.data
@@ -989,9 +1029,7 @@ async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_action_allowed_in_chat(update):
-        return
-
+    if not await is_action_allowed_in_chat(update): return
     chat_id = update.effective_chat.id
     user = update.effective_user
     await ensure_user(user)
@@ -1009,8 +1047,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if game and game.get("is_active"):
         challenger_name = html.escape(game.get("challenger_name", "کاربر"))
         await update.effective_message.reply_text(
-            f"⚠️ یک پرونده هم‌اکنون برای <b>{challenger_name}</b> در این گروه در جریان است!\n"
-            "لطفاً تا پایان مهلت ۳۰ ثانیه‌ای شکیبا باشید.",
+            f"⚠️ یک پرونده هم‌اکنون برای <b>{challenger_name}</b> در این گروه در جریان است!\nلطفاً تا پایان مهلت ۳۰ ثانیه‌ای شکیبا باشید.",
             parse_mode="HTML"
         )
         return
@@ -1050,7 +1087,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
         name=f"guess_timer_{chat_id}"
     )
 
-# --- SUDDEN DEATH PENALTY LOGIC ---
+# --- SUDDEN DEATH PENALTY ---
 
 def render_shootout_board(shootout_id: str, shooter_name: str, shot_number: int = 1):
     text = (
@@ -1074,8 +1111,7 @@ def render_shootout_board(shootout_id: str, shooter_name: str, shot_number: int 
     return text, InlineKeyboardMarkup(buttons)
 
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_action_allowed_in_chat(update):
-        return
+    if not await is_action_allowed_in_chat(update): return
 
     if not update.message.reply_to_message:
         await update.message.reply_text(
@@ -1093,18 +1129,12 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
 
     c_count = await get_penalty_count_db(challenger.id)
     if c_count >= 3:
-        await update.message.reply_text(
-            f"⛔️ <b>{html.escape(challenger.first_name)}</b> عزیز، شما سقف مجاز ۳ پنالتی در روز خود را مصرف کرده‌اید!",
-            parse_mode="HTML"
-        )
+        await update.message.reply_text(f"⛔️ <b>{html.escape(challenger.first_name)}</b> عزیز، شما سقف ۳ پنالتی امروز را زده‌اید!", parse_mode="HTML")
         return
 
     o_count = await get_penalty_count_db(opponent.id)
     if o_count >= 3:
-        await update.message.reply_text(
-            f"⛔️ حریف شما <b>{html.escape(opponent.first_name)}</b> امروز ۳ پنالتی خود را بازی کرده است!",
-            parse_mode="HTML"
-        )
+        await update.message.reply_text(f"⛔️ حریف شما <b>{html.escape(opponent.first_name)}</b> امروز ۳ پنالتی خود را بازی کرده است!", parse_mode="HTML")
         return
 
     await ensure_user(challenger)
@@ -1119,7 +1149,7 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
     o_pts = balances.get(opponent.id, 0)
 
     if c_pts < stake:
-        await update.message.reply_text(f"⛔️ شما برای پنالتی حداقل <b>{stake} PTS</b> نیاز دارید.\nموجودی: <code>{c_pts} PTS</code>", parse_mode="HTML")
+        await update.message.reply_text(f"⛔️ حداقل موجودی برای پنالتی <b>{stake} PTS</b> است.\nموجودی شما: <code>{c_pts} PTS</code>", parse_mode="HTML")
         return
     if o_pts < stake:
         await update.message.reply_text(f"⛔️ <b>{html.escape(opponent.first_name)}</b> حداقل <b>{stake} PTS</b> موجودی ندارد.", parse_mode="HTML")
@@ -1158,8 +1188,7 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
 
 async def execute_penalty_kick(context: ContextTypes.DEFAULT_TYPE, shootout_id: str, choice: str):
     s = ACTIVE_SHOOTOUTS.get(shootout_id)
-    if not s:
-        return
+    if not s: return
 
     chat_id = s["chat_id"]
     msg_id = s["message_id"]
@@ -1177,19 +1206,12 @@ async def execute_penalty_kick(context: ContextTypes.DEFAULT_TYPE, shootout_id: 
         s["current_turn"] = s["p2"]["id"]
         status_text = f"⚽️ <b>گل شد!</b> ({pos_names.get(choice, choice)})" if is_goal else f"🧤 <b>مهار شد!</b> (شیرجه به {pos_names.get(gk_dive, gk_dive)})"
         t, k = render_shootout_board(shootout_id, s["p2"]["name"], 2)
-        await safe_edit_message(
-            context.bot,
-            f"👤 {s['p1']['name']}: {status_text}\n\n{t}",
-            reply_markup=k,
-            chat_id=chat_id,
-            message_id=msg_id
-        )
+        await safe_edit_message(context.bot, f"👤 {s['p1']['name']}: {status_text}\n\n{t}", reply_markup=k, chat_id=chat_id, message_id=msg_id)
     else:
         s["p2"]["shot"] = is_goal
         p1_res, p2_res = s["p1"]["shot"], s["p2"]["shot"]
 
         if p1_res == p2_res:
-            # مساوی -> مرگ ناگهانی در راند بعدی
             s["p1"]["shot"] = None
             s["p2"]["shot"] = None
             s["current_turn"] = s["p1"]["id"]
@@ -1199,9 +1221,7 @@ async def execute_penalty_kick(context: ContextTypes.DEFAULT_TYPE, shootout_id: 
             await safe_edit_message(
                 context.bot,
                 f"🏁 پایان راند {s['round']-1}: {status}\n⚠️ <b>مرگ ناگهانی!</b> راند جدید آغاز شد.\n\n{t}",
-                reply_markup=k,
-                chat_id=chat_id,
-                message_id=msg_id
+                reply_markup=k, chat_id=chat_id, message_id=msg_id
             )
         else:
             winner = s["p1"] if p1_res else s["p2"]
@@ -1212,7 +1232,6 @@ async def execute_penalty_kick(context: ContextTypes.DEFAULT_TYPE, shootout_id: 
                 await db.commit()
 
             await profile_record_penalty_win(winner["id"])
-
             res = (
                 f"🏁 <b>پایان مسابقه (راند {s['round']})</b>\n────────────────────\n"
                 f"👤 {s['p1']['name']}: {'⚽️' if p1_res else '❌'}\n"
@@ -1222,17 +1241,14 @@ async def execute_penalty_kick(context: ContextTypes.DEFAULT_TYPE, shootout_id: 
             await safe_edit_message(context.bot, res, chat_id=chat_id, message_id=msg_id)
             del ACTIVE_SHOOTOUTS[shootout_id]
 
-# --- WEEKLY JACKPOT LOGIC (5 MATCHES) ---
+# --- WEEKLY JACKPOT (5 MATCHES) ---
 
 async def get_or_create_jackpot_round():
     iran_now = get_iran_now()
     week_id = f"JKW{iran_now.strftime('%U_%Y')}"
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        async with db.execute("""
-            SELECT round_id, title, matches_json, pool_amount, is_active, is_settled
-            FROM jackpot_rounds WHERE round_id = ?
-        """, (week_id,)) as cur:
+        async with db.execute("SELECT round_id, title, matches_json, pool_amount, is_active FROM jackpot_rounds WHERE round_id = ?", (week_id,)) as cur:
             row = await cur.fetchone()
             if row:
                 return {
@@ -1258,14 +1274,10 @@ async def get_or_create_jackpot_round():
                                 "away": m["away_team"],
                                 "date": m.get("date")
                             })
-                    if len(candidates) >= 5:
-                        break
-            except Exception:
-                continue
-            if len(candidates) >= 5:
-                break
-        if len(candidates) >= 5:
-            break
+                    if len(candidates) >= 5: break
+            except Exception: continue
+            if len(candidates) >= 5: break
+        if len(candidates) >= 5: break
 
     if len(candidates) < 5:
         tmrw = iran_now + timedelta(days=1)
@@ -1299,7 +1311,6 @@ async def get_or_create_jackpot_round():
     }
 
 async def settle_jackpot_task(context: ContextTypes.DEFAULT_TYPE):
-    """تسک خودکار تسویه جک‌پات"""
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
             async with db.execute("SELECT round_id, matches_json, pool_amount FROM jackpot_rounds WHERE is_settled = 0 AND is_active = 1") as cur:
@@ -1358,10 +1369,8 @@ async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     round_data = await get_or_create_jackpot_round()
     if not round_data:
         msg_not_ready = "⏳ مسابقات جک‌پات این هفته هنوز آماده نشده است."
-        if update.callback_query:
-            await update.callback_query.answer(msg_not_ready, show_alert=True)
-        else:
-            await update.effective_message.reply_text(msg_not_ready)
+        if update.callback_query: await update.callback_query.answer(msg_not_ready, show_alert=True)
+        else: await update.effective_message.reply_text(msg_not_ready)
         return
 
     round_id = round_data["round_id"]
@@ -1373,8 +1382,7 @@ async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT predictions_json FROM jackpot_combos WHERE user_id = ? AND round_id = ?", (user.id, round_id)) as cur:
             row = await cur.fetchone()
-            if row:
-                user_combo = json.loads(row[0])
+            if row: user_combo = json.loads(row[0])
 
     matches_text = ""
     for idx, m in enumerate(matches, 1):
@@ -1410,24 +1418,332 @@ async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     reply_markup = InlineKeyboardMarkup(buttons)
+    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=reply_markup)
+    else: await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="HTML")
+
+# --- FC CARDS SYSTEM & 60-SEC SIMULATION ---
+
+RARITY_COLORS = {
+    "ICON": "💎 آیکان افسانه‌ای",
+    "ELITE": "🔥 ستاره الیت",
+    "RARE": "⭐️ گلد ریر",
+    "COMMON": "⚪️ معمولی"
+}
+
+def generate_random_card_by_rarity(rarity_weights=None):
+    if not rarity_weights:
+        # شانس دریافت: Common 65%, Rare 25%, Elite 8%, Icon 2%
+        rarity_weights = {"COMMON": 65, "RARE": 25, "ELITE": 25, "ICON": 2}
+    rarities = list(rarity_weights.keys())
+    weights = list(rarity_weights.values())
+    chosen_rarity = random.choices(rarities, weights=weights)[0]
+    filtered = [c for c in FC_CATALOG if c["rarity"] == chosen_rarity]
+    return random.choice(filtered)
+
+async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await ensure_user(user)
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT offers_json FROM daily_market WHERE user_id = ? AND date_str = ?", (user.id, today_str)) as cur:
+            row = await cur.fetchone()
+
+        if row:
+            offers = json.loads(row[0])
+        else:
+            # ایجاد ۳ آفر: ۱ معمولی، ۱ متوسط/خوب، ۱ الیت/آیکان گران‌قیمت
+            c1 = random.choice([c for c in FC_CATALOG if c["rarity"] == "COMMON"])
+            c2 = random.choice([c for c in FC_CATALOG if c["rarity"] == "RARE"])
+            c3 = random.choice([c for c in FC_CATALOG if c["rarity"] in ["ELITE", "ICON"]])
+
+            offers = [
+                {"idx": 0, "card": c1, "price": 150, "bought": False},
+                {"idx": 1, "card": c2, "price": 450, "bought": False},
+                {"idx": 2, "card": c3, "price": 1400 if c3["rarity"] == "ELITE" else 3200, "bought": False}
+            ]
+            await db.execute("INSERT OR REPLACE INTO daily_market (user_id, date_str, offers_json) VALUES (?, ?, ?)",
+                             (user.id, today_str, json.dumps(offers, ensure_ascii=False)))
+            await db.commit()
+
+        async with db.execute("SELECT points FROM users WHERE user_id = ?", (user.id,)) as cur:
+            u_pts = (await cur.fetchone())[0]
+
+    text = (
+        "🛒 <b>مارکت روزانه نقل و انتقالات کارت‌ها (FC Scout)</b>\n"
+        "────────────────────\n"
+        f"💰 موجودی شما: <b>{u_pts:,} PTS</b>\n"
+        "⏰ مهلت اعتبار پیشنهادات: <b>تا ساعت ۲۴:۰۰ امشب</b>\n"
+        "────────────────────\n\n"
+    )
+
+    buttons = []
+    for o in offers:
+        c = o["card"]
+        tag = RARITY_COLORS.get(c["rarity"], c["rarity"])
+        status = "✅ خریداری شده" if o["bought"] else f"{o['price']} PTS"
+        text += f"▫️ <b>{c['name']}</b> ({c['pos']}) | <b>{c['ovr']} OVR</b>\n    └ رده: {tag} | قیمت: <b>{status}</b>\n\n"
+        if not o["bought"]:
+            buttons.append([InlineKeyboardButton(f"خرید {c['name']} ({o['price']} PTS)", callback_data=f"buy_m_{o['idx']}")])
+
+    buttons.append([InlineKeyboardButton("📦 باز کردن پک شانسی (Gold Pack: 250 PTS)", callback_data="buy_pack_gold")])
+    buttons.append([InlineKeyboardButton("‹ بازگشت", callback_data="home")])
+
+    kb_markup = InlineKeyboardMarkup(buttons)
     if update.callback_query:
-        await safe_edit_message(update.callback_query, text, reply_markup=reply_markup)
+        await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
     else:
-        await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="HTML")
+        await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
 
-# --- TRIVIA DUEL & BATTLE LOGIC ---
+async def my_cards_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await ensure_user(user)
 
-async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_action_allowed_in_chat(update):
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT player_name, rating, position, rarity, is_in_lineup FROM user_cards WHERE user_id = ? ORDER BY rating DESC", (user.id,)) as cur:
+            cards = await cur.fetchall()
+
+    if not cards:
+        text = "🎴 <b>کلکسیون کارت‌های شما خالی است!</b>\nاز بخش مارکت (<code>/market</code>) یا پک‌های شانسی کارت بخرید."
+        if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())
+        else: await update.message.reply_text(text, parse_mode="HTML")
         return
 
+    text = f"🎴 <b>کلکسیون کارت‌های {html.escape(user.first_name)}:</b>\n────────────────────\n\n"
+    for name, ovr, pos, rar, in_lineup in cards:
+        star = "🟢 [در ترکیب]" if in_lineup else "⚪️"
+        text += f"{star} <b>{name}</b> ({pos}) ➔ <b>{ovr} OVR</b> | {RARITY_COLORS.get(rar, rar)}\n"
+
+    buttons = [
+        [InlineKeyboardButton("⚡️ چیدن خودکار قوی‌ترین ترکیب ۵ نفره", callback_data="auto_lineup")],
+        [InlineKeyboardButton("‹ بازگشت", callback_data="home")]
+    ]
+    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=InlineKeyboardMarkup(buttons))
+    else: await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
+
+async def lineup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await ensure_user(user)
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user.id,)) as cur:
+            lineup = await cur.fetchall()
+
+    positions = {"GK": None, "DEF": None, "MID1": None, "MID2": None, "FWD": None}
+    mids = []
+    for name, ovr, pos in lineup:
+        if pos == "GK" and not positions["GK"]: positions["GK"] = (name, ovr)
+        elif pos == "DEF" and not positions["DEF"]: positions["DEF"] = (name, ovr)
+        elif pos == "FWD" and not positions["FWD"]: positions["FWD"] = (name, ovr)
+        elif pos == "MID": mids.append((name, ovr))
+
+    if len(mids) >= 1: positions["MID1"] = mids[0]
+    if len(mids) >= 2: positions["MID2"] = mids[1]
+
+    total_ovr = sum(p[1] for p in positions.values() if p)
+    count = sum(1 for p in positions.values() if p)
+    avg_ovr = round(total_ovr / count, 1) if count > 0 else 0
+
+    text = (
+        f"🛡 <b>ترکیب ۵ نفره تیم: {html.escape(user.first_name)}</b>\n"
+        "────────────────────\n"
+        f"⭐️ <b>قدرت تیمی: {avg_ovr} OVR</b> ({count}/5 بازیکن)\n\n"
+        f"🧤 دروازه‌بان (GK): <b>{positions['GK'][0] if positions['GK'] else '—'}</b> ({positions['GK'][1] if positions['GK'] else 0})\n"
+        f"🛡 مدافع (DEF): <b>{positions['DEF'][0] if positions['DEF'] else '—'}</b> ({positions['DEF'][1] if positions['DEF'] else 0})\n"
+        f"⚡️ هافبک ۱ (MID): <b>{positions['MID1'][0] if positions['MID1'] else '—'}</b> ({positions['MID1'][1] if positions['MID1'] else 0})\n"
+        f"⚡️ هافبک ۲ (MID): <b>{positions['MID2'][0] if positions['MID2'] else '—'}</b> ({positions['MID2'][1] if positions['MID2'] else 0})\n"
+        f"🎯 مهاجم (FWD): <b>{positions['FWD'][0] if positions['FWD'] else '—'}</b> ({positions['FWD'][1] if positions['FWD'] else 0})\n"
+        "────────────────────\n"
+    )
+
+    buttons = [
+        [InlineKeyboardButton("⚡️ چیدن خودکار قوی‌ترین ترکیب", callback_data="auto_lineup")],
+        [InlineKeyboardButton("🎴 مشاهده کل کارت‌ها", callback_data="view_my_cards")],
+        [InlineKeyboardButton("‹ بازگشت", callback_data="home")]
+    ]
+    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=InlineKeyboardMarkup(buttons))
+    else: await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
+
+async def auto_lineup_logic(user_id: int):
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE user_id = ?", (user_id,))
+        for pos, count in [("GK", 1), ("DEF", 1), ("MID", 2), ("FWD", 1)]:
+            async with db.execute("SELECT id FROM user_cards WHERE user_id = ? AND position = ? ORDER BY rating DESC LIMIT ?", (user_id, pos, count)) as cur:
+                ids = [r[0] for r in await cur.fetchall()]
+                for cid in ids:
+                    await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))
+        await db.commit()
+
+async def get_user_team_info(user_id: int):
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:
+            cards = await cur.fetchall()
+
+    if len(cards) < 5:
+        # شاید کارت داره ولی تو لاین‌آپ نچیده، خودکار براش بچینیم
+        await auto_lineup_logic(user_id)
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:
+                cards = await cur.fetchall()
+
+    if len(cards) < 5: return None
+    ovr = round(sum(c[1] for c in cards) / len(cards), 1)
+    fwd = next((c[0] for c in cards if c[2] == "FWD"), "مهاجم")
+    gk = next((c[0] for c in cards if c[2] == "GK"), "دروازه‌بان")
+    return {"ovr": ovr, "fwd": fwd, "gk": gk, "cards": cards}
+
+async def trigger_card_match(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await is_action_allowed_in_chat(update): return
+    if not update.message.reply_to_message:
+        await update.message.reply_text("⚽️ برای مسابقه کارت‌ها، روی پیام حریف ریپلای کن و بنویس:\n<code>مسابقه کارت</code> یا <code>/cardmatch</code>", parse_mode="HTML")
+        return
+
+    p1, p2 = update.effective_user, update.message.reply_to_message.from_user
+    if p2.is_bot or p1.id == p2.id:
+        await update.message.reply_text("⚠️ امکان مسابقه با این کاربر وجود ندارد.")
+        return
+
+    await ensure_user(p1)
+    await ensure_user(p2)
+
+    t1 = await get_user_team_info(p1.id)
+    t2 = await get_user_team_info(p2.id)
+
+    if not t1:
+        await update.message.reply_text(f"⛔️ <b>{html.escape(p1.first_name)}</b> عزیز، ترکیب ۵ نفره کارت‌های شما تکمیل نیست!\nابتدا از <code>/market</code> یا <code>/pack</code> کارت تهیه کرده و با <code>/lineup</code> بچینید.", parse_mode="HTML")
+        return
+    if not t2:
+        await update.message.reply_text(f"⛔️ حریف شما <b>{html.escape(p2.first_name)}</b> ترکیب ۵ نفره کارت‌ها را کامل نکرده است.", parse_mode="HTML")
+        return
+
+    stake = 30
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (p1.id, p2.id)) as cur:
+            balances = {r[0]: r[1] for r in await cur.fetchall()}
+
+    if balances.get(p1.id, 0) < stake or balances.get(p2.id, 0) < stake:
+        await update.message.reply_text(f"⛔️ هر دو بازیکن باید حداقل <b>{stake} PTS</b> موجودی داشته باشند.", parse_mode="HTML")
+        return
+
+    m_id = f"cm_{random.randint(10000, 99999)}"
+    ACTIVE_CARD_MATCHES[m_id] = {
+        "p1": {"id": p1.id, "name": p1.first_name, "team": t1, "score": 0},
+        "p2": {"id": p2.id, "name": p2.first_name, "team": t2, "score": 0},
+        "stake": stake,
+        "chat_id": update.effective_chat.id,
+        "msg_id": None
+    }
+
+    kb_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⚔️ قبول مسابقه کارت‌ها", callback_data=f"ac_cm_{m_id}"),
+         InlineKeyboardButton("❌ لغو", callback_data=f"rj_cm_{m_id}")]
+    ])
+
+    text = (
+        "🏟 <b>مسابقه بزرگ شبیه‌سازی کارت‌های FC!</b> 🔥\n"
+        "────────────────────\n"
+        f"🔵 تیم ۱: <b>{html.escape(p1.first_name)}</b> (⭐️ {t1['ovr']} OVR)\n"
+        f"🔴 تیم ۲: <b>{html.escape(p2.first_name)}</b> (⭐️ {t2['ovr']} OVR)\n"
+        f"💰 مبلغ شرط: <b>{stake} PTS</b> | مدت بازی: <b>۶۰ ثانیه</b>\n"
+        "────────────────────\n"
+        f"آیا <b>{html.escape(p2.first_name)}</b> این چالش را می‌پذیرد؟"
+    )
+    sent = await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
+    ACTIVE_CARD_MATCHES[m_id]["msg_id"] = sent.message_id
+
+async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_id: str):
+    m = ACTIVE_CARD_MATCHES.get(m_id)
+    if not m: return
+
+    chat_id, msg_id = m["chat_id"], m["msg_id"]
+    p1, p2 = m["p1"], m["p2"]
+    ovr_diff = p1["team"]["ovr"] - p2["team"]["ovr"]
+
+    # Step 1: Start (Minute 15)
+    await asyncio.sleep(15)
+    t15 = (
+        f"⏱ <b>دقیقه ۱۵ مسابقه:</b>\n"
+        f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+        "────────────────────\n"
+        f"⚔️ جدال فیزیکی شدید در میانه میدان! هر دو تیم در حال ارزیابی تاکتیک یکدیگر هستند..."
+    )
+    await safe_edit_message(context.bot, t15, chat_id=chat_id, message_id=msg_id)
+
+    # Step 2: Minute 40 (Chance for p1 or p2)
+    await asyncio.sleep(15)
+    # شانس گلزنی به نسبت OVR
+    p1_prob = 0.35 + (ovr_diff * 0.02)
+    if random.random() < p1_prob:
+        p1["score"] += 1
+        event_40 = f"⚽️🔥 <b>گـُــل برای {p1['name']}!</b> شوت استثنایی <b>{p1['team']['fwd']}</b> وارد دروازه شد!"
+    else:
+        event_40 = f"🧤 مهار درخشان توسط <b>{p2['team']['gk']}</b>! مانع از گلزنی حریف شد."
+
+    t40 = (
+        f"⏱ <b>دقیقه ۴۰ مسابقه:</b>\n"
+        f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+        "────────────────────\n"
+        f"{event_40}"
+    )
+    await safe_edit_message(context.bot, t40, chat_id=chat_id, message_id=msg_id)
+
+    # Step 3: Minute 70 (Counter attack)
+    await asyncio.sleep(15)
+    p2_prob = 0.35 - (ovr_diff * 0.02)
+    if random.random() < p2_prob:
+        p2["score"] += 1
+        event_70 = f"⚽️🔥 <b>گـُــل برای {p2['name']}!</b> فرار تند و تیز <b>{p2['team']['fwd']}</b> به گل تساوی/برتری نشست!"
+    else:
+        event_70 = f"🛡 تکل نجات‌بخش خط دفاعی، مانع از گلزنی <b>{p2['name']}</b> شد."
+
+    t70 = (
+        f"⏱ <b>دقیقه ۷۰ مسابقه:</b>\n"
+        f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+        "────────────────────\n"
+        f"{event_70}"
+    )
+    await safe_edit_message(context.bot, t70, chat_id=chat_id, message_id=msg_id)
+
+    # Step 4: Full Time (Minute 90)
+    await asyncio.sleep(15)
+    s1, s2 = p1["score"], p2["score"]
+    stake = m["stake"]
+
+    res_footer = ""
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        if s1 > s2:
+            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, p1["id"]))
+            await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p2["id"]))
+            await profile_add_xp(p1["id"], 100)
+            res_footer = f"🏆 برنده بازی: <b>{p1['name']}</b> (+{stake} امتیاز و +100 XP)"
+        elif s2 > s1:
+            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, p2["id"]))
+            await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p1["id"]))
+            await profile_add_xp(p2["id"], 100)
+            res_footer = f"🏆 برنده بازی: <b>{p2['name']}</b> (+{stake} امتیاز و +100 XP)"
+        else:
+            res_footer = "🤝 مسابقه با نتیجه مساوی به پایان رسید! هیچ امتیازی کسر نشد."
+        await db.commit()
+
+    t90 = (
+        f"🏁 <b>سوت پایان مسابقه کارت‌ها (Full Time)</b>\n"
+        "────────────────────\n"
+        f"▫️ <b>{p1['name']} (⭐️ {p1['team']['ovr']}) [{s1}] - [{s2}] (⭐️ {p2['team']['ovr']}) {p2['name']}</b>\n"
+        "────────────────────\n"
+        f"{res_footer}"
+    )
+    await safe_edit_message(context.bot, t90, chat_id=chat_id, message_id=msg_id)
+    ACTIVE_CARD_MATCHES.pop(m_id, None)
+
+# --- TRIVIA DUELS (1v1 & 2v2) ---
+
+async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await is_action_allowed_in_chat(update): return
     if not update.message.reply_to_message:
         await update.message.reply_text("⚔️ روی پیام حریف ریپلای کنید و بنویسید: <code>دوئل</code> یا <code>/duel</code>", parse_mode="HTML")
         return
 
-    challenger = update.effective_user
-    opponent = update.message.reply_to_message.from_user
-
+    challenger, opponent = update.effective_user, update.message.reply_to_message.from_user
     if opponent.is_bot or challenger.id == opponent.id:
         await update.message.reply_text("⚠️ امکان دوئل با این کاربر نیست.")
         return
@@ -1467,9 +1783,7 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("❌ رد چالش", callback_data=f"rjd_{duel_id}")]
     ])
 
-    c_name = html.escape(challenger.first_name)
-    o_name = html.escape(opponent.first_name)
-
+    c_name, o_name = html.escape(challenger.first_name), html.escape(opponent.first_name)
     text = (
         "⚔️ <b>میدان دوئل اطلاعات عمومی فوتبال!</b> 🔥\n"
         "────────────────────\n"
@@ -1483,11 +1797,8 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ACTIVE_DUELS[duel_id]["message_id"] = sent_msg.message_id
 
 def render_duel_question_text(duel, q_data, q_idx):
-    c_id = duel["challenger"]["id"]
-    o_id = duel["opponent"]["id"]
-    c_name = html.escape(duel["challenger"]["name"])
-    o_name = html.escape(duel["opponent"]["name"])
-
+    c_id, o_id = duel["challenger"]["id"], duel["opponent"]["id"]
+    c_name, o_name = html.escape(duel["challenger"]["name"]), html.escape(duel["opponent"]["name"])
     c_status = "✅ پاسخ داده شد" if c_id in duel.get("answered", {}) else "⏳ در حال پاسخ..."
     o_status = "✅ پاسخ داده شد" if o_id in duel.get("answered", {}) else "⏳ در حال پاسخ..."
 
@@ -1503,8 +1814,7 @@ def render_duel_question_text(duel, q_data, q_idx):
 
 async def question_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     job_data = context.job.data
-    duel_id = job_data["duel_id"]
-    q_idx = job_data["q_idx"]
+    duel_id, q_idx = job_data["duel_id"], job_data["q_idx"]
     duel = ACTIVE_DUELS.get(duel_id)
     if duel and duel.get("current_q") == q_idx:
         duel["current_q"] += 1
@@ -1512,20 +1822,15 @@ async def question_timeout_job(context: ContextTypes.DEFAULT_TYPE):
 
 async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     duel = ACTIVE_DUELS.get(duel_id)
-    if not duel:
-        return
+    if not duel: return
 
-    chat_id = duel["chat_id"]
-    msg_id = duel["message_id"]
+    chat_id, msg_id = duel["chat_id"], duel["message_id"]
     q_idx = duel["current_q"]
 
     if q_idx >= len(duel["questions"]):
-        c_score = duel["challenger"]["score"]
-        o_score = duel["opponent"]["score"]
-        c_name = html.escape(duel["challenger"]["name"])
-        o_name = html.escape(duel["opponent"]["name"])
-        c_id = duel["challenger"]["id"]
-        o_id = duel["opponent"]["id"]
+        c_score, o_score = duel["challenger"]["score"], duel["opponent"]["score"]
+        c_name, o_name = html.escape(duel["challenger"]["name"]), html.escape(duel["opponent"]["name"])
+        c_id, o_id = duel["challenger"]["id"], duel["opponent"]["id"]
         stake = duel["stake"]
 
         res_text = (
@@ -1564,35 +1869,27 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
 
     text = render_duel_question_text(duel, q_data, q_idx)
     await safe_edit_message(context.bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=chat_id, message_id=msg_id)
-
-    schedule_timer(
-        context,
-        question_timeout_job,
-        15,
-        data={"duel_id": duel_id, "q_idx": q_idx},
-        name=f"duel_timer_{duel_id}_{q_idx}"
-    )
+    schedule_timer(context, question_timeout_job, 15, data={"duel_id": duel_id, "q_idx": q_idx}, name=f"duel_timer_{duel_id}_{q_idx}")
 
 async def trigger_team_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_action_allowed_in_chat(update):
-        return
+    if not await is_action_allowed_in_chat(update): return
     if not update.message.reply_to_message:
-        await update.message.reply_text(
-            "⚔️ برای شروع بتل ۲ به ۲، روی پیام حریف ریپلای کن و بنویس:\n"
-            "<code>بتل</code> یا <code>/battle</code>", parse_mode="HTML"
-        )
+        await update.message.reply_text("⚔️ برای شروع بتل ۲ به ۲، روی پیام حریف ریپلای کن و بنویس:\n<code>بتل</code> یا <code>/battle</code>", parse_mode="HTML")
         return
-    challenger = update.effective_user
-    opponent = update.message.reply_to_message.from_user
+
+    challenger, opponent = update.effective_user, update.message.reply_to_message.from_user
     if opponent.is_bot or challenger.id == opponent.id:
         await update.message.reply_text("⚠️ امکان بتل با این کاربر نیست.")
         return
+
     await ensure_user(challenger)
     await ensure_user(opponent)
     stake = 30
+
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (challenger.id, opponent.id)) as cur:
             balances = {int(uid): int(pts or 0) for uid, pts in await cur.fetchall()}
+
     if balances.get(challenger.id, 0) < stake or balances.get(opponent.id, 0) < stake:
         await update.message.reply_text(f"⛔️ هر بازیکن برای شروع بتل باید حداقل <b>{stake} PTS</b> داشته باشد.", parse_mode="HTML")
         return
@@ -1621,10 +1918,8 @@ def render_team_duel_lobby(duel):
     def player_line(team):
         lines = []
         for idx in range(2):
-            if idx < len(team):
-                lines.append(f"<b>{html.escape(team[idx]['name'])}</b>")
-            else:
-                lines.append("<i>[در انتظار یار...]</i>")
+            if idx < len(team): lines.append(f"<b>{html.escape(team[idx]['name'])}</b>")
+            else: lines.append("<i>[در انتظار یار...]</i>")
         return " & ".join(lines)
 
     return (
@@ -1660,8 +1955,7 @@ def render_team_duel_question_text(duel, q_data, q_idx):
 
 async def team_duel_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     job_data = context.job.data
-    duel_id = job_data["duel_id"]
-    q_idx = job_data["q_idx"]
+    duel_id, q_idx = job_data["duel_id"], job_data["q_idx"]
     duel = ACTIVE_TEAM_DUELS.get(duel_id)
     if duel and duel["current_q"] == q_idx and not duel.get("finished"):
         duel["current_q"] += 1
@@ -1669,11 +1963,9 @@ async def team_duel_timeout_job(context: ContextTypes.DEFAULT_TYPE):
 
 async def finish_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     duel = ACTIVE_TEAM_DUELS.get(duel_id)
-    if not duel or duel.get("finished"):
-        return
+    if not duel or duel.get("finished"): return
     duel["finished"] = True
-    chat_id = duel["chat_id"]
-    msg_id = duel["message_id"]
+    chat_id, msg_id = duel["chat_id"], duel["message_id"]
     stake = duel["stake"]
 
     t1_score = sum(duel["scores"].get(p["id"], 0) for p in duel["team1"])
@@ -1713,8 +2005,7 @@ async def finish_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
 
 async def proceed_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     duel = ACTIVE_TEAM_DUELS.get(duel_id)
-    if not duel or duel.get("finished"):
-        return
+    if not duel or duel.get("finished"): return
     q_idx = duel["current_q"]
     if q_idx >= len(duel["questions"]):
         await finish_team_duel(context, duel_id)
@@ -1728,75 +2019,19 @@ async def proceed_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
 
     text = render_team_duel_question_text(duel, q_data, q_idx)
     await safe_edit_message(context.bot, text, reply_markup=InlineKeyboardMarkup(buttons), chat_id=duel["chat_id"], message_id=duel["message_id"])
-
-    schedule_timer(
-        context,
-        team_duel_timeout_job, 15,
-        data={"duel_id": duel_id, "q_idx": q_idx},
-        name=f"team_duel_timer_{duel_id}_{q_idx}"
-    )
-
-async def predictions_hub_handler(query):
-    iran_now = get_iran_now()
-    dates = [iran_now.strftime("%Y%m%d"), (iran_now + timedelta(days=1)).strftime("%Y%m%d")]
-
-    candidate_matches = []
-    for d in dates:
-        for l_code in ACTIVE_MONITOR_LEAGUES:
-            try:
-                m_list = await provider.get_matches(d, league_code=l_code)
-                for m in m_list:
-                    MATCH_CACHE[m["id"]] = m
-                    if m.get("status") == "UPCOMING":
-                        candidate_matches.append(m)
-            except Exception:
-                pass
-
-    seen = set()
-    upcoming_list = []
-    for m in candidate_matches:
-        if m["id"] not in seen:
-            seen.add(m["id"])
-            upcoming_list.append(m)
-
-    if not upcoming_list:
-        await safe_edit_message(query, "⏳ مسابقه شروع‌نشده‌ای در دسترس نیست.", reply_markup=kb.get_back_button())
-        return
-
-    text = (
-        "🎯 <b>تالار پیش‌بینی مسابقات فوتبال</b>\n"
-        "────────────────────\n"
-        "مسابقه مورد نظر خود را جهت ثبت نتیجه انتخاب کنید:\n"
-        "💰 پاداش شرکت: <b>+10 امتیاز هدیه</b>\n"
-        "────────────────────"
-    )
-    await safe_edit_message(query, text, reply_markup=kb.get_upcoming_matches_keyboard(upcoming_list))
+    schedule_timer(context, team_duel_timeout_job, 15, data={"duel_id": duel_id, "q_idx": q_idx}, name=f"team_duel_timer_{duel_id}_{q_idx}")
 
 async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    chat = update.effective_chat
-
-    if chat is None or chat.type != "private":
-        return
-
-    if str(user.id) != str(ADMIN_ID):
-        return
+    user, chat = update.effective_user, update.effective_chat
+    if chat is None or chat.type != "private" or str(user.id) != str(ADMIN_ID): return
 
     command = (update.effective_message.text or "").split()[0].split("@")[0].lower()
-
     if command == "/ch_on":
         CHEAT_MODE_USERS.add(user.id)
-        await update.effective_message.reply_text(
-            "🟢 <b>Ch Mode اختصاصی شما فعال شد.</b>\n"
-            "پاسخ دوئل و بتل برای شما همیشه درست ثبت می‌شود.",
-            parse_mode="HTML"
-        )
+        await update.effective_message.reply_text("🟢 <b>Ch Mode اختصاصی فعال شد.</b> پاسخ‌ها همیشه صحیح ثبت می‌شوند.", parse_mode="HTML")
     elif command == "/ch_off":
         CHEAT_MODE_USERS.discard(user.id)
-        await update.effective_message.reply_text(
-            "🔴 <b>Ch Mode غیرفعال شد.</b>",
-            parse_mode="HTML"
-        )
+        await update.effective_message.reply_text("🔴 <b>Ch Mode غیرفعال شد.</b>", parse_mode="HTML")
 
 # --- CALLBACK ROUTER ---
 
@@ -1812,6 +2047,79 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "spin_wheel":
         await spin_wheel_cmd(update, context)
 
+    elif data == "view_market":
+        await market_cmd(update, context)
+
+    elif data == "view_my_cards":
+        await my_cards_cmd(update, context)
+
+    elif data == "view_lineup":
+        await lineup_cmd(update, context)
+
+    elif data == "auto_lineup":
+        await auto_lineup_logic(uid)
+        await query.answer("⚡️ قوی‌ترین ترکیب با کارت‌های موجود شما چیده شد!", show_alert=True)
+        await lineup_cmd(update, context)
+
+    elif data.startswith("buy_m_"):
+        idx = int(data.split("_")[2])
+        today_str = get_iran_now().strftime("%Y-%m-%d")
+
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with db.execute("SELECT offers_json FROM daily_market WHERE user_id = ? AND date_str = ?", (uid, today_str)) as cur:
+                row = await cur.fetchone()
+            if not row: return
+            offers = json.loads(row[0])
+            target = next((o for o in offers if o["idx"] == idx), None)
+            if not target or target["bought"]:
+                await query.answer("این کارت قبلاً خریداری شده است.", show_alert=True)
+                return
+
+            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
+                pts = (await cur.fetchone())[0]
+
+            if pts < target["price"]:
+                await query.answer(f"امتیاز ناکافی! به {target['price']} PTS نیاز دارید.", show_alert=True)
+                return
+
+            await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (target["price"], uid))
+            c = target["card"]
+            await db.execute("""
+                INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (uid, c["name"], c["ovr"], c["pos"], c["rarity"], today_str))
+
+            target["bought"] = True
+            await db.execute("UPDATE daily_market SET offers_json = ? WHERE user_id = ? AND date_str = ?", (json.dumps(offers, ensure_ascii=False), uid, today_str))
+            await db.commit()
+
+        await profile_add_xp(uid, 50)
+        await query.answer(f"🎉 کارت {c['name']} ({c['ovr']} OVR) خریداری شد!", show_alert=True)
+        await market_cmd(update, context)
+
+    elif data == "buy_pack_gold":
+        pack_price = 250
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
+                pts = (await cur.fetchone())[0]
+            if pts < pack_price:
+                await query.answer(f"امتیاز ناکافی! قیمت گلد پک {pack_price} PTS است.", show_alert=True)
+                return
+
+            await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (pack_price, uid))
+            c = generate_random_card_by_rarity({"COMMON": 60, "RARE": 30, "ELITE": 8, "ICON": 2})
+            today_str = get_iran_now().strftime("%Y-%m-%d")
+            await db.execute("""
+                INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (uid, c["name"], c["ovr"], c["pos"], c["rarity"], today_str))
+            await db.commit()
+
+        await profile_add_xp(uid, 40)
+        pop_msg = f"📦 <b>پک باز شد!</b>\n⭐️ <b>{c['name']}</b> ({c['pos']})\nریتینگ: <b>{c['ovr']} OVR</b> | {RARITY_COLORS.get(c['rarity'], c['rarity'])}"
+        await query.message.reply_text(pop_msg, parse_mode="HTML")
+        await market_cmd(update, context)
+
     # بخش جک‌پات
     elif data == "jackpot_hub":
         await jackpot_cmd(update, context)
@@ -1820,10 +2128,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         rid = data.replace("jk_start_", "")
         USER_JACKPOT_DRAFTS[uid] = {"round_id": rid, "picks": {}}
         r_data = await get_or_create_jackpot_round()
-        if not r_data or not r_data.get("matches"):
-            await query.answer("خطا در دریافت مسابقات جک‌پات", show_alert=True)
-            return
-
         m = r_data["matches"][0]
         text = f"1️⃣ بازی اول:\n<b>{m['home']} ✕ {m['away']}</b>"
         kb_step = InlineKeyboardMarkup([
@@ -1834,13 +2138,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_edit_message(query, text, reply_markup=kb_step)
 
     elif data.startswith("jk_p_"):
-        # jk_p_{rid}_{idx}_{choice}
         p = data.split("_")
         rid, idx, choice = p[2], int(p[3]), p[4]
-        if uid not in USER_JACKPOT_DRAFTS:
-            await query.answer("نشست ثبت پیش‌بینی منقضی شده است.", show_alert=True)
-            return
-
+        if uid not in USER_JACKPOT_DRAFTS: return
         USER_JACKPOT_DRAFTS[uid]["picks"][str(idx)] = choice
         r_data = await get_or_create_jackpot_round()
         matches = r_data["matches"] if r_data else []
@@ -1867,154 +2167,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await db.commit()
 
                 await profile_add_xp(uid, 30)
+                await query.message.reply_text("✅ <b>فرم جک‌پات شما با موفقیت ثبت شد!</b>", parse_mode="HTML")
 
-                receipt = ""
-                for i, m in enumerate(matches):
-                    c_val = draft["picks"].get(str(i), "—")
-                    lbl = "برد ۱" if c_val == "HOME" else ("تساوی X" if c_val == "DRAW" else "برد ۲")
-                    receipt += f"▫️ {m['home']} ✕ {m['away']}: <b>{lbl}</b>\n"
-
-                text = (
-                    "🎉 <b>فرم جک‌پات شما با موفقیت ثبت شد!</b> 🎟\n"
-                    "────────────────────\n"
-                    f"{receipt}"
-                    "────────────────────\n"
-                    "💰 پاداش ثبت فرم: <b>+30 XP</b>\n"
-                    "🏆 در صورت حدس هر ۵ مسابقه، استخر ۵۰۰ امتیازی بین برندگان تقسیم خواهد شد!"
-                )
-                await safe_edit_message(query, text, reply_markup=kb.get_back_button("jackpot_hub"))
-
-    elif data == "predictions_hub":
-        await predictions_hub_handler(query)
-
-    elif data.startswith("select_pred_"):
-        match_id = data.replace("select_pred_", "")
-        m = MATCH_CACHE.get(match_id)
-        if not m:
-            await query.answer("اطلاعات این مسابقه منقضی شده است.", show_alert=True)
-            return
-        time_str = format_iran_time(m.get("date"))
-        text = (
-            f"🎯 <b>فرم ثبت پیش‌بینی:</b>\n"
-            f"────────────────────\n"
-            f"⚽️ <b>{m['home_team']}</b> 🆚 <b>{m['away_team']}</b>\n"
-            f"⏰ شروع: <code>{time_str}</code> (تهران)\n"
-            f"────────────────────\n"
-            f"نتیجه را انتخاب کنید:"
-        )
-        await safe_edit_message(query, text, reply_markup=kb.get_prediction_keyboard(m['id']))
-
-    elif data.startswith("pred_out_"):
-        parts = data.split("_")
-        match_id, choice = parts[2], parts[3]
-        user_id = query.from_user.id
-        
-        async with aiosqlite.connect(DATABASE_PATH) as db:
-            try:
-                await db.execute("""
-                    INSERT INTO predictions (user_id, match_id, outcome_choice, predicted_home, predicted_away)
-                    VALUES (?, ?, ?, 0, 0)
-                """, (user_id, match_id, choice))
-                await db.execute("UPDATE users SET points = points + 10, total_predictions = total_predictions + 1 WHERE user_id = ?", (user_id,))
-                await db.commit()
-                await profile_add_xp(user_id, 20)
-                await safe_edit_message(query, "✅ <b>پیش‌بینی ثبت شد! (+10 امتیاز و +20 XP هدیه)</b>", reply_markup=kb.get_back_button())
-            except Exception:
-                await safe_edit_message(query, "⚠️ شما قبلاً این بازی را پیش‌بینی کرده‌اید.", reply_markup=kb.get_back_button())
-
-    elif data.startswith("pool_"):
-        parts = data.split("_")
-        match_id = parts[1]
-        choice = parts[2]
-        user = query.from_user
-
-        async with aiosqlite.connect(DATABASE_PATH) as db:
-            await db.execute("""
-                INSERT INTO special_pool_predictions (match_id, user_id, user_name, choice)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(match_id, user_id) DO UPDATE SET choice = excluded.choice, user_name = excluded.user_name
-            """, (match_id, user.id, user.first_name, choice))
-            await db.commit()
-
-            async with db.execute("SELECT user_name, choice FROM special_pool_predictions WHERE match_id = ?", (match_id,)) as cur:
-                participants = await cur.fetchall()
-
-        await query.answer("✅ ثبت شد!", show_alert=False)
-        m = MATCH_CACHE.get(match_id, {"home_team": "میزبان", "away_team": "میهمان", "date": None})
-        new_text = await generate_pool_message_text(m, participants)
-        await safe_edit_message(query, new_text, reply_markup=query.message.reply_markup)
-
-    elif data == "select_matches_today":
-        await safe_edit_message(query, "🔥 <b>لیگ مورد نظر برای مسابقات امروز:</b>", reply_markup=kb.get_matches_leagues_keyboard("today"))
-
-    elif data == "select_matches_tomorrow":
-        await safe_edit_message(query, "📅 <b>لیگ مورد نظر برای مسابقات فردا:</b>", reply_markup=kb.get_matches_leagues_keyboard("tmrw"))
-
-    elif data == "select_standings_league":
-        await safe_edit_message(query, "🏆 <b>جدول رده‌بندی لیگ مورد نظر:</b>", reply_markup=kb.get_standings_leagues_keyboard())
-
-    elif data.startswith("today_") or data.startswith("tmrw_"):
-        is_today = data.startswith("today_")
-        league_code = data.split("_")[1]
-        target_date = get_iran_now() if is_today else (get_iran_now() + timedelta(days=1))
-        date_str = target_date.strftime("%Y%m%d")
-
-        matches = await provider.get_matches(date_str, league_code=league_code)
-        title = LEAGUE_TITLES.get(league_code, "مسابقات فوتبال")
-        day_label = "امروز" if is_today else "فردا"
-
-        if not matches:
-            await safe_edit_message(
-                query,
-                f"⏳ مسابقه‌ای برای <b>{title}</b> در {day_label} یافت نشد.",
-                reply_markup=kb.get_back_button()
-            )
-            return
-
-        text = f"⚽️ <b>برنامه مسابقات {title} ({day_label}):</b>\n────────────────────\n\n"
-        for m in matches[:10]:
-            MATCH_CACHE[m["id"]] = m
-            time_str = format_iran_time(m.get("date"))
-            status = m.get("status", "UPCOMING")
-            if status in ["LIVE", "IN_PLAY", "1H", "2H", "HT"]:
-                badge = f"🔴 زنده [{m['home_score']} - {m['away_score']}]"
-            elif status in ["FINISHED", "FT", "POST"]:
-                badge = f"🏁 پایان [{m['home_score']} - {m['away_score']}]"
-            else:
-                badge = f"⏰ <code>{time_str}</code>"
-
-            text += f"▫️ <b>{m['home_team']}</b> 🆚 <b>{m['away_team']}</b>\n    └ {badge}  •  {m.get('venue', 'ورزشگاه')}\n\n"
-
-        text += "────────────────────"
-        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
-
-    elif data.startswith("table_"):
-        league_code = data.replace("table_", "")
-        standings = await provider.get_standings(league_code)
-        title = LEAGUE_TITLES.get(league_code, "جدول رده‌بندی")
-
-        if not standings:
-            await safe_edit_message(query, f"جدول رده‌بندی {title} در دسترس نیست.", reply_markup=kb.get_back_button())
-            return
-
-        text = f"🏆 <b>جدول رده‌بندی {title}</b>\n<pre>"
-        text += "#  | Team          | P  | Pts\n---+---------------+----+----\n"
-        for idx, s in enumerate(standings[:10], 1):
-            team_str = s['team'][:13].ljust(13)
-            p_str = str(s['p'])[:2].rjust(2)
-            pts_str = str(s['pts'])[:3].rjust(3)
-            text += f"{idx:<2} | {team_str} | {p_str} | {pts_str}\n"
-        text += "</pre>\n<i>(P: تعداد بازی  |  Pts: مجموع امتیاز)</i>"
-        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
-
-    elif data == "user_profile":
-        await user_profile_handler(query)
-
-    elif data == "leaderboard_hub":
-        text = await show_leaderboard_text(query.from_user.id)
-        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
-
-    # بخش پنالتی
+    # پنالتی
     elif data.startswith("acp_"):
         p_id = data.replace("acp_", "")
         s = ACTIVE_SHOOTOUTS.get(p_id)
@@ -2023,8 +2178,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await increment_penalty_count_db(s["p2"]["id"])
             t, k = render_shootout_board(p_id, s["p1"]["name"], 1)
             await safe_edit_message(query, t, reply_markup=k)
-        elif s:
-            await query.answer("فقط حریف دعوت‌شده می‌تواند چالش را بپذیرد.", show_alert=True)
 
     elif data.startswith("rjp_"):
         p_id = data.replace("rjp_", "")
@@ -2039,62 +2192,54 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         choice = parts[3]
         if p_id in ACTIVE_SHOOTOUTS and uid == ACTIVE_SHOOTOUTS[p_id]["current_turn"]:
             await execute_penalty_kick(context, p_id, choice)
-        elif p_id in ACTIVE_SHOOTOUTS:
-            await query.answer("اکنون نوبت شوت شما نیست!", show_alert=True)
 
-    # بخش دوئل
+    # کارت مچ
+    elif data.startswith("ac_cm_"):
+        m_id = data.replace("ac_cm_", "")
+        m = ACTIVE_CARD_MATCHES.get(m_id)
+        if m and uid == m["p2"]["id"]:
+            await safe_edit_message(query, "⚽️ <b>مسابقه کارت‌ها آغاز شد! در حال شبیه‌سازی زنده...</b>")
+            asyncio.create_task(run_live_card_match_simulation(context, m_id))
+
+    elif data.startswith("rj_cm_"):
+        m_id = data.replace("rj_cm_", "")
+        if m_id in ACTIVE_CARD_MATCHES:
+            del ACTIVE_CARD_MATCHES[m_id]
+            await safe_edit_message(query, "❌ مسابقه کارت‌ها لغو شد.")
+
+    # دوئل
     elif data.startswith("acd_"):
         duel_id = data.replace("acd_", "")
         duel = ACTIVE_DUELS.get(duel_id)
-        if not duel or uid != duel["opponent"]["id"]:
-            await query.answer("فقط کاربر به چالش کشیده‌شده می‌تواند قبول کند.", show_alert=True)
-            return
-        await proceed_duel(context, duel_id)
+        if duel and uid == duel["opponent"]["id"]:
+            await proceed_duel(context, duel_id)
 
     elif data.startswith("rjd_"):
         duel_id = data.replace("rjd_", "")
-        duel = ACTIVE_DUELS.get(duel_id)
-        if duel and uid in [duel["challenger"]["id"], duel["opponent"]["id"]]:
+        if duel_id in ACTIVE_DUELS:
             del ACTIVE_DUELS[duel_id]
             await safe_edit_message(query, "❌ چالش دوئل لغو گردید.")
 
     elif data.startswith("ad_"):
         parts = data.split("_")
-        duel_id = f"{parts[1]}_{parts[2]}"
-        opt_idx = int(parts[3])
+        duel_id, opt_idx = f"{parts[1]}_{parts[2]}", int(parts[3])
         duel = ACTIVE_DUELS.get(duel_id)
-        if not duel:
-            await query.answer("این دوئل منقضی شده است.", show_alert=True)
-            return
-
-        if uid not in [duel["challenger"]["id"], duel["opponent"]["id"]]:
-            await query.answer("شما شرکت‌کننده این دوئل نیستید!", show_alert=True)
-            return
-
-        if uid in duel["answered"]:
-            await query.answer("شما قبلاً به این سوال پاسخ داده‌اید.", show_alert=True)
+        if not duel or uid not in [duel["challenger"]["id"], duel["opponent"]["id"]] or uid in duel["answered"]:
             return
 
         q_idx = duel["current_q"]
-        if q_idx >= len(duel["questions"]):
-            return
+        if q_idx >= len(duel["questions"]): return
         q_data = duel["questions"][q_idx]
 
         is_correct = (opt_idx == q_data["correct_idx"])
-        if uid == int(ADMIN_ID) and uid in CHEAT_MODE_USERS:
-            is_correct = True
+        if uid == int(ADMIN_ID) and uid in CHEAT_MODE_USERS: is_correct = True
 
         duel["answered"][uid] = is_correct
         await profile_record_answer(uid, is_correct)
 
         if is_correct:
-            if uid == duel["challenger"]["id"]:
-                duel["challenger"]["score"] += 1
-            else:
-                duel["opponent"]["score"] += 1
-            await query.answer("✅ پاسخ درست!", show_alert=False)
-        else:
-            await query.answer("❌ اشتباه!", show_alert=False)
+            if uid == duel["challenger"]["id"]: duel["challenger"]["score"] += 1
+            else: duel["opponent"]["score"] += 1
 
         await safe_edit_message(
             context.bot,
@@ -2109,40 +2254,21 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             duel["current_q"] += 1
             await proceed_duel(context, duel_id)
 
-    # بخش بتل تیمی
+    # بتل تیمی
     elif data.startswith("bt1_") or data.startswith("bt2_"):
         duel_id = data.split("_", 1)[1]
         team_num = 1 if data.startswith("bt1_") else 2
         duel = ACTIVE_TEAM_DUELS.get(duel_id)
-        if not duel or duel.get("started"):
-            await query.answer("این بتل در جریان است یا منقضی شده.", show_alert=True)
-            return
+        if not duel or duel.get("started"): return
 
         user = query.from_user
         await ensure_user(user)
-        stake = duel["stake"]
-
-        async with aiosqlite.connect(DATABASE_PATH) as db:
-            async with db.execute("SELECT points FROM users WHERE user_id = ?", (user.id,)) as cur:
-                r = await cur.fetchone()
-                user_pts = r[0] if r else 0
-
-        if user_pts < stake:
-            await query.answer(f"موجودی ناکافی! حداقل {stake} PTS لازم دارید.", show_alert=True)
-            return
-
         target_team = duel["team1"] if team_num == 1 else duel["team2"]
         other_team = duel["team2"] if team_num == 1 else duel["team1"]
 
-        if any(p["id"] == user.id for p in target_team):
-            await query.answer("شما قبلاً در این تیم عضو شده‌اید!", show_alert=True)
-            return
-
+        if any(p["id"] == user.id for p in target_team): return
         other_team[:] = [p for p in other_team if p["id"] != user.id]
-
-        if len(target_team) >= 2:
-            await query.answer("ظرفیت این تیم تکمیل است!", show_alert=True)
-            return
+        if len(target_team) >= 2: return
 
         target_team.append({"id": user.id, "name": user.first_name})
         duel["scores"][user.id] = 0
@@ -2162,39 +2288,23 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data.startswith("at2_"):
         parts = data.split("_")
-        duel_id = f"{parts[1]}_{parts[2]}"
-        opt_idx = int(parts[3])
+        duel_id, opt_idx = f"{parts[1]}_{parts[2]}", int(parts[3])
         duel = ACTIVE_TEAM_DUELS.get(duel_id)
-        if not duel or duel.get("finished"):
-            await query.answer("این بتل به پایان رسیده است.", show_alert=True)
-            return
+        if not duel or duel.get("finished"): return
 
         all_players = [p["id"] for p in duel["team1"] + duel["team2"]]
-        if uid not in all_players:
-            await query.answer("شما بازیکن این مسابقه نیستید!", show_alert=True)
-            return
-
-        if uid in duel.get("answered", {}):
-            await query.answer("قبلاً به این سوال پاسخ داده‌اید.", show_alert=True)
-            return
+        if uid not in all_players or uid in duel.get("answered", {}): return
 
         q_idx = duel["current_q"]
-        if q_idx >= len(duel["questions"]):
-            return
+        if q_idx >= len(duel["questions"]): return
         q_data = duel["questions"][q_idx]
 
         is_correct = (opt_idx == q_data["correct_idx"])
-        if uid == int(ADMIN_ID) and uid in CHEAT_MODE_USERS:
-            is_correct = True
+        if uid == int(ADMIN_ID) and uid in CHEAT_MODE_USERS: is_correct = True
 
         duel["answered"][uid] = is_correct
         await profile_record_answer(uid, is_correct)
-
-        if is_correct:
-            duel["scores"][uid] = duel["scores"].get(uid, 0) + 1
-            await query.answer("✅ پاسخ درست!", show_alert=False)
-        else:
-            await query.answer("❌ اشتباه!", show_alert=False)
+        if is_correct: duel["scores"][uid] = duel["scores"].get(uid, 0) + 1
 
         await safe_edit_message(
             context.bot,
@@ -2209,10 +2319,16 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             duel["current_q"] += 1
             await proceed_team_duel(context, duel_id)
 
+    elif data == "user_profile":
+        await user_profile_handler(query)
+
+    elif data == "leaderboard_hub":
+        text = await show_leaderboard_text(query.from_user.id)
+        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
+
 async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message.text.strip() if update.message and update.message.text else ""
-    if not msg:
-        return
+    if not msg: return
 
     chat_id = update.effective_chat.id
 
@@ -2225,7 +2341,6 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
             game["is_active"] = False
 
             cancel_timer(context, f"guess_timer_{chat_id}")
-
             async with aiosqlite.connect(DATABASE_PATH) as db:
                 await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, winner.id))
                 await db.commit()
@@ -2233,10 +2348,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 
             main_name = game["names"][0]
             await update.message.reply_text(
-                f"🎉🔥 <b>پاسخ کاملاً صحیح! هویت ستاره به درستی تشخیص داده شد!</b>\n"
-                f"👤 نام ستاره: <b>{main_name}</b>\n"
-                f"🏆 برنده چالش: <b>{html.escape(winner.first_name)}</b>\n"
-                f"💰 پاداش: <b>+{reward} امتیاز</b> و <b>+80 XP</b>",
+                f"🎉🔥 <b>پاسخ صحیح!</b>\n👤 ستاره: <b>{main_name}</b>\n🏆 برنده: <b>{html.escape(winner.first_name)}</b> (+{reward} امتیاز و +80 XP)",
                 parse_mode="HTML"
             )
             return
@@ -2249,17 +2361,21 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     if msg in ["دوئل", "duel", "چالش"]:
-        if await is_action_allowed_in_chat(update):
-            await trigger_duel(update, context)
+        await trigger_duel(update, context)
     elif msg in ["پنالتی", "پنالتی کشی", "penalty"]:
-        if await is_action_allowed_in_chat(update):
-            await trigger_penalty_shootout(update, context)
+        await trigger_penalty_shootout(update, context)
+    elif msg in ["مسابقه کارت", "کارت مچ", "cardmatch", "کارت"]:
+        await trigger_card_match(update, context)
+    elif msg in ["مارکت", "market", "خرید کارت"]:
+        await market_cmd(update, context)
+    elif msg in ["کارتها", "کارتهای من", "mycards"]:
+        await my_cards_cmd(update, context)
+    elif msg in ["ترکیب", "لاین اپ", "lineup"]:
+        await lineup_cmd(update, context)
     elif msg in ["شوت", "گل", "shoot"]:
-        if await is_action_allowed_in_chat(update):
-            await daily_shoot_cmd(update, context)
+        await daily_shoot_cmd(update, context)
     elif msg in ["جایزه", "روزانه", "daily"]:
-        if await is_action_allowed_in_chat(update):
-            await daily_reward_cmd(update, context)
+        await daily_reward_cmd(update, context)
     elif msg in ["حدس", "حدس بازیکن", "guess"]:
         await start_guess_game(update, context)
     elif msg in ["گردونه", "wheel", "شانس"]:
@@ -2270,19 +2386,6 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
         await start(update, context)
     elif msg in ["جدول", "رنکینگ", "امتیازات"]:
         await leaderboard_cmd(update, context)
-    elif msg in ["پیشبینی", "پیش بینی"]:
-        await update.message.reply_text("🎯 جهت ورود به تالار پیش‌بینی، دستور /start را ارسال فرمایید.", parse_mode="HTML")
-    elif msg in ["بازیها", "بازی ها"]:
-        iran_now = get_iran_now()
-        matches = await provider.get_matches(iran_now.strftime("%Y%m%d"), league_code="all")
-        if matches:
-            t = "🔥 <b>مسابقات منتخب امروز (به وقت تهران):</b>\n────────────────────\n\n"
-            for m in matches[:6]:
-                tm = format_iran_time(m.get("date"))
-                t += f"▫️ <b>{m['home_team']}</b> 🆚 <b>{m['away_team']}</b> (⏰ <code>{tm}</code>)\n"
-            await update.message.reply_text(t, parse_mode="HTML")
-        else:
-            await update.message.reply_text("⏳ مسابقه‌ای برای امروز یافت نشد.")
 
 async def post_init(application: Application):
     await init_db()
@@ -2309,6 +2412,26 @@ async def post_init(application: Application):
                 PRIMARY KEY (user_id, round_id)
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS user_cards (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                player_name TEXT,
+                rating INTEGER,
+                position TEXT,
+                rarity TEXT,
+                is_in_lineup INTEGER DEFAULT 0,
+                acquired_at TEXT
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS daily_market (
+                user_id INTEGER,
+                date_str TEXT,
+                offers_json TEXT,
+                PRIMARY KEY (user_id, date_str)
+            )
+        """)
         await db.commit()
 
     await ensure_escobar_ai()
@@ -2316,7 +2439,7 @@ async def post_init(application: Application):
         application.job_queue.run_repeating(monitor_live_matches_and_banter, interval=90, first=5)
         application.job_queue.run_repeating(check_and_settle_monthly_season, interval=3600, first=15)
         application.job_queue.run_repeating(settle_jackpot_task, interval=7200, first=60)
-        logger.info("PTB JobQueue is active and running background tasks.")
+        logger.info("PTB JobQueue is active.")
     else:
         logger.warning("PTB JobQueue is None. Falling back to native asyncio background tasks.")
         asyncio.create_task(run_repeating_task(monitor_live_matches_and_banter, application, 90, 5))
@@ -2335,21 +2458,29 @@ def main():
     app.add_handler(CommandHandler("duel", trigger_duel))
     app.add_handler(CommandHandler("battle", trigger_team_duel))
     app.add_handler(CommandHandler("penalty", trigger_penalty_shootout))
+    app.add_handler(CommandHandler("cardmatch", trigger_card_match))
+    app.add_handler(CommandHandler("market", market_cmd))
+    app.add_handler(CommandHandler("pack", lambda u, c: market_cmd(u, c)))
+    app.add_handler(CommandHandler("mycards", my_cards_cmd))
+    app.add_handler(CommandHandler("lineup", lineup_cmd))
     app.add_handler(CommandHandler("shoot", daily_shoot_cmd))
     app.add_handler(CommandHandler("daily", daily_reward_cmd))
     app.add_handler(CommandHandler("guess", start_guess_game))
     app.add_handler(CommandHandler("wheel", spin_wheel_cmd))
     app.add_handler(CommandHandler("jackpot", jackpot_cmd))
+    app.add_handler(CommandHandler("backup", backup_db_cmd))
+    app.add_handler(CommandHandler("restore", restore_db_cmd))
     app.add_handler(CommandHandler("reset_points", reset_points_cmd))
     app.add_handler(CommandHandler("set_live", set_live_group))
     app.add_handler(CommandHandler("ch_on", cheat_mode_command))
     app.add_handler(CommandHandler("ch_off", cheat_mode_command))
     app.add_handler(CommandHandler("info", lambda u, c: handle_group_messages(u, c)))
+
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.Regex(r"^\s*بتل\s*$"), trigger_team_duel))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Football Hub Bot successfully initialized!")
+    logger.info("Football Hub Bot successfully initialized with FC Cards Engine!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
