@@ -867,7 +867,6 @@ async def user_profile_handler(query, target_user=None):
         """, (user_id,)) as cur:
             row = await cur.fetchone()
 
-        # کارت‌های ترکیب
         async with db.execute("SELECT AVG(rating), COUNT(*) FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:
             lineup_stat = await cur.fetchone()
             team_ovr = round(lineup_stat[0], 1) if lineup_stat and lineup_stat[0] else 0
@@ -1421,6 +1420,44 @@ async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=reply_markup)
     else: await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="HTML")
 
+# --- PREDICTIONS HUB LOGIC ---
+
+async def predictions_hub_handler(query):
+    iran_now = get_iran_now()
+    dates = [iran_now.strftime("%Y%m%d"), (iran_now + timedelta(days=1)).strftime("%Y%m%d")]
+
+    candidate_matches = []
+    for d in dates:
+        for l_code in ACTIVE_MONITOR_LEAGUES:
+            try:
+                m_list = await provider.get_matches(d, league_code=l_code)
+                for m in m_list:
+                    MATCH_CACHE[m["id"]] = m
+                    if m.get("status") == "UPCOMING":
+                        candidate_matches.append(m)
+            except Exception:
+                pass
+
+    seen = set()
+    upcoming_list = []
+    for m in candidate_matches:
+        if m["id"] not in seen:
+            seen.add(m["id"])
+            upcoming_list.append(m)
+
+    if not upcoming_list:
+        await safe_edit_message(query, "⏳ مسابقه شروع‌نشده‌ای در دسترس نیست.", reply_markup=kb.get_back_button())
+        return
+
+    text = (
+        "🎯 <b>تالار پیش‌بینی مسابقات فوتبال</b>\n"
+        "────────────────────\n"
+        "مسابقه مورد نظر خود را جهت ثبت نتیجه انتخاب کنید:\n"
+        "💰 پاداش شرکت: <b>+10 امتیاز هدیه</b>\n"
+        "────────────────────"
+    )
+    await safe_edit_message(query, text, reply_markup=kb.get_upcoming_matches_keyboard(upcoming_list))
+
 # --- FC CARDS SYSTEM & 60-SEC SIMULATION ---
 
 RARITY_COLORS = {
@@ -1432,8 +1469,7 @@ RARITY_COLORS = {
 
 def generate_random_card_by_rarity(rarity_weights=None):
     if not rarity_weights:
-        # شانس دریافت: Common 65%, Rare 25%, Elite 8%, Icon 2%
-        rarity_weights = {"COMMON": 65, "RARE": 25, "ELITE": 25, "ICON": 2}
+        rarity_weights = {"COMMON": 65, "RARE": 25, "ELITE": 8, "ICON": 2}
     rarities = list(rarity_weights.keys())
     weights = list(rarity_weights.values())
     chosen_rarity = random.choices(rarities, weights=weights)[0]
@@ -1452,7 +1488,6 @@ async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if row:
             offers = json.loads(row[0])
         else:
-            # ایجاد ۳ آفر: ۱ معمولی، ۱ متوسط/خوب، ۱ الیت/آیکان گران‌قیمت
             c1 = random.choice([c for c in FC_CATALOG if c["rarity"] == "COMMON"])
             c2 = random.choice([c for c in FC_CATALOG if c["rarity"] == "RARE"])
             c3 = random.choice([c for c in FC_CATALOG if c["rarity"] in ["ELITE", "ICON"]])
@@ -1580,7 +1615,6 @@ async def get_user_team_info(user_id: int):
             cards = await cur.fetchall()
 
     if len(cards) < 5:
-        # شاید کارت داره ولی تو لاین‌آپ نچیده، خودکار براش بچینیم
         await auto_lineup_logic(user_id)
         async with aiosqlite.connect(DATABASE_PATH) as db:
             async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:
@@ -1659,7 +1693,6 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     p1, p2 = m["p1"], m["p2"]
     ovr_diff = p1["team"]["ovr"] - p2["team"]["ovr"]
 
-    # Step 1: Start (Minute 15)
     await asyncio.sleep(15)
     t15 = (
         f"⏱ <b>دقیقه ۱۵ مسابقه:</b>\n"
@@ -1669,9 +1702,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     )
     await safe_edit_message(context.bot, t15, chat_id=chat_id, message_id=msg_id)
 
-    # Step 2: Minute 40 (Chance for p1 or p2)
     await asyncio.sleep(15)
-    # شانس گلزنی به نسبت OVR
     p1_prob = 0.35 + (ovr_diff * 0.02)
     if random.random() < p1_prob:
         p1["score"] += 1
@@ -1687,12 +1718,11 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     )
     await safe_edit_message(context.bot, t40, chat_id=chat_id, message_id=msg_id)
 
-    # Step 3: Minute 70 (Counter attack)
     await asyncio.sleep(15)
     p2_prob = 0.35 - (ovr_diff * 0.02)
     if random.random() < p2_prob:
         p2["score"] += 1
-        event_70 = f"⚽️🔥 <b>گـُــل برای {p2['name']}!</b> فرار تند و تیز <b>{p2['team']['fwd']}</b> به گل تساوی/برتری نشست!"
+        event_70 = f"⚽️🔥 <b>گـُــل برای {p2['name']}!</b> فرار تند و تیز <b>{p2['team']['fwd']}</b> به گل نشست!"
     else:
         event_70 = f"🛡 تکل نجات‌بخش خط دفاعی، مانع از گلزنی <b>{p2['name']}</b> شد."
 
@@ -1704,7 +1734,6 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     )
     await safe_edit_message(context.bot, t70, chat_id=chat_id, message_id=msg_id)
 
-    # Step 4: Full Time (Minute 90)
     await asyncio.sleep(15)
     s1, s2 = p1["score"], p2["score"]
     stake = m["stake"]
@@ -2047,6 +2076,131 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "spin_wheel":
         await spin_wheel_cmd(update, context)
 
+    # بخش‌های برنامه مسابقات و جداول لیگ‌ها
+    elif data == "select_matches_today":
+        await safe_edit_message(query, "🔥 <b>لیگ مورد نظر برای مسابقات امروز:</b>", reply_markup=kb.get_matches_leagues_keyboard("today"))
+
+    elif data == "select_matches_tomorrow":
+        await safe_edit_message(query, "📅 <b>لیگ مورد نظر برای مسابقات فردا:</b>", reply_markup=kb.get_matches_leagues_keyboard("tmrw"))
+
+    elif data == "select_standings_league":
+        await safe_edit_message(query, "🏆 <b>جدول رده‌بندی لیگ مورد نظر:</b>", reply_markup=kb.get_standings_leagues_keyboard())
+
+    elif data.startswith("today_") or data.startswith("tmrw_"):
+        is_today = data.startswith("today_")
+        league_code = data.split("_")[1]
+        target_date = get_iran_now() if is_today else (get_iran_now() + timedelta(days=1))
+        date_str = target_date.strftime("%Y%m%d")
+
+        matches = await provider.get_matches(date_str, league_code=league_code)
+        title = LEAGUE_TITLES.get(league_code, "مسابقات فوتبال")
+        day_label = "امروز" if is_today else "فردا"
+
+        if not matches:
+            await safe_edit_message(
+                query,
+                f"⏳ مسابقه‌ای برای <b>{title}</b> در {day_label} یافت نشد.",
+                reply_markup=kb.get_back_button()
+            )
+            return
+
+        text = f"⚽️ <b>برنامه مسابقات {title} ({day_label}):</b>\n────────────────────\n\n"
+        for m in matches[:10]:
+            MATCH_CACHE[m["id"]] = m
+            time_str = format_iran_time(m.get("date"))
+            status = m.get("status", "UPCOMING")
+            if status in ["LIVE", "IN_PLAY", "1H", "2H", "HT"]:
+                badge = f"🔴 زنده [{m['home_score']} - {m['away_score']}]"
+            elif status in ["FINISHED", "FT", "POST"]:
+                badge = f"🏁 پایان [{m['home_score']} - {m['away_score']}]"
+            else:
+                badge = f"⏰ <code>{time_str}</code>"
+
+            text += f"▫️ <b>{m['home_team']}</b> 🆚 <b>{m['away_team']}</b>\n    └ {badge}  •  {m.get('venue', 'ورزشگاه')}\n\n"
+
+        text += "────────────────────"
+        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
+
+    elif data.startswith("table_"):
+        league_code = data.replace("table_", "")
+        standings = await provider.get_standings(league_code)
+        title = LEAGUE_TITLES.get(league_code, "جدول رده‌بندی")
+
+        if not standings:
+            await safe_edit_message(query, f"جدول رده‌بندی {title} در دسترس نیست.", reply_markup=kb.get_back_button())
+            return
+
+        text = f"🏆 <b>جدول رده‌بندی {title}</b>\n<pre>"
+        text += "#  | Team          | P  | Pts\n---+---------------+----+----\n"
+        for idx, s in enumerate(standings[:10], 1):
+            team_str = s['team'][:13].ljust(13)
+            p_str = str(s['p'])[:2].rjust(2)
+            pts_str = str(s['pts'])[:3].rjust(3)
+            text += f"{idx:<2} | {team_str} | {p_str} | {pts_str}\n"
+        text += "</pre>\n<i>(P: تعداد بازی  |  Pts: مجموع امتیاز)</i>"
+        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
+
+    # تالار پیش‌بینی
+    elif data == "predictions_hub":
+        await predictions_hub_handler(query)
+
+    elif data.startswith("select_pred_"):
+        match_id = data.replace("select_pred_", "")
+        m = MATCH_CACHE.get(match_id)
+        if not m:
+            await query.answer("اطلاعات این مسابقه منقضی شده است.", show_alert=True)
+            return
+        time_str = format_iran_time(m.get("date"))
+        text = (
+            f"🎯 <b>فرم ثبت پیش‌بینی:</b>\n"
+            f"────────────────────\n"
+            f"⚽️ <b>{m['home_team']}</b> 🆚 <b>{m['away_team']}</b>\n"
+            f"⏰ شروع: <code>{time_str}</code> (تهران)\n"
+            f"────────────────────\n"
+            f"نتیجه را انتخاب کنید:"
+        )
+        await safe_edit_message(query, text, reply_markup=kb.get_prediction_keyboard(m['id']))
+
+    elif data.startswith("pred_out_"):
+        parts = data.split("_")
+        match_id, choice = parts[2], parts[3]
+        user_id = query.from_user.id
+        
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            try:
+                await db.execute("""
+                    INSERT INTO predictions (user_id, match_id, outcome_choice, predicted_home, predicted_away)
+                    VALUES (?, ?, ?, 0, 0)
+                """, (user_id, match_id, choice))
+                await db.execute("UPDATE users SET points = points + 10, total_predictions = total_predictions + 1 WHERE user_id = ?", (user_id,))
+                await db.commit()
+                await profile_add_xp(user_id, 20)
+                await safe_edit_message(query, "✅ <b>پیش‌بینی ثبت شد! (+10 امتیاز و +20 XP هدیه)</b>", reply_markup=kb.get_back_button())
+            except Exception:
+                await safe_edit_message(query, "⚠️ شما قبلاً این بازی را پیش‌بینی کرده‌اید.", reply_markup=kb.get_back_button())
+
+    elif data.startswith("pool_"):
+        parts = data.split("_")
+        match_id, choice = parts[1], parts[2]
+        user = query.from_user
+
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute("""
+                INSERT INTO special_pool_predictions (match_id, user_id, user_name, choice)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(match_id, user_id) DO UPDATE SET choice = excluded.choice, user_name = excluded.user_name
+            """, (match_id, user.id, user.first_name, choice))
+            await db.commit()
+
+            async with db.execute("SELECT user_name, choice FROM special_pool_predictions WHERE match_id = ?", (match_id,)) as cur:
+                participants = await cur.fetchall()
+
+        await query.answer("✅ ثبت شد!", show_alert=False)
+        m = MATCH_CACHE.get(match_id, {"home_team": "میزبان", "away_team": "میهمان", "date": None})
+        new_text = await generate_pool_message_text(m, participants)
+        await safe_edit_message(query, new_text, reply_markup=query.message.reply_markup)
+
+    # بخش کارت‌ها و مارکت
     elif data == "view_market":
         await market_cmd(update, context)
 
@@ -2193,7 +2347,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if p_id in ACTIVE_SHOOTOUTS and uid == ACTIVE_SHOOTOUTS[p_id]["current_turn"]:
             await execute_penalty_kick(context, p_id, choice)
 
-    # کارت مچ
+    # مسابقه کارت
     elif data.startswith("ac_cm_"):
         m_id = data.replace("ac_cm_", "")
         m = ACTIVE_CARD_MATCHES.get(m_id)
@@ -2391,6 +2545,27 @@ async def post_init(application: Application):
     await init_db()
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("""
+            CREATE TABLE IF NOT EXISTS predictions (
+                user_id INTEGER,
+                match_id TEXT,
+                outcome_choice TEXT,
+                predicted_home INTEGER,
+                predicted_away INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, match_id)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS special_pool_predictions (
+                match_id TEXT,
+                user_id INTEGER,
+                user_name TEXT,
+                choice TEXT,
+                settled INTEGER DEFAULT 0,
+                PRIMARY KEY (match_id, user_id)
+            )
+        """)
+        await db.execute("""
             CREATE TABLE IF NOT EXISTS jackpot_rounds (
                 round_id TEXT PRIMARY KEY,
                 title TEXT,
@@ -2480,7 +2655,7 @@ def main():
     app.add_handler(MessageHandler(filters.Regex(r"^\s*بتل\s*$"), trigger_team_duel))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Football Hub Bot successfully initialized with FC Cards Engine!")
+    logger.info("Football Hub Bot successfully initialized!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
