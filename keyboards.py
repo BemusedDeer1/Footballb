@@ -11,6 +11,10 @@ def get_main_menu():
             InlineKeyboardButton("🏆 جدول لیگ‌ها", callback_data="select_standings_league")
         ],
         [
+            InlineKeyboardButton("🛒 مارکت و کارت‌های FC", callback_data="view_market"),
+            InlineKeyboardButton("🛡 ترکیب ۵ نفره تیم", callback_data="view_lineup")
+        ],
+        [
             InlineKeyboardButton("🎡 گردونه شانس", callback_data="spin_wheel"),
             InlineKeyboardButton("🎰 جک‌پات کمبو", callback_data="jackpot_hub")
         ],
@@ -33,6 +37,10 @@ def get_matches_leagues_keyboard(action_prefix="today"):
         ],
         [
             InlineKeyboardButton("🇫🇷 لوشامپیونه", callback_data=f"{action_prefix}_fra.1"),
+            InlineKeyboardButton("🏆 چمپیونزلیگ", callback_data=f"{action_prefix}_uefa.champions")
+        ],
+        [
+            InlineKeyboardButton("🇮🇷 لیگ برتر ایران", callback_data=f"{action_prefix}_irn.1"),
             InlineKeyboardButton("🌍 بازی‌های ملی (فیفادی)", callback_data=f"{action_prefix}_all")
         ],
         [
@@ -52,7 +60,8 @@ def get_standings_leagues_keyboard():
             InlineKeyboardButton("🇩🇪 Bundesliga", callback_data="table_ger.1")
         ],
         [
-            InlineKeyboardButton("🇫🇷 Ligue 1", callback_data="table_fra.1")
+            InlineKeyboardButton("🇫🇷 Ligue 1", callback_data="table_fra.1"),
+            InlineKeyboardButton("🇮🇷 لیگ برتر ایران", callback_data="table_irn.1")
         ],
         [
             InlineKeyboardButton("‹ بازگشت به منو", callback_data="home")
