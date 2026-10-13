@@ -410,7 +410,6 @@ async def ensure_escobar_ai():
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
 async def get_wealth_multiplier():
-    """محاسبه نرخ تورم و میانگین ثروت جامعه برای قیمت‌گذاری شناور مارکت"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT AVG(points) FROM users WHERE user_id != ?", (ESCOBAR_AI_ID,)) as cur:
             row = await cur.fetchone()
@@ -519,7 +518,7 @@ async def quests_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
     else: await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
 
-# --- ADMIN COMMANDS: ADD TO ALL & BACKUP ---
+# --- ADMIN COMMANDS ---
 
 async def add_points_to_all_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -1054,7 +1053,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(text, parse_mode="HTML")
     schedule_timer(context, guess_timeout_job, 30, data={"chat_id": chat_id, "user_id": user.id}, name=f"guess_timer_{chat_id}")
 
-# --- DOUBLE OR NOTHING (HARDCORE 10-SEC CHALLENGE) ---
+# --- DOUBLE OR NOTHING ---
 
 async def double_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     job_data = context.job.data
@@ -1150,7 +1149,7 @@ async def double_or_nothing_cmd(update: Update, context: ContextTypes.DEFAULT_TY
 
     schedule_timer(context, double_timeout_job, 10, data={"g_id": g_id}, name=f"timer_dbl_{g_id}")
 
-# --- SUDDEN DEATH PENALTY (DICE ANIMATION ⚽️) ---
+# --- SUDDEN DEATH PENALTY ---
 
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update): return
@@ -1452,85 +1451,12 @@ async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons.append([
         InlineKeyboardButton("👑 سوپر پک ویژه (2,500 PTS)", callback_data="buy_pack_super")
     ])
-    buttons.append([InlineKeyboardButton("🤝 تالار حراجی بین کاربران (P2P)", callback_data="view_p2p_market")])
     buttons.append([InlineKeyboardButton("💰 فروش کارت‌های مازاد به ربات", callback_data="open_sell_menu")])
     buttons.append([InlineKeyboardButton("‹ بازگشت", callback_data="home")])
 
     kb_markup = InlineKeyboardMarkup(buttons)
     if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
     else: await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
-
-# --- P2P AUCTION SYSTEM (حراجی بازیکنان بین اعضا) ---
-
-async def p2p_auctions_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    await ensure_user(user)
-
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        async with db.execute("""
-            SELECT id, seller_id, seller_name, player_name, rating, position, rarity, price
-            FROM p2p_auctions WHERE is_active = 1 ORDER BY created_at DESC LIMIT 15
-        """) as cur:
-            auctions = await cur.fetchall()
-
-    if not auctions:
-        text = "🤝 <b>تالار حراجی کارت‌های کاربران (P2P)</b>\n────────────────────\nدر حال حاضر کارتی در حراجی عمومی ثبت نشده است!\n\n💡 برای حراج کارت‌های مازاد خود بنویسید:\n<code>حراج [کد کارت] [قیمت]</code>"
-        buttons = [[InlineKeyboardButton("🎴 کارت‌های من جهت حراج", callback_data="view_my_cards")],
-                   [InlineKeyboardButton("‹ بازگشت به مارکت", callback_data="view_market")]]
-        if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=InlineKeyboardMarkup(buttons))
-        else: await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
-        return
-
-    text = "🤝 <b>تالار حراجی کارت‌های کاربران (P2P Auction)</b>\n────────────────────\nکارت‌های عرضه‌شده توسط اعضای گروه:\n────────────────────\n\n"
-    buttons = []
-    for auc_id, s_id, s_name, p_name, ovr, pos, rar, price in auctions:
-        text += f"▫️ <b>{p_name}</b> ({pos}) ➔ <b>{ovr} OVR</b>\n    └ فروشنده: {html.escape(s_name)} | قیمت: <b>{price:,} PTS</b>\n\n"
-        if s_id != user.id:
-            buttons.append([InlineKeyboardButton(f"خرید {p_name} ({ovr}) - {price:,} PTS", callback_data=f"buy_p2p_{auc_id}")])
-        else:
-            buttons.append([InlineKeyboardButton(f"❌ لغو حراج {p_name}", callback_data=f"cancel_p2p_{auc_id}")])
-
-    buttons.append([InlineKeyboardButton("‹ بازگشت به مارکت", callback_data="view_market")])
-    kb_markup = InlineKeyboardMarkup(buttons)
-    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
-    else: await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
-
-async def create_auction_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    await ensure_user(user)
-
-    msg_text = update.effective_message.text or ""
-    parts = re.findall(r"\d+", msg_text)
-    if len(parts) < 2:
-        await update.effective_message.reply_text("⚠️ <b>نحوه ثبت در حراجی:</b>\n<code>حراج [کد کارت] [قیمت]</code>\nمثال: <code>حراج 12 400</code>\n(کد کارت در منوی <code>/sell</code> مشخص است)", parse_mode="HTML")
-        return
-
-    card_id, price = int(parts[0]), int(parts[1])
-    if price < 50:
-        await update.effective_message.reply_text("⚠️ حداقل قیمت حراج ۵۰ امتیاز است.")
-        return
-
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        async with db.execute("SELECT id, player_name, rating, position, rarity, is_in_lineup FROM user_cards WHERE id = ? AND user_id = ?", (card_id, user.id)) as cur:
-            card = await cur.fetchone()
-
-        if not card:
-            await update.effective_message.reply_text("⛔️ کارت مورد نظر در کلکسیون شما یافت نشد.")
-            return
-
-        if card[5] == 1:
-            await update.effective_message.reply_text("⛔️ این کارت در ترکیب اصلی شماست. ابتدا با کارت دیگری جابه‌جا کنید.")
-            return
-
-        await db.execute("DELETE FROM user_cards WHERE id = ?", (card_id,))
-        now_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
-        await db.execute("""
-            INSERT INTO p2p_auctions (seller_id, seller_name, card_id, player_name, rating, position, rarity, price, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-        """, (user.id, user.first_name, card_id, card[1], card[2], card[3], card[4], price, now_str))
-        await db.commit()
-
-    await update.effective_message.reply_text(f"✅ <b>کارت {card[1]} ({card[2]} OVR) با قیمت {price:,} PTS در حراجی ثبت شد!</b>\nسایر کاربران با دستور <code>/auctions</code> می‌توانند آن را بخرند.", parse_mode="HTML")
 
 async def sell_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -1546,12 +1472,12 @@ async def sell_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else: await update.message.reply_text(text, parse_mode="HTML")
         return
 
-    text = "💰 <b>فروشگاه بازخرید کارت‌ها (Quick Sell)</b>\n────────────────────\nکد هر کارت در کنار آن نوشته شده است:\n────────────────────\n\n"
+    text = "💰 <b>فروشگاه بازخرید کارت‌ها (Quick Sell)</b>\n────────────────────\nوجه فروش فوراً به حسابتان اضافه می‌شود:\n────────────────────\n\n"
     buttons = []
     for cid, name, ovr, pos, rar, in_lineup in cards:
         price = SELL_PRICES.get(rar, 70)
         badge = "🟢 " if in_lineup else ""
-        buttons.append([InlineKeyboardButton(f"فروش {badge}{name} (کد:{cid}) ➔ +{price} PTS", callback_data=f"sell_c_{cid}")])
+        buttons.append([InlineKeyboardButton(f"فروش {badge}{name} ({ovr}) ➔ +{price} PTS", callback_data=f"sell_c_{cid}")])
 
     buttons.append([InlineKeyboardButton("‹ بازگشت به مارکت", callback_data="view_market")])
     buttons.append([InlineKeyboardButton("‹ منوی اصلی", callback_data="home")])
@@ -1578,9 +1504,7 @@ async def my_cards_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for cid, name, ovr, pos, rar, in_lineup in cards:
         star = "🟢 [در ترکیب]" if in_lineup else "⚪️"
         c_info = FC_CATALOG_DICT.get(name, {})
-        styles = " | ".join(c_info.get("playstyles", []))
-        style_text = f" | {styles}" if styles else ""
-        text += f"{star} <b>{name}</b> ({pos}) ➔ <b>{ovr} OVR</b> {c_info.get('nation','')} | کد: <code>{cid}</code>{style_text}\n"
+        text += f"{star} <b>{name}</b> ({pos}) ➔ <b>{ovr} OVR</b> {c_info.get('nation','')}\n"
 
     buttons = [
         [InlineKeyboardButton("⚡️ چیدن خودکار قوی‌ترین ترکیب", callback_data="auto_lineup")],
@@ -1620,8 +1544,7 @@ async def lineup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def p_line(p):
         if not p: return "—"
-        styles = " ".join(p.get("playstyles", []))
-        return f"<b>{p['name']}</b> ({p['ovr']}) {p.get('nation', '')} {styles}"
+        return f"<b>{p['name']}</b> ({p['ovr']}) {p.get('nation', '')}"
 
     text = (
         f"🛡 <b>ترکیب ۵ نفره تیم: {html.escape(user.first_name)}</b>\n────────────────────\n"
@@ -1690,7 +1613,7 @@ async def get_user_team_info(user_id: int):
         "cards": enriched
     }
 
-# --- DEEP FC 26 CHAINED MATCH ENGINE WITH DRAMA & MOMENTUM ---
+# --- DEEP FC 26 DYNAMIC CHANCES MATCH ENGINE ---
 
 def simulate_chained_fc26_attack(att_dict, def_dict, minute_label, momentum_boost=0.0):
     t_att = att_dict.get("team") if isinstance(att_dict.get("team"), dict) else att_dict
@@ -1702,14 +1625,14 @@ def simulate_chained_fc26_attack(att_dict, def_dict, minute_label, momentum_boos
     mid_def = t_def.get("mid_ovr", 78) + (t_def.get("chem", 35) / 25.0)
 
     # 1. فاز میانه میدان
-    creation_rate = 0.60 + ((mid_att - mid_def) * 0.02)
-    creation_rate = max(0.32, min(0.88, creation_rate))
+    creation_rate = 0.65 + ((mid_att - mid_def) * 0.02)
+    creation_rate = max(0.35, min(0.90, creation_rate))
 
     if random.random() > creation_rate:
         def_mid_player = random.choice(t_def.get("mids", ["هافبک حریف"]))
         return False, None, None, f"⏱ <b>دقیقه {minute_label}:</b> جنگ تن‌به‌تن در میانه میدان؛ <b>{def_mid_player}</b> توپ‌گیری کرد و مانع ضدحمله شد.", False, False
 
-    # 2. فاز دفاع و بررسی خطای پنالتی یا کارت قرمز جنجالی
+    # 2. فاز دفاع و خطای پنالتی یا کارت قرمز
     assist_maker = random.choice(t_att.get("mids", [t_att.get("fwd", "مهاجم")]))
     fwd_player = t_att.get("fwd", "مهاجم")
     def_card = t_def.get("def", "مدافع")
@@ -1720,30 +1643,25 @@ def simulate_chained_fc26_attack(att_dict, def_dict, minute_label, momentum_boos
         pen_scorer = fwd_player
         return True, pen_scorer, None, f"🚨 <b>خطای پنالتی در محوطه جریمه (دقیقه {minute_label})!</b>\nتکل خشن <b>{def_card}</b> با سوت داور پنالتی اعلام شد ({card_text}). <b>{pen_scorer}</b> با خونسردی توپ را به تور دوخت! ⚽️🎯", True, is_red
 
-    def_tackle_chance = 0.30 + ((t_def.get("def_ovr", 78) - t_att.get("fwd_ovr", 78)) * 0.015) - (momentum_boost * 0.05)
-    def_tackle_chance = max(0.12, min(0.48, def_tackle_chance))
+    def_tackle_chance = 0.28 + ((t_def.get("def_ovr", 78) - t_att.get("fwd_ovr", 78)) * 0.015) - (momentum_boost * 0.05)
+    def_tackle_chance = max(0.10, min(0.45, def_tackle_chance))
 
     if random.random() < def_tackle_chance:
-        def_styles = t_def.get("def_styles", [])
-        style_txt = f" ({def_styles[0]})" if def_styles else ""
-        return False, None, None, f"🛡 <b>دقیقه {minute_label}:</b> تکل تمیز و به‌موقع <b>{def_card}</b>{style_txt} مانع از شوت‌زنی {fwd_player} شد.", False, False
+        return False, None, None, f"🛡 <b>دقیقه {minute_label}:</b> تکل تمیز و به‌موقع <b>{def_card}</b> مانع از شوت‌زنی {fwd_player} شد.", False, False
 
     # 3. فاز نهایی تمام‌کنندگی (FWD vs GK)
     gk_player = t_def.get("gk", "دروازه‌بان")
-    fwd_styles = t_att.get("fwd_styles", [])
-    fwd_style_str = f" با استایل {fwd_styles[0]}" if fwd_styles else ""
-
     shot_power = t_att.get("fwd_ovr", 78) + (t_att.get("chem", 35) / 30.0) + (momentum_boost * 5.0)
     gk_power = t_def.get("gk_ovr", 78) + (t_def.get("chem", 35) / 30.0)
 
-    goal_chance = 0.54 + ((shot_power - gk_power) * 0.025)
-    goal_chance = max(0.35, min(0.78, goal_chance))
+    goal_chance = 0.55 + ((shot_power - gk_power) * 0.025)
+    goal_chance = max(0.35, min(0.80, goal_chance))
 
     roll = random.random()
     if roll < goal_chance:
         scorer = fwd_player if random.random() < 0.72 else assist_maker
         scenarios = [
-            f"روی پاس در عمق مهندسی‌شده <b>{assist_maker}</b>، <b>{scorer}</b>{fwd_style_str} توپ را کنج دروازه کاشت! 🚀",
+            f"روی پاس در عمق مهندسی‌شده <b>{assist_maker}</b>، <b>{scorer}</b> توپ را کنج دروازه کاشت! 🚀",
             f"شوت سرکش و غیرقابل مهار <b>{scorer}</b> طاق دروازه {def_name} را فرو ریخت! 💥",
             f"ارسال مواج <b>{assist_maker}</b> و ضربه سر چکشی دیدنی <b>{scorer}</b> به تور چسبید! ⚽️",
             f"مهارت تمام‌کنندگی ناب! <b>{scorer}</b> در تک‌به‌تک گلر را فریب داد و گلزنی کرد! 🎯"
@@ -1752,10 +1670,8 @@ def simulate_chained_fc26_attack(att_dict, def_dict, minute_label, momentum_boos
     elif roll < goal_chance + 0.12:
         return False, None, None, f"💥 <b>دقیقه {minute_label}:</b> شلیک مرگبار <b>{fwd_player}</b> به تیرک افقی دروازه {def_name} برخورد کرد و برگشت!", True, False
     else:
-        gk_styles = t_def.get("gk_styles", [])
-        gk_style_str = f" ({gk_styles[0]})" if gk_styles else ""
         saves = [
-            f"شیرجه تماشایی <b>{gk_player}</b>{gk_style_str} مانع از گلزنی قطعی {fwd_player} شد!",
+            f"شیرجه تماشایی <b>{gk_player}</b> مانع از گلزنی قطعی {fwd_player} شد!",
             f"واکنش خیره‌کننده با پا توسط <b>{gk_player}</b> دروازه را در ثانیه آخر نجات داد!",
             f"مهار دوضرب و مطمئن توسط <b>{gk_player}</b> در محوطه شش قدم."
         ]
@@ -1814,8 +1730,12 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     chat_id, msg_id = m["chat_id"], m["msg_id"]
     p1, p2 = m["p1"], m["p2"]
 
-    mid_diff = p1["team"]["mid_ovr"] - p2["team"]["mid_ovr"]
-    p1_pos = int(max(38, min(62, 50 + mid_diff * 1.5)))
+    # توزیع وزن‌دار موقعیت‌ها بر اساس قدرت تیم
+    p1_power = (p1["team"]["eff_ovr"] ** 1.3) * (1 + p1["team"]["chem"] / 100.0)
+    p2_power = (p2["team"]["eff_ovr"] ** 1.3) * (1 + p2["team"]["chem"] / 100.0)
+    p1_chance_prob = max(0.25, min(0.75, p1_power / (p1_power + p2_power)))
+
+    p1_pos = int(max(35, min(65, p1_chance_prob * 100)))
     p2_pos = 100 - p1_pos
 
     stats = {
@@ -1827,87 +1747,82 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     }
     momentum = {"p1": 0.0, "p2": 0.0}
 
-    try:
-        # فاز ۱: دقیقه ۲۲
-        await asyncio.sleep(15)
-        g1, s1, a1, txt1, on_t1, red1 = simulate_chained_fc26_attack(p1, p2, "۲۲", momentum["p1"])
-        if on_t1: stats["p1_shots"] += 1
-        if g1:
-            p1["score"] += 1
-            stats["scorers"].append(f"⚽️ {s1} ({p1['name']})")
-            stats["motm_points"][s1] += 3
-            if a1: stats["motm_points"][a1] += 2
-            momentum["p2"] += 0.08
-            momentum["p1"] = 0.0
-        else:
-            if on_t1: stats["p2_saves"] += 1
-        if red1: stats["red_cards"].append(f"🟥 اخراج مدافع {p2['name']}")
+    def execute_chance(minute_label, extra_boost=0.0):
+        # انتخاب حمله بر اساس احتمال برتری تیم قوی‌تر
+        attacker, defender = (p1, p2) if random.random() < p1_chance_prob else (p2, p1)
+        att_key = "p1" if attacker == p1 else "p2"
+        boost = momentum[att_key] + extra_boost
 
-        t1 = f"⏱ <b>دقیقه ۲۵ مسابقه:</b>\n▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n────────────────────\n{txt1}"
+        g, s, a, txt, on_target, red = simulate_chained_fc26_attack(attacker, defender, minute_label, boost)
+
+        if on_target:
+            if attacker == p1: stats["p1_shots"] += 1
+            else: stats["p2_shots"] += 1
+        if g:
+            attacker["score"] += 1
+            stats["scorers"].append(f"⚽️ {s} ({attacker['name']})")
+            stats["motm_points"][s] += 3
+            if a: stats["motm_points"][a] += 2
+            # حریف انگیزه جبران پیدا می‌کند
+            opp_key = "p2" if att_key == "p1" else "p1"
+            momentum[opp_key] += 0.08
+            momentum[att_key] = 0.0
+        else:
+            if on_target:
+                if attacker == p1: stats["p2_saves"] += 1
+                else: stats["p1_saves"] += 1
+        if red:
+            stats["red_cards"].append(f"🟥 اخراج مدافع {defender['name']}")
+        return txt
+
+    try:
+        # فاز ۱: دقایق ۱۵ و ۲۴ (۲ موقعیت خطرناک)
+        await asyncio.sleep(15)
+        txt_1a = execute_chance("۱۶")
+        txt_1b = execute_chance("۲۴")
+        t1 = (
+            f"⏱ <b>دقیقه ۲۵ مسابقه:</b>\n"
+            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+            "────────────────────\n"
+            f"{txt_1a}\n\n{txt_1b}"
+        )
         await safe_edit_message(context.bot, t1, chat_id=chat_id, message_id=msg_id)
 
-        # فاز ۲: دقیقه ۴۵
+        # فاز ۲: دقایق ۳۵ و ۴۴ (پایان نیمه اول)
         await asyncio.sleep(15)
-        g2, s2, a2, txt2, on_t2, red2 = simulate_chained_fc26_attack(p2, p1, "۴۴", momentum["p2"])
-        if on_t2: stats["p2_shots"] += 1
-        if g2:
-            p2["score"] += 1
-            stats["scorers"].append(f"⚽️ {s2} ({p2['name']})")
-            stats["motm_points"][s2] += 3
-            if a2: stats["motm_points"][a2] += 2
-            momentum["p1"] += 0.08
-            momentum["p2"] = 0.0
-        else:
-            if on_t2: stats["p1_saves"] += 1
-        if red2: stats["red_cards"].append(f"🟥 اخراج مدافع {p1['name']}")
-
-        t2 = f"⏱ <b>پایان نیمه اول (دقیقه ۴۵):</b>\n▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n────────────────────\n{txt2}"
+        txt_2a = execute_chance("۳۵")
+        txt_2b = execute_chance("۴۴")
+        t2 = (
+            f"⏱ <b>پایان نیمه اول (دقیقه ۴۵):</b>\n"
+            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+            "────────────────────\n"
+            f"{txt_2a}\n\n{txt_2b}"
+        )
         await safe_edit_message(context.bot, t2, chat_id=chat_id, message_id=msg_id)
 
-        # فاز ۳: دقیقه ۶۸
+        # فاز ۳: دقایق ۶۲ و ۷۱ (نیمه دوم)
         await asyncio.sleep(15)
-        active_att, active_def = (p1, p2) if random.random() < (p1_pos / 100.0) else (p2, p1)
-        att_key = "p1_shots" if active_att == p1 else "p2_shots"
-        save_key = "p2_saves" if active_att == p1 else "p1_saves"
-        m_boost = momentum["p1"] if active_att == p1 else momentum["p2"]
-
-        g3, s3, a3, txt3, on_t3, red3 = simulate_chained_fc26_attack(active_att, active_def, "۶۸", m_boost)
-        if on_t3: stats[att_key] += 1
-        if g3:
-            active_att["score"] += 1
-            stats["scorers"].append(f"⚽️ {s3} ({active_att['name']})")
-            stats["motm_points"][s3] += 3
-            if a3: stats["motm_points"][a3] += 2
-            opp = p2 if active_att == p1 else p1
-            momentum[opp["name"]] = 0.10
-        else:
-            if on_t3: stats[save_key] += 1
-
-        t3 = f"⏱ <b>دقیقه ۷۰ مسابقه:</b>\n▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n────────────────────\n{txt3}"
+        txt_3a = execute_chance("۶۲")
+        txt_3b = execute_chance("۷۱")
+        t3 = (
+            f"⏱ <b>دقیقه ۷۰ مسابقه:</b>\n"
+            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+            "────────────────────\n"
+            f"{txt_3a}\n\n{txt_3b}"
+        )
         await safe_edit_message(context.bot, t3, chat_id=chat_id, message_id=msg_id)
 
-        # فاز ۴: دقیقه ۹۰+ فرگی تایم (Clutch Time)
+        # فاز ۴: دقیقه ۸۹ و ۹۰+۲ (فرگی تایم کلاچ)
         await asyncio.sleep(15)
-        late_att, late_def = (p2, p1) if active_att == p1 else (p1, p2)
-        late_att_key = "p1_shots" if late_att == p1 else "p2_shots"
-        late_save_key = "p2_saves" if late_att == p1 else "p1_saves"
-        late_boost = 0.12 if abs(p1["score"] - p2["score"]) <= 1 else 0.0
-
-        g4, s4, a4, txt4, on_t4, red4 = simulate_chained_fc26_attack(late_att, late_def, "۹۰+۲", late_boost)
-        if on_t4: stats[late_att_key] += 1
-        if g4:
-            late_att["score"] += 1
-            stats["scorers"].append(f"⚽️ {s4} ({late_att['name']})")
-            stats["motm_points"][s4] += 4
-            if a4: stats["motm_points"][a4] += 2
-        else:
-            if on_t4: stats[late_save_key] += 1
+        clutch_boost = 0.12 if abs(p1["score"] - p2["score"]) <= 1 else 0.0
+        txt_4a = execute_chance("۸۶", clutch_boost)
+        txt_4b = execute_chance("۹۰+۲", clutch_boost)
 
         motm_player = "نامشخص"
         motm_rating = "8.2"
         if stats["motm_points"]:
             motm_player, best_pts = stats["motm_points"].most_common(1)[0]
-            motm_rating = f"{min(9.9, round(7.5 + (best_pts * 0.5), 1))}"
+            motm_rating = f"{min(9.9, round(7.5 + (best_pts * 0.4), 1))}"
         else:
             motm_player = random.choice(p1["team"]["cards"] + p2["team"]["cards"])["name"]
             motm_rating = "8.0"
@@ -1928,7 +1843,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
                 winner_id = p2["id"]
                 res_footer = f"🏆 <b>پیروز مسابقه: {p2['name']}</b> (+{stake} امتیاز و +100 XP)"
             else:
-                res_footer = "🤝 مسابقه با تساوی پرهیجان به پایان رسید! هیچ امتیازی کسر نشد."
+                res_footer = "🤝 مسابقه با تساوی پرگل به پایان رسید! هیچ امتیازی کسر نشد."
             await db.commit()
 
         if winner_id:
@@ -1944,9 +1859,9 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
             f"🏁 <b>سوت پایان مسابقه کارت‌های FC 26 (Full Time)</b>\n"
             "────────────────────\n"
             f"▫️ نتیجه قطعی: <b>{p1['name']} [{s1}] - [{s2}] {p2['name']}</b>\n\n"
-            f"{txt4}{red_str}\n\n"
-            f"⚽️ <b>گلزنان بازی:</b>\n{scorers_str}\n\n"
-            "📊 <b>آمار رسمی مسابقه (Match Stats):</b>\n"
+            f"{txt_4a}\n\n{txt_4b}{red_str}\n\n"
+            f"⚽️ <b>گلزنان مسابقه:</b>\n{scorers_str}\n\n"
+            "📊 <b>آمار رسمی بازی (Match Stats):</b>\n"
             f"▫️ مالکیت توپ: <code>{p1_pos}%</code> ✕ <code>{p2_pos}%</code>\n"
             f"▫️ شوت در چارچوب: <code>{stats['p1_shots']}</code> ✕ <code>{stats['p2_shots']}</code>\n"
             f"▫️ سیو دروازه‌بان: <code>{stats['p1_saves']}</code> ✕ <code>{stats['p2_saves']}</code>\n\n"
@@ -2137,7 +2052,7 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
                 if target_chat_id: await context.bot.send_message(chat_id=target_chat_id, text=report, parse_mode="HTML")
     except Exception as e: logger.error(f"Error in simulate_daily_league_task: {e}")
 
-# --- TRIVIA DUELS (RESOLVED QUESTION 3 DEADLOCK) ---
+# --- TRIVIA DUELS ---
 
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update): return
@@ -2484,7 +2399,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "open_sell_menu": await sell_menu_cmd(update, context)
     elif data == "view_my_cards": await my_cards_cmd(update, context)
     elif data == "view_lineup": await lineup_cmd(update, context)
-    elif data == "view_p2p_market": await p2p_auctions_cmd(update, context)
 
     elif data == "auto_lineup":
         await auto_lineup_logic(uid)
@@ -2519,51 +2433,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await profile_add_xp(uid, 50)
         await query.answer(f"🎉 کارت {c['name']} خریداری شد!", show_alert=True)
         await market_cmd(update, context)
-
-    elif data.startswith("buy_p2p_"):
-        auc_id = int(data.split("_")[2])
-        async with aiosqlite.connect(DATABASE_PATH) as db:
-            async with db.execute("SELECT seller_id, player_name, rating, position, rarity, price FROM p2p_auctions WHERE id = ? AND is_active = 1", (auc_id,)) as cur:
-                auc = await cur.fetchone()
-
-            if not auc:
-                await query.answer("این حراجی قبلاً خریداری شده یا لغو گردیده است.", show_alert=True)
-                await p2p_auctions_cmd(update, context)
-                return
-
-            s_id, p_name, ovr, pos, rar, price = auc
-            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
-                buyer_pts = (await cur.fetchone())[0]
-
-            if buyer_pts < price:
-                await query.answer(f"امتیاز ناکافی! قیمت این کارت {price:,} PTS است.", show_alert=True)
-                return
-
-            await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (price, uid))
-            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (price, s_id))
-            await db.execute("UPDATE p2p_auctions SET is_active = 0 WHERE id = ?", (auc_id,))
-            today_str = get_iran_now().strftime("%Y-%m-%d")
-            await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)",
-                             (uid, p_name, ovr, pos, rar, today_str))
-            await db.commit()
-
-        await profile_add_xp(uid, 40)
-        await query.answer(f"🎉 کارت {p_name} با موفقیت خریداری شد!", show_alert=True)
-        await p2p_auctions_cmd(update, context)
-
-    elif data.startswith("cancel_p2p_"):
-        auc_id = int(data.split("_")[2])
-        async with aiosqlite.connect(DATABASE_PATH) as db:
-            async with db.execute("SELECT player_name, rating, position, rarity FROM p2p_auctions WHERE id = ? AND seller_id = ? AND is_active = 1", (auc_id, uid)) as cur:
-                auc = await cur.fetchone()
-            if auc:
-                await db.execute("UPDATE p2p_auctions SET is_active = 0 WHERE id = ?", (auc_id,))
-                today_str = get_iran_now().strftime("%Y-%m-%d")
-                await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)",
-                                 (uid, auc[0], auc[1], auc[2], auc[3], today_str))
-                await db.commit()
-                await query.answer("کارت از حراجی برداشته شد و به ترکیب بازگشت.", show_alert=True)
-        await p2p_auctions_cmd(update, context)
 
     elif data.startswith("sell_c_"):
         card_id = int(data.split("_")[2])
@@ -2602,7 +2471,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(pop_msg, parse_mode="HTML")
         await market_cmd(update, context)
 
-    # ۲. اولتیمیت پک (750 PTS) - حفظ ریسک کارت معمولی
+    # ۲. اولتیمیت پک (750 PTS)
     elif data == "buy_pack_ultimate":
         pack_price = 750
         async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -2628,7 +2497,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(pop_msg, parse_mode="HTML")
         await market_cmd(update, context)
 
-    # ۳. سوپر پک ویژه (2,500 PTS) - ۱۰۰٪ تضمین الیت و آیکان
+    # ۳. سوپر پک ویژه (2,500 PTS)
     elif data == "buy_pack_super":
         pack_price = 2500
         async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -2995,13 +2864,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
         await user_profile_handler(update.message, target_user=target_user)
         return
 
-    if re.match(r"^\s*(?:حراج|auction)\s+(\d+)\s+(\d+)\s*$", msg, re.IGNORECASE):
-        await create_auction_cmd(update, context)
-        return
-    elif msg.lower() in ["حراجی", "حراجی ها", "auctions", "/auctions"]:
-        await p2p_auctions_cmd(update, context)
-        return
-    elif re.match(r"^\s*(?:دوبل|قمار|ریسک)\s+(\d+)\s*$", msg):
+    if re.match(r"^\s*(?:دوبل|قمار|ریسک)\s+(\d+)\s*$", msg):
         await double_or_nothing_cmd(update, context)
     elif msg in ["دوئل", "duel", "چالش"]: await trigger_duel(update, context)
     elif msg in ["پنالتی", "پنالتی کشی", "penalty"]: await trigger_penalty_shootout(update, context)
@@ -3025,23 +2888,8 @@ async def post_init(application: Application):
     async with aiosqlite.connect(DATABASE_PATH) as db:
         try:
             await db.execute("ALTER TABLE users ADD COLUMN last_double_date TEXT DEFAULT ''")
+            await db.commit()
         except Exception: pass
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS p2p_auctions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                seller_id INTEGER,
-                seller_name TEXT,
-                card_id INTEGER,
-                player_name TEXT,
-                rating INTEGER,
-                position TEXT,
-                rarity TEXT,
-                price INTEGER,
-                is_active INTEGER DEFAULT 1,
-                created_at TEXT
-            )
-        """)
-        await db.commit()
 
     await ensure_escobar_ai()
     if getattr(application, "job_queue", None):
@@ -3069,8 +2917,6 @@ def main():
     app.add_handler(CommandHandler("penalty", trigger_penalty_shootout))
     app.add_handler(CommandHandler("cardmatch", trigger_card_match))
     app.add_handler(CommandHandler("market", market_cmd))
-    app.add_handler(CommandHandler("auctions", p2p_auctions_cmd))
-    app.add_handler(CommandHandler("auction", create_auction_cmd))
     app.add_handler(CommandHandler("sell", sell_menu_cmd))
     app.add_handler(CommandHandler("pack", lambda u, c: market_cmd(u, c)))
     app.add_handler(CommandHandler("mycards", my_cards_cmd))
@@ -3100,7 +2946,7 @@ def main():
     app.add_handler(MessageHandler(filters.Regex(r"^\s*بتل\s*$"), trigger_team_duel))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Football Hub Bot running smoothly with FC 26 Engine and P2P Auctions!")
+    logger.info("Football Hub Bot running smoothly with Enhanced Dynamic FC 26 Engine!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
