@@ -35,7 +35,7 @@ ESCOBAR_AI_ID = 999999999
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 LRM = "\u200E"
 
-# --- RE-BALANCED QUICK SELL PRICES ---
+# نرخ بازخرید فوری کارت‌ها به ربات
 SELL_PRICES = {
     "ICON": 1500,
     "ELITE": 550,
@@ -43,7 +43,7 @@ SELL_PRICES = {
     "COMMON": 50
 }
 
-# --- HARDCORE FOOTBALL QUIZ POOL ---
+# سوالات چالش دوبل مرگبار
 HARDCORE_QUIZ_POOL = [
     {
         "question": "در فینال جام جهانی ۱۹۵۴ (معجزه برن)، زننده گل برتری دقیقه ۸۴ آلمان غربی چه کسی بود؟",
@@ -418,12 +418,10 @@ async def ensure_escobar_ai():
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
 async def get_wealth_multiplier():
-    """محاسبه ضریب تورم هوشمند: حداقل ۱.۰ برای حفظ کف قیمت‌های قطعی"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT AVG(points) FROM users WHERE user_id != ?", (ESCOBAR_AI_ID,)) as cur:
             row = await cur.fetchone()
             avg_pts = row[0] if row and row[0] else 200
-    # اگر میانگین از ۳۰۰ بالاتر رفت، قیمت‌ها به مرور کمی رشد می‌کنند تا احتکار نشود
     mult = 1.0 + max(0.0, (avg_pts - 300) / 1000.0)
     return min(2.5, mult)
 
@@ -531,7 +529,6 @@ async def quests_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # --- ADMIN ECONOMIC CONTROLS ---
 
 async def halve_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """نصف کردن امتیاز تمام کاربران برای کنترل تورم و بازسازی اقتصاد"""
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
 
@@ -560,7 +557,6 @@ async def halve_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception: pass
 
 async def reset_market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """ریست کردن روزانه مارکت برای همه تا با قیمت‌های متعادل تازه لود شوند"""
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
 
@@ -1208,7 +1204,7 @@ async def double_or_nothing_cmd(update: Update, context: ContextTypes.DEFAULT_TY
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update): return
     if not update.message.reply_to_message:
-        await update.message.reply_text("🥅 روی پیام حریف ریپلای کنید و بنویسید: <code>پنالتی</code>", parse_mode="HTML")
+        await update.message.reply_to_message.reply_text("🥅 روی پیام حریف ریپلای کنید و بنویسید: <code>پنالتی</code>", parse_mode="HTML")
         return
 
     challenger, opponent = update.effective_user, update.message.reply_to_message.from_user
@@ -1475,7 +1471,6 @@ async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             offers = []
             for i, c in enumerate(selected):
-                # تعیین کف قطعی و بازه پایه هر رده کارت
                 if c["rarity"] == "COMMON":
                     base_price = random.randint(120, 180)
                 elif c["rarity"] == "RARE":
@@ -1870,7 +1865,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
         )
         await safe_edit_message(context.bot, t3, chat_id=chat_id, message_id=msg_id)
 
-        # فاز ۴: دقیقه ۸۶ و ۹۰+۲ (فرگی تایم کلاچ)
+        # فاز ۴: دقیقه ۸۶ و ۹۰+۲
         await asyncio.sleep(15)
         clutch_boost = 0.12 if abs(p1["score"] - p2["score"]) <= 1 else 0.0
         txt_4a = execute_chance("۸۶", clutch_boost)
@@ -1936,7 +1931,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     finally:
         ACTIVE_CARD_MATCHES.pop(m_id, None)
 
-# --- FC CARDS LEAGUE ENGINE ---
+# --- FC CARDS LEAGUE ENGINE (2 MATCHES PER TEAM PER DAY) ---
 
 async def league_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -1963,7 +1958,7 @@ async def league_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for idx, (name, p, w, d, l, gf, ga, gd, pts) in enumerate(table_rows, 1):
         t_name = name[:13].ljust(13)
         text += f"{idx:<2} | {t_name} | {str(p):<2} | {str(w):<2} | {str(d):<2} | {str(l):<2} | {str(gd):<2} | {str(pts):<3}\n"
-    text += "</pre>\n<i>(روزی ۲ مسابقه خودکار با موتور FC 26 برگزار می‌شود)</i>"
+    text += "</pre>\n<i>(هر شب بعد از ساعت ۱۲، برای هر تیم ۲ مسابقه خودکار برگزار می‌شود)</i>"
 
     if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())
     else: await update.message.reply_text(text, parse_mode="HTML")
@@ -2010,7 +2005,7 @@ async def league_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🏆🔥 <b>سوت آغاز فصل جدید لیگ کارت‌های FC 26 زده شد!</b>\n────────────────────\n"
         f"👥 تعداد تیم‌های حاضر: <b>{len(eligible)} تیم</b>\n"
         f"🏟 مجموع مسابقات رفت و برگشت: <b>{total_m} مسابقه</b>\n"
-        f"⏰ برنامه: <b>روزی ۲ مسابقه خودکار با موتور FC 26</b>\n\n"
+        f"⏰ برنامه: <b>روزی ۲ مسابقه برای هر تیم بعد از ساعت ۱۲ شب</b>\n\n"
         f"🥇 قهرمان: ۲,۵۰۰ PTS | 🥈 نایب‌قهرمان: ۱,۲۰۰ PTS | 🥉 سوم: ۶۰۰ PTS"
     )
     target_chat_id = await get_live_chat_id()
@@ -2026,63 +2021,108 @@ async def league_off_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.commit()
     await update.message.reply_text("🔴 لیگ فعال فعلی لغو و متوقف شد.")
 
+async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str):
+    async with db.execute("""
+        SELECT s.user_id, u.first_name, s.points, s.gd
+        FROM league_standings s JOIN users u ON s.user_id = u.user_id
+        WHERE s.season_id = ? ORDER BY s.points DESC, s.gd DESC
+    """, (s_id,)) as cur:
+        final_ranks = await cur.fetchall()
+
+    if final_ranks:
+        prizes = {0: (2500, 600), 1: (1200, 350), 2: (600, 200)}
+        summary = "🏁 <b>پایان رسمی فصل لیگ کارت‌های FC 26!</b>\n────────────────────\n"
+        for idx, (uid, name, pts, gd) in enumerate(final_ranks):
+            p_pts, p_xp = prizes.get(idx, (150, 50))
+            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (p_pts, uid))
+            await profile_add_xp(uid, p_xp)
+            medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
+            summary += f"{medal} <b>{html.escape(name)}</b>: {pts} PTS (+{p_pts:,} جایزه)\n"
+
+        await db.execute("UPDATE league_seasons SET status = 'FINISHED' WHERE season_id = ?", (s_id,))
+        await db.commit()
+
+        target_chat_id = await get_live_chat_id()
+        if target_chat_id:
+            try:
+                await context.bot.send_message(chat_id=target_chat_id, text=summary, parse_mode="HTML")
+            except Exception: pass
+
 async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
     try:
+        iran_now = get_iran_now()
+        today_str = iran_now.strftime("%Y-%m-%d")
+
         async with aiosqlite.connect(DATABASE_PATH) as db:
             async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
                 row = await cur.fetchone()
                 if not row: return
                 s_id = row[0]
 
-            async with db.execute("SELECT id, home_id, away_id FROM league_fixtures WHERE season_id = ? AND status = 'PENDING' LIMIT 2", (s_id,)) as cur:
+            # بررسی اینکه بازی‌های امروز قبلاً شبیه‌سازی نشده باشند
+            setting_key = f"last_league_run_{s_id}"
+            async with db.execute("SELECT value FROM bot_settings WHERE key = ?", (setting_key,)) as cur:
+                last_run_row = await cur.fetchone()
+                last_run_date = last_run_row[0] if last_run_row else None
+
+            if last_run_date == today_str:
+                return
+
+            async with db.execute(
+                "SELECT id, home_id, away_id FROM league_fixtures WHERE season_id = ? AND status = 'PENDING' ORDER BY id ASC",
+                (s_id,)
+            ) as cur:
                 pending_matches = await cur.fetchall()
 
             if not pending_matches:
-                async with db.execute("""
-                    SELECT s.user_id, u.first_name, s.points, s.gd
-                    FROM league_standings s JOIN users u ON s.user_id = u.user_id
-                    WHERE s.season_id = ? ORDER BY s.points DESC, s.gd DESC
-                """, (s_id,)) as cur:
-                    final_ranks = await cur.fetchall()
-
-                if final_ranks:
-                    prizes = {0: (2500, 600), 1: (1200, 350), 2: (600, 200)}
-                    summary = "🏁 <b>پایان رسمی فصل لیگ کارت‌های FC 26!</b>\n────────────────────\n"
-                    for idx, (uid, name, pts, gd) in enumerate(final_ranks):
-                        p_pts, p_xp = prizes.get(idx, (150, 50))
-                        await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (p_pts, uid))
-                        await db.commit()
-                        await profile_add_xp(uid, p_xp)
-                        medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
-                        summary += f"{medal} <b>{html.escape(name)}</b>: {pts} PTS (+{p_pts} جایزه)\n"
-
-                    await db.execute("UPDATE league_seasons SET status = 'FINISHED' WHERE season_id = ?", (s_id,))
-                    await db.commit()
-
-                    target_chat_id = await get_live_chat_id()
-                    if target_chat_id: await context.bot.send_message(chat_id=target_chat_id, text=summary, parse_mode="HTML")
+                await settle_league_season(context, db, s_id)
                 return
 
-            for f_id, h_id, a_id in pending_matches:
+            # الگوریتم انتخاب بازی‌ها: هر تیم حداکثر ۲ مسابقه در روز
+            team_games = Counter()
+            selected_matches = []
+            remaining = list(pending_matches)
+
+            while True:
+                candidates = [f for f in remaining if team_games[f[1]] < 2 and team_games[f[2]] < 2]
+                if not candidates:
+                    break
+                # اولویت با تیم‌هایی که بازی کمتری تا این لحظه داشته‌اند
+                candidates.sort(key=lambda f: (team_games[f[1]] + team_games[f[2]]))
+                best = candidates[0]
+                selected_matches.append(best)
+                team_games[best[1]] += 1
+                team_games[best[2]] += 1
+                remaining.remove(best)
+
+            if not selected_matches:
+                return
+
+            match_results = []
+            for f_id, h_id, a_id in selected_matches:
                 t1 = await get_user_team_info(h_id)
                 t2 = await get_user_team_info(a_id)
 
-                p1_obj = {"name": "میزبان", "team": t1}
-                p2_obj = {"name": "میهمان", "team": t2}
+                p1_power = (t1["eff_ovr"] ** 1.3) * (1 + t1["chem"] / 100.0) if t1 else 100
+                p2_power = (t2["eff_ovr"] ** 1.3) * (1 + t2["chem"] / 100.0) if t2 else 100
+                p1_chance_prob = max(0.25, min(0.75, p1_power / (p1_power + p2_power)))
 
-                s1 = sum([
-                    simulate_chained_fc26_attack(p1_obj, p2_obj, "15")[0],
-                    simulate_chained_fc26_attack(p1_obj, p2_obj, "55")[0],
-                    (random.random() < 0.35 and simulate_chained_fc26_attack(p1_obj, p2_obj, "85")[0])
-                ])
-                s2 = sum([
-                    simulate_chained_fc26_attack(p2_obj, p1_obj, "35")[0],
-                    simulate_chained_fc26_attack(p2_obj, p1_obj, "75")[0],
-                    (random.random() < 0.35 and simulate_chained_fc26_attack(p2_obj, p1_obj, "90")[0])
-                ])
+                # شبیه‌سازی ۶ تا ۸ موقعیت با برتری تیم قوی‌تر
+                s1, s2 = 0, 0
+                num_chances = random.randint(6, 8)
+                for _ in range(num_chances):
+                    if random.random() < p1_chance_prob:
+                        goal = simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]
+                        if goal: s1 += 1
+                    else:
+                        goal = simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]
+                        if goal: s2 += 1
 
-                await db.execute("UPDATE league_fixtures SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? WHERE id = ?",
-                                 (s1, s2, get_iran_now().strftime("%Y-%m-%d %H:%M"), f_id))
+                now_time = iran_now.strftime("%Y-%m-%d %H:%M")
+                await db.execute(
+                    "UPDATE league_fixtures SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? WHERE id = ?",
+                    (s1, s2, now_time, f_id)
+                )
 
                 w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
                 w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
@@ -2096,19 +2136,41 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
                     UPDATE league_standings SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
                     gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? WHERE season_id = ? AND user_id = ?
                 """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
-                await db.commit()
 
                 async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (h_id,)) as cur: h_name = (await cur.fetchone())[0]
                 async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (a_id,)) as cur: a_name = (await cur.fetchone())[0]
+                match_results.append((h_name, s1, s2, a_name))
 
-                report = (
-                    f"📢 <b>نتیجه مسابقه لیگ کارت‌های FC 26:</b>\n────────────────────\n"
-                    f"▫️ تیم <b>{html.escape(h_name)}</b> [{s1}] - [{s2}] تیم <b>{html.escape(a_name)}</b>\n"
-                    f"📊 جدول با دستور <code>/league</code> به‌روز شد."
-                )
-                target_chat_id = await get_live_chat_id()
-                if target_chat_id: await context.bot.send_message(chat_id=target_chat_id, text=report, parse_mode="HTML")
-    except Exception as e: logger.error(f"Error in simulate_daily_league_task: {e}")
+            # ثبت تاریخ اجرای امروز
+            await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)", (setting_key, today_str))
+            await db.commit()
+
+            # ارسال گزارش جامع روزانه به گروه
+            report_lines = [
+                "🏆⚽️ <b>نتایج مسابقات لیگ کارت‌های FC 26 (۲ بازی برای هر تیم):</b>",
+                "────────────────────"
+            ]
+            for h_name, s1, s2, a_name in match_results:
+                report_lines.append(f"▫️ <b>{html.escape(h_name)}</b> [{s1}] - [{s2}] <b>{html.escape(a_name)}</b>")
+            report_lines.append("────────────────────")
+            report_lines.append("📊 <i>جدول رده‌بندی با دستور <code>/league</code> به‌روزرسانی شد.</i>")
+            report_msg = "\n".join(report_lines)
+
+            target_chat_id = await get_live_chat_id()
+            if target_chat_id:
+                try:
+                    await context.bot.send_message(chat_id=target_chat_id, text=report_msg, parse_mode="HTML")
+                except Exception as e:
+                    logger.error(f"Error sending league results: {e}")
+
+            # بررسی اتمام تمام بازی‌های فصل
+            async with db.execute("SELECT COUNT(*) FROM league_fixtures WHERE season_id = ? AND status = 'PENDING'", (s_id,)) as cur:
+                rem_cnt = (await cur.fetchone())[0]
+            if rem_cnt == 0:
+                await settle_league_season(context, db, s_id)
+
+    except Exception as e:
+        logger.error(f"Error in simulate_daily_league_task: {e}")
 
 # --- TRIVIA DUELS ---
 
@@ -2954,14 +3016,15 @@ async def post_init(application: Application):
         application.job_queue.run_repeating(monitor_live_matches_and_banter, interval=90, first=5)
         application.job_queue.run_repeating(check_and_settle_monthly_season, interval=3600, first=15)
         application.job_queue.run_repeating(settle_jackpot_task, interval=7200, first=60)
-        application.job_queue.run_repeating(simulate_daily_league_task, interval=14400, first=120)
+        # اجرای خودکار لیگ امشب در ثانیه ۱۰ و بررسی منظم هر ۵ دقیقه بعد از ساعت ۱۲ شب
+        application.job_queue.run_repeating(simulate_daily_league_task, interval=300, first=10)
         logger.info("PTB JobQueue is active.")
     else:
         logger.warning("PTB JobQueue is None. Falling back to native asyncio background tasks.")
         asyncio.create_task(run_repeating_task(monitor_live_matches_and_banter, application, 90, 5))
         asyncio.create_task(run_repeating_task(check_and_settle_monthly_season, application, 3600, 15))
         asyncio.create_task(run_repeating_task(settle_jackpot_task, application, 7200, 60))
-        asyncio.create_task(run_repeating_task(simulate_daily_league_task, application, 14400, 120))
+        asyncio.create_task(run_repeating_task(simulate_daily_league_task, application, 300, 10))
 
 def main():
     threading.Thread(target=start_health_server, daemon=True).start()
@@ -3006,7 +3069,7 @@ def main():
     app.add_handler(MessageHandler(filters.Regex(r"^\s*بتل\s*$"), trigger_team_duel))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Football Hub Bot running smoothly with Solid Balanced Economy!")
+    logger.info("Football Hub Bot running smoothly!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
