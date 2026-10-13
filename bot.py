@@ -178,7 +178,6 @@ FC_CATALOG = [
     {"name": "کینگزلی کومان", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "بایرن مونیخ"},
 
     # COMMON (75 - 81) - 65 PLAYERS
-    # ستارگان فوتبال ایران و لژیونرها
     {"name": "علیرضا جهانبخش", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "هیرنفین"},
     {"name": "رامین رضاییان", "pos": "DEF", "ovr": 78, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "استقلال"},
     {"name": "علیرضا بیرانوند", "pos": "GK", "ovr": 78, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "تراکتور"},
@@ -209,7 +208,6 @@ FC_CATALOG = [
     {"name": "امید نورافکن", "pos": "MID", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "ملوان"},
     {"name": "یاسین سلمانی", "pos": "MID", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "پرسپولیس"},
     {"name": "آریا یوسفی", "pos": "DEF", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "سپاهان"},
-    # ستارگان بین‌المللی و استعدادهای برتر
     {"name": "آردا گولر", "pos": "MID", "ovr": 80, "rarity": "COMMON", "nation": "ترکیه 🇹🇷", "club": "رئال مادرید"},
     {"name": "اندریک", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "رئال مادرید"},
     {"name": "کوبی مینو", "pos": "MID", "ovr": 80, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "منچستر یونایتد"},
@@ -256,7 +254,6 @@ SELL_PRICES = {
     "COMMON": 70
 }
 
-# --- HARDCORE FOOTBALL QUIZ POOL ---
 HARDCORE_QUIZ_POOL = [
     {
         "question": "در فینال جام جهانی ۱۹۵۴ (معجزه برن)، زننده گل برتری دقیقه ۸۴ آلمان غربی چه کسی بود؟",
@@ -1851,47 +1848,47 @@ async def get_user_team_info(user_id: int):
         "cards": enriched
     }
 
-# --- DEEP SIMULATION ENGINE (FC 26 LOGIC) ---
+# --- DEEP SIMULATION ENGINE (SAFE & ROBUST FC 26 ENGINE) ---
 
 def simulate_deep_quarter(attacking_team, defending_team, minute_label):
-    """
-    شبیه‌سازی یک مرحله حمله بر اساس تقابل هافبک‌ها، مهاجم و دفاع+دروازه‌بان
-    """
-    att_mid = attacking_team["mid_ovr"] + (attacking_team["chem"] / 20.0)
-    def_mid = defending_team["mid_ovr"] + (defending_team["chem"] / 20.0)
+    t_att = attacking_team.get("team") if isinstance(attacking_team.get("team"), dict) else attacking_team
+    t_def = defending_team.get("team") if isinstance(defending_team.get("team"), dict) else defending_team
+    att_name = attacking_team.get("name", "تیم ۱")
+    def_name = defending_team.get("name", "تیم ۲")
 
-    # شانس تصاحب و خلق حمله در میانه زمین
+    att_mid = t_att.get("mid_ovr", 78) + (t_att.get("chem", 35) / 20.0)
+    def_mid = t_def.get("mid_ovr", 78) + (t_def.get("chem", 35) / 20.0)
+
     possession_chance = 0.50 + ((att_mid - def_mid) * 0.02)
     possession_chance = max(0.25, min(0.75, possession_chance))
 
     if random.random() > possession_chance:
-        return False, f"⏱ <b>دقیقه {minute_label}:</b> خط هافبک <b>{defending_team['name']}</b> نبض بازی را در دست گرفت و اجازه خلق موقعیت نداد."
+        return False, f"⏱ <b>دقیقه {minute_label}:</b> خط هافبک <b>{def_name}</b> نبض بازی را در دست گرفت و اجازه خلق موقعیت نداد."
 
-    # حمله خلق شد؛ حالا نبرد مهاجم و مدافع/دروازه‌بان
-    fwd_power = attacking_team["fwd_ovr"] + (attacking_team["chem"] / 25.0)
-    def_power = ((defending_team["def_ovr"] + defending_team["gk_ovr"]) / 2.0) + (defending_team["chem"] / 25.0)
+    fwd_power = t_att.get("fwd_ovr", 78) + (t_att.get("chem", 35) / 25.0)
+    def_power = ((t_def.get("def_ovr", 78) + t_def.get("gk_ovr", 78)) / 2.0) + (t_def.get("chem", 35) / 25.0)
 
-    # نرخ تبدیل شوت به گل (تیم ضعیف هم شانس گل دارد اما کمتر)
     conversion_rate = 0.38 + ((fwd_power - def_power) * 0.03)
     conversion_rate = max(0.15, min(0.70, conversion_rate))
 
-    fwd_name = attacking_team["team"]["fwd"]
-    gk_name = defending_team["team"]["gk"]
-    def_name = defending_team["team"]["def"]
+    fwd_player = t_att.get("fwd", "مهاجم")
+    gk_player = t_def.get("gk", "دروازه‌بان")
+    def_player = t_def.get("def", "مدافع")
+    mids_list = t_att.get("mids", [])
 
     if random.random() < conversion_rate:
-        scorer = fwd_name if random.random() < 0.75 else random.choice(attacking_team["team"]["mids"] or [fwd_name])
+        scorer = fwd_player if random.random() < 0.75 else (random.choice(mids_list) if mids_list else fwd_player)
         shot_types = [
             f"شوت سرکش و غیرقابل مهار <b>{scorer}</b> کنج دروازه آرام گرفت!",
             f"روی پاس در عمق تماشایی، <b>{scorer}</b> در موقعیت تک‌به‌تک گلزنی کرد!",
             f"ضربه سر چکشی و دیدنی <b>{scorer}</b> به تور چسبید!"
         ]
-        return True, f"⚽️🔥 <b>گـُــل برای {attacking_team['name']} (دقیقه {minute_label})!</b>\n{random.choice(shot_types)}"
+        return True, f"⚽️🔥 <b>گـُــل برای {att_name} (دقیقه {minute_label})!</b>\n{random.choice(shot_types)}"
     else:
         save_types = [
-            f"واکنش استثنایی و مهار تک‌به‌تک توسط <b>{gk_name}</b> مانع گلزنی شد!",
-            f"تکل نجات‌بخش <b>{def_name}</b> در محوطه جریمه توپ را بلوکه کرد!",
-            f"شوت خطرناک <b>{fwd_name}</b> مماس با تیرک عمودی به بیرون رفت."
+            f"واکنش استثنایی و مهار تک‌به‌تک توسط <b>{gk_player}</b> مانع گلزنی شد!",
+            f"تکل نجات‌بخش <b>{def_player}</b> در محوطه جریمه توپ را بلوکه کرد!",
+            f"شوت خطرناک <b>{fwd_player}</b> مماس با تیرک عمودی به بیرون رفت."
         ]
         return False, f"🧤 <b>دقیقه {minute_label}:</b> {random.choice(save_types)}"
 
@@ -1948,84 +1945,86 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     chat_id, msg_id = m["chat_id"], m["msg_id"]
     p1, p2 = m["p1"], m["p2"]
 
-    # دقیقه ۲۵: حمله اول (تیم ۱ حمله می‌کند)
-    await asyncio.sleep(15)
-    is_goal_25, text_25 = simulate_deep_quarter(p1, p2, "۲۵")
-    if is_goal_25: p1["score"] += 1
-    t25 = (
-        f"⏱ <b>دقیقه ۲۵ مسابقه:</b>\n"
-        f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
-        "────────────────────\n"
-        f"{text_25}"
-    )
-    await safe_edit_message(context.bot, t25, chat_id=chat_id, message_id=msg_id)
+    try:
+        await asyncio.sleep(15)
+        is_goal_25, text_25 = simulate_deep_quarter(p1, p2, "۲۵")
+        if is_goal_25: p1["score"] += 1
+        t25 = (
+            f"⏱ <b>دقیقه ۲۵ مسابقه:</b>\n"
+            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+            "────────────────────\n"
+            f"{text_25}"
+        )
+        await safe_edit_message(context.bot, t25, chat_id=chat_id, message_id=msg_id)
 
-    # دقیقه ۴۵: پایان نیمه اول (تیم ۲ پاسخ می‌دهد)
-    await asyncio.sleep(15)
-    is_goal_45, text_45 = simulate_deep_quarter(p2, p1, "۴۵")
-    if is_goal_45: p2["score"] += 1
-    t45 = (
-        f"⏱ <b>پایان نیمه اول (دقیقه ۴۵):</b>\n"
-        f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
-        "────────────────────\n"
-        f"{text_45}"
-    )
-    await safe_edit_message(context.bot, t45, chat_id=chat_id, message_id=msg_id)
+        await asyncio.sleep(15)
+        is_goal_45, text_45 = simulate_deep_quarter(p2, p1, "۴۵")
+        if is_goal_45: p2["score"] += 1
+        t45 = (
+            f"⏱ <b>پایان نیمه اول (دقیقه ۴۵):</b>\n"
+            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+            "────────────────────\n"
+            f"{text_45}"
+        )
+        await safe_edit_message(context.bot, t45, chat_id=chat_id, message_id=msg_id)
 
-    # دقیقه ۷۰: نیمه دوم و حمله مجدد
-    await asyncio.sleep(15)
-    attacker, defender = (p1, p2) if random.random() < 0.5 else (p2, p1)
-    is_goal_70, text_70 = simulate_deep_quarter(attacker, defender, "۷۰")
-    if is_goal_70: attacker["score"] += 1
-    t70 = (
-        f"⏱ <b>دقیقه ۷۰ مسابقه:</b>\n"
-        f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
-        "────────────────────\n"
-        f"{text_70}"
-    )
-    await safe_edit_message(context.bot, t70, chat_id=chat_id, message_id=msg_id)
+        await asyncio.sleep(15)
+        attacker, defender = (p1, p2) if random.random() < 0.5 else (p2, p1)
+        is_goal_70, text_70 = simulate_deep_quarter(attacker, defender, "۷۰")
+        if is_goal_70: attacker["score"] += 1
+        t70 = (
+            f"⏱ <b>دقیقه ۷۰ مسابقه:</b>\n"
+            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+            "────────────────────\n"
+            f"{text_70}"
+        )
+        await safe_edit_message(context.bot, t70, chat_id=chat_id, message_id=msg_id)
 
-    # دقیقه ۸۸: دقایق پایانی و اوج درام مسابقه
-    await asyncio.sleep(15)
-    attacker_late, defender_late = (p2, p1) if attacker == p1 else (p1, p2)
-    is_goal_late, text_late = simulate_deep_quarter(attacker_late, defender_late, "۸۸")
-    if is_goal_late: attacker_late["score"] += 1
+        await asyncio.sleep(15)
+        attacker_late, defender_late = (p2, p1) if attacker == p1 else (p1, p2)
+        is_goal_late, text_late = simulate_deep_quarter(attacker_late, defender_late, "۸۸")
+        if is_goal_late: attacker_late["score"] += 1
 
-    s1, s2, stake = p1["score"], p2["score"], m["stake"]
-    res_footer = ""
-    winner_id = None
+        s1, s2, stake = p1["score"], p2["score"], m["stake"]
+        res_footer = ""
+        winner_id = None
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        if s1 > s2:
-            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, p1["id"]))
-            await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p2["id"]))
-            winner_id = p1["id"]
-            res_footer = f"🏆 برنده بازی: <b>{p1['name']}</b> (+{stake} امتیاز و +100 XP)"
-        elif s2 > s1:
-            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, p2["id"]))
-            await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p1["id"]))
-            winner_id = p2["id"]
-            res_footer = f"🏆 برنده بازی: <b>{p2['name']}</b> (+{stake} امتیاز و +100 XP)"
-        else:
-            res_footer = "🤝 مسابقه با تساوی دراماتیک به پایان رسید! هیچ امتیازی کسر نشد."
-        await db.commit()
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            if s1 > s2:
+                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, p1["id"]))
+                await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p2["id"]))
+                winner_id = p1["id"]
+                res_footer = f"🏆 برنده بازی: <b>{p1['name']}</b> (+{stake} امتیاز و +100 XP)"
+            elif s2 > s1:
+                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, p2["id"]))
+                await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p1["id"]))
+                winner_id = p2["id"]
+                res_footer = f"🏆 برنده بازی: <b>{p2['name']}</b> (+{stake} امتیاز و +100 XP)"
+            else:
+                res_footer = "🤝 مسابقه با تساوی دراماتیک به پایان رسید! هیچ امتیازی کسر نشد."
+            await db.commit()
 
-    if winner_id:
-        await profile_add_xp(winner_id, 100)
+        if winner_id:
+            await profile_add_xp(winner_id, 100)
 
-    await record_quest_action(p1["id"], "card_matches")
-    await record_quest_action(p2["id"], "card_matches")
+        await record_quest_action(p1["id"], "card_matches")
+        await record_quest_action(p2["id"], "card_matches")
 
-    t90 = (
-        f"🏁 <b>سوت پایان مسابقه کارت‌های FC 26 (Full Time)</b>\n"
-        "────────────────────\n"
-        f"▫️ نتیجه قطعی: <b>{p1['name']} [{s1}] - [{s2}] {p2['name']}</b>\n\n"
-        f"{text_late}\n"
-        "────────────────────\n"
-        f"{res_footer}"
-    )
-    await safe_edit_message(context.bot, t90, chat_id=chat_id, message_id=msg_id)
-    ACTIVE_CARD_MATCHES.pop(m_id, None)
+        t90 = (
+            f"🏁 <b>سوت پایان مسابقه کارت‌های FC 26 (Full Time)</b>\n"
+            "────────────────────\n"
+            f"▫️ نتیجه قطعی: <b>{p1['name']} [{s1}] - [{s2}] {p2['name']}</b>\n\n"
+            f"{text_late}\n"
+            "────────────────────\n"
+            f"{res_footer}"
+        )
+        await safe_edit_message(context.bot, t90, chat_id=chat_id, message_id=msg_id)
+
+    except Exception as e:
+        logger.error(f"Error in card match simulation: {e}")
+        await safe_edit_message(context.bot, "❌ خطایی در شبیه‌سازی مسابقه کارت رخ داد.", chat_id=chat_id, message_id=msg_id)
+    finally:
+        ACTIVE_CARD_MATCHES.pop(m_id, None)
 
 # --- FC CARDS LEAGUE ENGINE ---
 
@@ -2198,7 +2197,7 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update): return
     if not update.message.reply_to_message:
-        await update.message.reply_text("⚔️ روی پیام حریف ریپلای کنید و بنویسید: <code>دوئل</code>", parse_mode="HTML")
+        await update.message.reply_to_message.reply_text("⚔️ روی پیام حریف ریپلای کنید و بنویسید: <code>دوئل</code>", parse_mode="HTML")
         return
 
     challenger, opponent = update.effective_user, update.message.reply_to_message.from_user
