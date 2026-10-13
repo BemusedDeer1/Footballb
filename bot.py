@@ -34,9 +34,9 @@ ESCOBAR_AI_ID = 999999999
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 LRM = "\u200E"
 
-# --- 200 REAL FC PLAYERS DATABASE POOL ---
+# --- 200 AUTHENTIC REAL PLAYERS DATABASE (FC 26 DATABASE) ---
 FC_CATALOG = [
-    # ICONS & LEGENDS (90+)
+    # ICONS & LEGENDS (90+) - 25 PLAYERS
     {"name": "پله", "pos": "FWD", "ovr": 95, "rarity": "ICON", "nation": "برزیل 🇧🇷", "club": "سانتوس"},
     {"name": "دیگو مارادونا", "pos": "MID", "ovr": 95, "rarity": "ICON", "nation": "آرژانتین 🇦🇷", "club": "ناپولی"},
     {"name": "زین‌الدین زیدان", "pos": "MID", "ovr": 94, "rarity": "ICON", "nation": "فرانسه 🇫🇷", "club": "رئال مادرید"},
@@ -56,13 +56,14 @@ FC_CATALOG = [
     {"name": "کارلس پویول", "pos": "DEF", "ovr": 91, "rarity": "ICON", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا"},
     {"name": "ژاوی هرناندز", "pos": "MID", "ovr": 91, "rarity": "ICON", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا"},
     {"name": "آندرس اینیستا", "pos": "MID", "ovr": 91, "rarity": "ICON", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا"},
+    {"name": "کاکا", "pos": "MID", "ovr": 91, "rarity": "ICON", "nation": "برزیل 🇧🇷", "club": "میلان"},
     {"name": "کیلیان امباپه", "pos": "FWD", "ovr": 91, "rarity": "ICON", "nation": "فرانسه 🇫🇷", "club": "رئال مادرید"},
     {"name": "ارلینگ هالند", "pos": "FWD", "ovr": 91, "rarity": "ICON", "nation": "نروژ 🇳🇴", "club": "منچسترسیتی"},
     {"name": "کوین دی‌بروینه", "pos": "MID", "ovr": 91, "rarity": "ICON", "nation": "بلژیک 🇧🇪", "club": "منچسترسیتی"},
     {"name": "ویرجیل فن‌دایک", "pos": "DEF", "ovr": 90, "rarity": "ICON", "nation": "هلند 🇳🇱", "club": "لیورپول"},
     {"name": "مانوئل نویر", "pos": "GK", "ovr": 90, "rarity": "ICON", "nation": "آلمان 🇩🇪", "club": "بایرن مونیخ"},
 
-    # ELITE / WALKOUT (86 - 89)
+    # ELITE / WALKOUT (86 - 89) - 45 PLAYERS
     {"name": "وینیسیوس جونیور", "pos": "FWD", "ovr": 89, "rarity": "ELITE", "nation": "برزیل 🇧🇷", "club": "رئال مادرید"},
     {"name": "جود بلینگهام", "pos": "MID", "ovr": 89, "rarity": "ELITE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "رئال مادرید"},
     {"name": "رودری", "pos": "MID", "ovr": 89, "rarity": "ELITE", "nation": "اسپانیا 🇪🇸", "club": "منچسترسیتی"},
@@ -88,95 +89,163 @@ FC_CATALOG = [
     {"name": "دکلان رایس", "pos": "MID", "ovr": 87, "rarity": "ELITE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "آرسنال"},
     {"name": "فیل فودن", "pos": "FWD", "ovr": 88, "rarity": "ELITE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "منچسترسیتی"},
     {"name": "لامین یامال", "pos": "FWD", "ovr": 86, "rarity": "ELITE", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا"},
+    {"name": "کول پالمر", "pos": "MID", "ovr": 86, "rarity": "ELITE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "چلسی"},
+    {"name": "آنتوان گریزمان", "pos": "FWD", "ovr": 88, "rarity": "ELITE", "nation": "فرانسه 🇫🇷", "club": "اتلتیکو مادرید"},
+    {"name": "یوشوا کیمیش", "pos": "MID", "ovr": 86, "rarity": "ELITE", "nation": "آلمان 🇩🇪", "club": "بایرن مونیخ"},
+    {"name": "مارک آندره تراشتگن", "pos": "GK", "ovr": 88, "rarity": "ELITE", "nation": "آلمان 🇩🇪", "club": "بارسلونا"},
+    {"name": "ادر میلیتائو", "pos": "DEF", "ovr": 86, "rarity": "ELITE", "nation": "برزیل 🇧🇷", "club": "رئال مادرید"},
+    {"name": "دنی کارواخال", "pos": "DEF", "ovr": 86, "rarity": "ELITE", "nation": "اسپانیا 🇪🇸", "club": "رئال مادرید"},
+    {"name": "رودریگو", "pos": "FWD", "ovr": 86, "rarity": "ELITE", "nation": "برزیل 🇧🇷", "club": "رئال مادرید"},
+    {"name": "ادرسون مورائس", "pos": "GK", "ovr": 88, "rarity": "ELITE", "nation": "برزیل 🇧🇷", "club": "منچسترسیتی"},
+    {"name": "الساندرو باستونی", "pos": "DEF", "ovr": 86, "rarity": "ELITE", "nation": "ایتالیا 🇮🇹", "club": "اینتر"},
+    {"name": "نیکولو بارلا", "pos": "MID", "ovr": 87, "rarity": "ELITE", "nation": "ایتالیا 🇮🇹", "club": "اینتر"},
+    {"name": "ویلیام سالیبا", "pos": "DEF", "ovr": 87, "rarity": "ELITE", "nation": "فرانسه 🇫🇷", "club": "آرسنال"},
+    {"name": "برونو فرناندز", "pos": "MID", "ovr": 87, "rarity": "ELITE", "nation": "پرتغال 🇵🇹", "club": "منچستر یونایتد"},
+    {"name": "رافائل لیائو", "pos": "FWD", "ovr": 86, "rarity": "ELITE", "nation": "پرتغال 🇵🇹", "club": "میلان"},
+    {"name": "ویکتور اوسیمهن", "pos": "FWD", "ovr": 87, "rarity": "ELITE", "nation": "نیجریه 🇳🇬", "club": "گالاتاسرای"},
+    {"name": "اشرف حکیمی", "pos": "DEF", "ovr": 86, "rarity": "ELITE", "nation": "مراکش 🇲🇦", "club": "پاری‌سن‌ژرمن"},
+    {"name": "دوناروما", "pos": "GK", "ovr": 86, "rarity": "ELITE", "nation": "ایتالیا 🇮🇹", "club": "پاری‌سن‌ژرمن"},
+    {"name": "امیلیانو مارتینز", "pos": "GK", "ovr": 87, "rarity": "ELITE", "nation": "آرژانتین 🇦🇷", "club": "استون ویلا"},
+    {"name": "خولیان آلوارز", "pos": "FWD", "ovr": 86, "rarity": "ELITE", "nation": "آرژانتین 🇦🇷", "club": "اتلتیکو مادرید"},
+    {"name": "آلفونسو دیویس", "pos": "DEF", "ovr": 86, "rarity": "ELITE", "nation": "کانادا 🇨🇦", "club": "بایرن مونیخ"},
+    {"name": "یوشکو گواردیول", "pos": "DEF", "ovr": 86, "rarity": "ELITE", "nation": "کرواسی 🇭🇷", "club": "منچسترسیتی"},
 
-    # RARE GOLD (82 - 85)
+    # RARE GOLD (82 - 85) - 65 PLAYERS
     {"name": "فرنکی دی‌یونگ", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "هلند 🇳🇱", "club": "بارسلونا"},
-    {"name": "رافائل لیائو", "pos": "FWD", "ovr": 85, "rarity": "RARE", "nation": "پرتغال 🇵🇹", "club": "میلان"},
     {"name": "پدری", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا"},
-    {"name": "دوناروما", "pos": "GK", "ovr": 85, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "پاری‌سن‌ژرمن"},
-    {"name": "امیلیانو مارتینز", "pos": "GK", "ovr": 85, "rarity": "RARE", "nation": "آرژانتین 🇦🇷", "club": "استون ویلا"},
-    {"name": "الساندرو باستونی", "pos": "DEF", "ovr": 85, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "اینتر"},
-    {"name": "نیکولو بارلا", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "اینتر"},
-    {"name": "ویلیام سالیبا", "pos": "DEF", "ovr": 85, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "آرسنال"},
-    {"name": "یوشکو گواردیول", "pos": "DEF", "ovr": 85, "rarity": "RARE", "nation": "کرواسی 🇭🇷", "club": "منچسترسیتی"},
-    {"name": "اشرف حکیمی", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "مراکش 🇲🇦", "club": "پاری‌سن‌ژرمن"},
-    {"name": "ادر میلیتائو", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "برزیل 🇧🇷", "club": "رئال مادرید"},
-    {"name": "اورلین شوامنی", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "رئال مادرید"},
+    {"name": "اورلین شوامنی", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "رئال مادرید"},
     {"name": "ادواردو کاماوینگا", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "رئال مادرید"},
-    {"name": "برونو فرناندز", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "پرتغال 🇵🇹", "club": "منچستر یونایتد"},
-    {"name": "خولیان آلوارز", "pos": "FWD", "ovr": 84, "rarity": "RARE", "nation": "آرژانتین 🇦🇷", "club": "اتلتیکو مادرید"},
-    {"name": "آلفونسو دیویس", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "کانادا 🇨🇦", "club": "بایرن مونیخ"},
     {"name": "گاوی", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا"},
     {"name": "داروین نونیز", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "اروگوئه 🇺🇾", "club": "لیورپول"},
     {"name": "فدریکو کیه‌زا", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "لیورپول"},
-    {"name": "خویچا کواراتسخلیا", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "گرجستان 🇬🇪", "club": "ناپولی"},
+    {"name": "خویچا کواراتسخلیا", "pos": "FWD", "ovr": 85, "rarity": "RARE", "nation": "گرجستان 🇬🇪", "club": "ناپولی"},
     {"name": "مهدی طارمی", "pos": "FWD", "ovr": 82, "rarity": "RARE", "nation": "ایران 🇮🇷", "club": "اینتر"},
     {"name": "سردار آزمون", "pos": "FWD", "ovr": 82, "rarity": "RARE", "nation": "ایران 🇮🇷", "club": "شباب الاهلی"},
-    {"name": "گرگور کوبل", "pos": "GK", "ovr": 84, "rarity": "RARE", "nation": "سوئیس 🇨🇭", "club": "دورتموند"},
-    {"name": "یان سومر", "pos": "GK", "ovr": 83, "rarity": "RARE", "nation": "سوئیس 🇨🇭", "club": "اینتر"},
+    {"name": "گرگور کوبل", "pos": "GK", "ovr": 85, "rarity": "RARE", "nation": "سوئیس 🇨🇭", "club": "دورتموند"},
+    {"name": "یان سومر", "pos": "GK", "ovr": 84, "rarity": "RARE", "nation": "سوئیس 🇨🇭", "club": "اینتر"},
     {"name": "لوکا مودریچ", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "کرواسی 🇭🇷", "club": "رئال مادرید"},
-    {"name": "الکسیس مک‌آلیستر", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "آرژانتین 🇦🇷", "club": "لیورپول"},
-    {"name": "دنی اولمو", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا"},
-    {"name": "نیکو ویلیامز", "pos": "FWD", "ovr": 84, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "اتلتیک بیلبائو"},
+    {"name": "الکسیس مک‌آلیستر", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "آرژانتین 🇦🇷", "club": "لیورپول"},
+    {"name": "دنی اولمو", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا"},
+    {"name": "نیکو ویلیامز", "pos": "FWD", "ovr": 85, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "اتلتیک بیلبائو"},
     {"name": "گابریل ماگالاش", "pos": "DEF", "ovr": 85, "rarity": "RARE", "nation": "برزیل 🇧🇷", "club": "آرسنال"},
-    {"name": "کای هاورتز", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "آلمان 🇩🇪", "club": "آرسنال"},
+    {"name": "کای هاورتز", "pos": "FWD", "ovr": 84, "rarity": "RARE", "nation": "آلمان 🇩🇪", "club": "آرسنال"},
     {"name": "ژوائو پالینیا", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "پرتغال 🇵🇹", "club": "بایرن مونیخ"},
-    {"name": "مانوئل آکانجی", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "سوئیس 🇨🇭", "club": "منچسترسیتی"},
-    {"name": "جرمی دوکو", "pos": "FWD", "ovr": 82, "rarity": "RARE", "nation": "بلژیک 🇧🇪", "club": "منچسترسیتی"},
+    {"name": "مانوئل آکانجی", "pos": "DEF", "ovr": 85, "rarity": "RARE", "nation": "سوئیس 🇨🇭", "club": "منچسترسیتی"},
+    {"name": "جرمی دوکو", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "بلژیک 🇧🇪", "club": "منچسترسیتی"},
     {"name": "گلیسون برمر", "pos": "DEF", "ovr": 85, "rarity": "RARE", "nation": "برزیل 🇧🇷", "club": "یوونتوس"},
     {"name": "هاکان چالهان‌اوغلو", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "ترکیه 🇹🇷", "club": "اینتر"},
+    {"name": "دایوت اوپامکانو", "pos": "DEF", "ovr": 83, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "بایرن مونیخ"},
+    {"name": "ابراهیما کوناته", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "لیورپول"},
+    {"name": "کریستین رومرو", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "آرژانتین 🇦🇷", "club": "تاتنهام"},
+    {"name": "پدرو پورو", "pos": "DEF", "ovr": 83, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "تاتنهام"},
+    {"name": "جرمی فریمپونگ", "pos": "DEF", "ovr": 85, "rarity": "RARE", "nation": "هلند 🇳🇱", "club": "بایر لورکوزن"},
+    {"name": "الکس گریمالدو", "pos": "DEF", "ovr": 85, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "بایر لورکوزن"},
+    {"name": "برونو گیمارش", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "برزیل 🇧🇷", "club": "نیوکاسل"},
+    {"name": "داگلاس لوئیز", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "برزیل 🇧🇷", "club": "یوونتوس"},
+    {"name": "الکساندر ایساک", "pos": "FWD", "ovr": 85, "rarity": "RARE", "nation": "سوئد 🇸🇪", "club": "نیوکاسل"},
+    {"name": "اولی واتکینز", "pos": "FWD", "ovr": 85, "rarity": "RARE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "استون ویلا"},
+    {"name": "ویکتور گیوکرش", "pos": "FWD", "ovr": 85, "rarity": "RARE", "nation": "سوئد 🇸🇪", "club": "اسپورتینگ"},
+    {"name": "آدمولا لوکمن", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "نیجریه 🇳🇬", "club": "آتالانتا"},
+    {"name": "دوشان ولاهوویچ", "pos": "FWD", "ovr": 84, "rarity": "RARE", "nation": "صربستان 🇷🇸", "club": "یوونتوس"},
+    {"name": "مارکوس تورام", "pos": "FWD", "ovr": 84, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "اینتر"},
+    {"name": "فدریکو دی‌مارکو", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "اینتر"},
+    {"name": "ریکاردو کالافیوری", "pos": "DEF", "ovr": 82, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "آرسنال"},
+    {"name": "گولیلمو ویکاریو", "pos": "GK", "ovr": 83, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "تاتنهام"},
+    {"name": "داوید رایا", "pos": "GK", "ovr": 84, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "آرسنال"},
+    {"name": "آدرین رابیو", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "مارسی"},
+    {"name": "مانوئل اوگارته", "pos": "MID", "ovr": 82, "rarity": "RARE", "nation": "اروگوئه 🇺🇾", "club": "منچستر یونایتد"},
+    {"name": "ویتینیا", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "پرتغال 🇵🇹", "club": "پاری‌سن‌ژرمن"},
+    {"name": "عثمان دمبله", "pos": "FWD", "ovr": 85, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "پاری‌سن‌ژرمن"},
+    {"name": "بردلی بارکولا", "pos": "FWD", "ovr": 82, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "پاری‌سن‌ژرمن"},
+    {"name": "ژاوی سیمونز", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "هلند 🇳🇱", "club": "لایپزیگ"},
+    {"name": "لوئیس اوپندا", "pos": "FWD", "ovr": 84, "rarity": "RARE", "nation": "بلژیک 🇧🇪", "club": "لایپزیگ"},
+    {"name": "نیکو اشلوتربک", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "آلمان 🇩🇪", "club": "دورتموند"},
+    {"name": "جاناتان تاه", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "آلمان 🇩🇪", "club": "بایر لورکوزن"},
+    {"name": "روبرت آندریش", "pos": "MID", "ovr": 82, "rarity": "RARE", "nation": "آلمان 🇩🇪", "club": "بایر لورکوزن"},
+    {"name": "ویکتور بونیفاس", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "نیجریه 🇳🇬", "club": "بایر لورکوزن"},
+    {"name": "مارتین زوبیمندی", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "رئال سوسیداد"},
+    {"name": "میکل مرینو", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "آرسنال"},
+    {"name": "مانوئل لوکاتلی", "pos": "MID", "ovr": 82, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "یوونتوس"},
+    {"name": "تئون کوپماینرز", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "هلند 🇳🇱", "club": "یوونتوس"},
+    {"name": "جووانی دی لورنتزو", "pos": "DEF", "ovr": 83, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "ناپولی"},
+    {"name": "دستینی اودوگی", "pos": "DEF", "ovr": 82, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "تاتنهام"},
+    {"name": "میکی فن ده فن", "pos": "DEF", "ovr": 82, "rarity": "RARE", "nation": "هلند 🇳🇱", "club": "تاتنهام"},
+    {"name": "امیلیانو بوئندیا", "pos": "MID", "ovr": 82, "rarity": "RARE", "nation": "آرژانتین 🇦🇷", "club": "استون ویلا"},
+    {"name": "بن وایت", "pos": "DEF", "ovr": 83, "rarity": "RARE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "آرسنال"},
+    {"name": "یوری تیلمانس", "pos": "MID", "ovr": 82, "rarity": "RARE", "nation": "بلژیک 🇧🇪", "club": "استون ویلا"},
+    {"name": "لئاندرو تروسار", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "بلژیک 🇧🇪", "club": "آرسنال"},
+    {"name": "سرژ گنابری", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "آلمان 🇩🇪", "club": "بایرن مونیخ"},
+    {"name": "کینگزلی کومان", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "بایرن مونیخ"},
 
-    # COMMON (75 - 81)
-    {"name": "داوید رایا", "pos": "GK", "ovr": 81, "rarity": "COMMON", "nation": "اسپانیا 🇪🇸", "club": "آرسنال"},
-    {"name": "آندره اونانا", "pos": "GK", "ovr": 81, "rarity": "COMMON", "nation": "کامرون 🇨🇲", "club": "منچستر یونایتد"},
-    {"name": "نیک پوپ", "pos": "GK", "ovr": 81, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "نیوکاسل"},
-    {"name": "اسکات مک‌تامینی", "pos": "MID", "ovr": 80, "rarity": "COMMON", "nation": "اسکاتلند 🏴󠁧󠁢󠁳󠁣󠁴󠁿", "club": "ناپولی"},
-    {"name": "ریچارلیسون", "pos": "FWD", "ovr": 80, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "تاتنهام"},
+    # COMMON (75 - 81) - 65 PLAYERS
+    # ستارگان فوتبال ایران و لژیونرها
+    {"name": "علیرضا جهانبخش", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "هیرنفین"},
+    {"name": "رامین رضاییان", "pos": "DEF", "ovr": 78, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "استقلال"},
+    {"name": "علیرضا بیرانوند", "pos": "GK", "ovr": 78, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "تراکتور"},
+    {"name": "سامان قدوس", "pos": "MID", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "کلبا"},
+    {"name": "سید حسین حسینی", "pos": "GK", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "استقلال"},
+    {"name": "شجاع خلیل‌زاده", "pos": "DEF", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "تراکتور"},
+    {"name": "مهدی ترابی", "pos": "MID", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "تراکتور"},
+    {"name": "مهدی قایدی", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "کلبا"},
+    {"name": "محمد محبی", "pos": "FWD", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "روستوف"},
+    {"name": "امید ابراهیمی", "pos": "MID", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "الشمال"},
+    {"name": "روزبه چشمی", "pos": "DEF", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "استقلال"},
+    {"name": "حسین کنعانی", "pos": "DEF", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "پرسپولیس"},
+    {"name": "میلاد محمدی", "pos": "DEF", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "پرسپولیس"},
+    {"name": "علی علیپور", "pos": "FWD", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "پرسپولیس"},
+    {"name": "سعید عزت‌اللهی", "pos": "MID", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "شباب الاهلی"},
+    {"name": "علی قلی‌زاده", "pos": "MID", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "لخ پوزنان"},
+    {"name": "احمد نوراللهی", "pos": "MID", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "الوحده"},
+    {"name": "اللهیار صیادمنش", "pos": "FWD", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "وسترلو"},
+    {"name": "محمدجواد حسین‌نژاد", "pos": "MID", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "دینامو مخاچ‌قلعه"},
+    {"name": "صادق محرمی", "pos": "DEF", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "دینامو زاگرب"},
+    {"name": "صالح حردانی", "pos": "DEF", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "سپاهان"},
+    {"name": "شهریار مغانلو", "pos": "FWD", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "کلبا"},
+    {"name": "رضا اسدی", "pos": "FWD", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "سپاهان"},
+    {"name": "پیام نیازمند", "pos": "GK", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "سپاهان"},
+    {"name": "محمدرضا اخباری", "pos": "GK", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "گل‌گهر"},
+    {"name": "مرتضی پورعلی‌گنجی", "pos": "DEF", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "پرسپولیس"},
+    {"name": "ابوالفضل جلالی", "pos": "DEF", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "استقلال"},
+    {"name": "امید نورافکن", "pos": "MID", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "ملوان"},
+    {"name": "یاسین سلمانی", "pos": "MID", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "پرسپولیس"},
+    {"name": "آریا یوسفی", "pos": "DEF", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "سپاهان"},
+    # ستارگان بین‌المللی و استعدادهای برتر
+    {"name": "آردا گولر", "pos": "MID", "ovr": 80, "rarity": "COMMON", "nation": "ترکیه 🇹🇷", "club": "رئال مادرید"},
+    {"name": "اندریک", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "رئال مادرید"},
+    {"name": "کوبی مینو", "pos": "MID", "ovr": 80, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "منچستر یونایتد"},
+    {"name": "الخاندرو گارناچو", "pos": "FWD", "ovr": 80, "rarity": "COMMON", "nation": "آرژانتین 🇦🇷", "club": "منچستر یونایتد"},
+    {"name": "ریچارلیسون", "pos": "FWD", "ovr": 81, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "تاتنهام"},
     {"name": "مارکوس رشفورد", "pos": "FWD", "ovr": 81, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "منچستر یونایتد"},
     {"name": "تیمو ورنر", "pos": "FWD", "ovr": 80, "rarity": "COMMON", "nation": "آلمان 🇩🇪", "club": "تاتنهام"},
-    {"name": "هری مگوایر", "pos": "DEF", "ovr": 79, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "منچستر یونایتد"},
-    {"name": "واتارو اندو", "pos": "MID", "ovr": 79, "rarity": "COMMON", "nation": "ژاپن 🇯🇵", "club": "لیورپول"},
-    {"name": "آنتونی", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "منچستر یونایتد"},
-    {"name": "میخائیلو مودریک", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "اوکراین 🇺🇦", "club": "چلسی"},
-    {"name": "علیرضا جهانبخش", "pos": "FWD", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "هیرنفین"},
-    {"name": "رامین رضاییان", "pos": "DEF", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "استقلال"},
-    {"name": "علیرضا بیرانوند", "pos": "GK", "ovr": 77, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "تراکتور"},
-    {"name": "سامان قدوس", "pos": "MID", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "کلبا"},
-    {"name": "سید حسین حسینی", "pos": "GK", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "استقلال"},
-    {"name": "شجاع خلیل‌زاده", "pos": "DEF", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "تراکتور"},
-    {"name": "مهدی ترابی", "pos": "MID", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "تراکتور"},
-    {"name": "مهدی قایدی", "pos": "FWD", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "کلبا"},
-    {"name": "محمد محبی", "pos": "FWD", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "روستوف"},
-    {"name": "امید ابراهیمی", "pos": "MID", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "الشمال"},
-    {"name": "روزبه چشمی", "pos": "DEF", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "استقلال"},
-    {"name": "حسین کنعانی", "pos": "DEF", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "پرسپولیس"},
-    {"name": "میلاد محمدی", "pos": "DEF", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "پرسپولیس"},
-    {"name": "علی علیپور", "pos": "FWD", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "پرسپولیس"},
-    {"name": "سعید عزت‌اللهی", "pos": "MID", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "شباب الاهلی"},
-    {"name": "آردا گولر", "pos": "MID", "ovr": 78, "rarity": "COMMON", "nation": "ترکیه 🇹🇷", "club": "رئال مادرید"},
-    {"name": "اندریک", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "رئال مادرید"},
-    {"name": "کوبی مینو", "pos": "MID", "ovr": 78, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "منچستر یونایتد"},
-    {"name": "الخاندرو گارناچو", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "آرژانتین 🇦🇷", "club": "منچستر یونایتد"}
+    {"name": "هری مگوایر", "pos": "DEF", "ovr": 80, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "منچستر یونایتد"},
+    {"name": "واتارو اندو", "pos": "MID", "ovr": 80, "rarity": "COMMON", "nation": "ژاپن 🇯🇵", "club": "لیورپول"},
+    {"name": "آنتونی", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "منچستر یونایتد"},
+    {"name": "میخائیلو مودریک", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "اوکراین 🇺🇦", "club": "چلسی"},
+    {"name": "راسموس هویلوند", "pos": "FWD", "ovr": 80, "rarity": "COMMON", "nation": "دانمارک 🇩🇰", "club": "منچستر یونایتد"},
+    {"name": "یاشوا زیرکزی", "pos": "FWD", "ovr": 80, "rarity": "COMMON", "nation": "هلند 🇳🇱", "club": "منچستر یونایتد"},
+    {"name": "کازمیرو", "pos": "MID", "ovr": 81, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "منچستر یونایتد"},
+    {"name": "رحیم استرلینگ", "pos": "FWD", "ovr": 81, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "آرسنال"},
+    {"name": "کانر گالاگر", "pos": "MID", "ovr": 81, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "اتلتیکو مادرید"},
+    {"name": "نیکلاس جکسون", "pos": "FWD", "ovr": 80, "rarity": "COMMON", "nation": "سنگال 🇸🇳", "club": "چلسی"},
+    {"name": "نونی مادوئکه", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "چلسی"},
+    {"name": "ژوائو فلیکس", "pos": "FWD", "ovr": 81, "rarity": "COMMON", "nation": "پرتغال 🇵🇹", "club": "چلسی"},
+    {"name": "پدرو نتو", "pos": "FWD", "ovr": 80, "rarity": "COMMON", "nation": "پرتغال 🇵🇹", "club": "چلسی"},
+    {"name": "ماتئوس کونا", "pos": "FWD", "ovr": 81, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "ولورهمپتون"},
+    {"name": "لوکاس پاکتا", "pos": "MID", "ovr": 81, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "وستهم"},
+    {"name": "محمد قدوس", "pos": "MID", "ovr": 81, "rarity": "COMMON", "nation": "غنا 🇬🇭", "club": "وستهم"},
+    {"name": "جارود بوون", "pos": "FWD", "ovr": 81, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "وستهم"},
+    {"name": "مورگان گیبز وایت", "pos": "MID", "ovr": 80, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "ناتینگهام فارست"},
+    {"name": "ابره‌چی ازه", "pos": "MID", "ovr": 81, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "کریستال پالاس"},
+    {"name": "آدام وارتون", "pos": "MID", "ovr": 79, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "کریستال پالاس"},
+    {"name": "کانر بردلی", "pos": "DEF", "ovr": 78, "rarity": "COMMON", "nation": "ایرلند شمالی 🇬🇧", "club": "لیورپول"},
+    {"name": "جارل کوانسا", "pos": "DEF", "ovr": 78, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "لیورپول"},
+    {"name": "ریکو لوئیس", "pos": "DEF", "ovr": 79, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "منچسترسیتی"},
+    {"name": "ماتیس تل", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "فرانسه 🇫🇷", "club": "بایرن مونیخ"},
+    {"name": "الکساندر پاولوویچ", "pos": "MID", "ovr": 79, "rarity": "COMMON", "nation": "آلمان 🇩🇪", "club": "بایرن مونیخ"},
+    {"name": "ماکسیمیلیان بیر", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "آلمان 🇩🇪", "club": "دورتموند"},
+    {"name": "کریم آدیمی", "pos": "FWD", "ovr": 80, "rarity": "COMMON", "nation": "آلمان 🇩🇪", "club": "دورتموند"},
+    {"name": "دونیل مالن", "pos": "FWD", "ovr": 80, "rarity": "COMMON", "nation": "هلند 🇳🇱", "club": "دورتموند"}
 ]
-
-# تکمیل خودکار کاتالوگ دقیقاً تا ۲۰۰ بازیکن با باشگاه‌ها و ملیت‌های معتبر
-_EXTRA_CLUBS = ["بارسلونا", "رئال مادرید", "منچسترسیتی", "لیورپول", "آرسنال", "میلان", "اینتر", "بایرن مونیخ", "استقلال", "پرسپولیس", "تراکتور", "سپاهان", "چلسی", "یوونتوس", "اتلتیکو مادرید"]
-_EXTRA_NATIONS = ["ایران 🇮🇷", "اسپانیا 🇪🇸", "برزیل 🇧🇷", "فرانسه 🇫🇷", "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "آلمان 🇩🇪", "ایتالیا 🇮🇹", "آرژانتین 🇦🇷", "پرتغال 🇵🇹", "هلند 🇳🇱"]
-_POS_CYCLE = ["GK", "DEF", "MID", "FWD"]
-
-for _idx in range(len(FC_CATALOG), 200):
-    _pos = _POS_CYCLE[_idx % 4]
-    _ovr = random.randint(75, 80)
-    _nat = random.choice(_EXTRA_NATIONS)
-    _clb = random.choice(_EXTRA_CLUBS)
-    FC_CATALOG.append({
-        "name": f"ستاره فوتبال {_idx+1}",
-        "pos": _pos,
-        "ovr": _ovr,
-        "rarity": "COMMON",
-        "nation": _nat,
-        "club": _clb
-    })
 
 FC_CATALOG_DICT = {c["name"]: c for c in FC_CATALOG}
 
@@ -186,6 +255,85 @@ SELL_PRICES = {
     "RARE": 200,
     "COMMON": 70
 }
+
+# --- HARDCORE FOOTBALL QUIZ POOL ---
+HARDCORE_QUIZ_POOL = [
+    {
+        "question": "در فینال جام جهانی ۱۹۵۴ (معجزه برن)، زننده گل برتری دقیقه ۸۴ آلمان غربی چه کسی بود؟",
+        "options": ["هلموت ران", "فریتز والتر", "ماکس مورلوک", "اووه زلر"],
+        "correct": "هلموت ران"
+    },
+    {
+        "question": "کدام دروازه‌بان در ضربات پنالتی فینال جام باشگاه‌های اروپا ۱۹۸۶ هر ۴ پنالتی بارسلونا را مهار کرد؟",
+        "options": ["هلموت دوکادام", "استوان استویانوویچ", "پیتر اشمایکل", "سیلوینو"],
+        "correct": "هلموت دوکادام"
+    },
+    {
+        "question": "اولین بازیکنی که در تاریخ جام‌های جهانی کارت قرمز دریافت کرد چه کسی بود؟",
+        "options": ["کارلوس کازلی", "کارلوس کاستیلیو", "روبن توریبیو", "آنتونیو راتین"],
+        "correct": "کارلوس کازلی"
+    },
+    {
+        "question": "کدام باشگاه رکورددار طولانی‌ترین روند شکست‌ناپذیری متوالی در تاریخ لیگ‌های اروپایی (۱۰۴ بازی) است؟",
+        "options": ["استوا بخارست", "سلتیک", "بنفیکا", "آژاکس"],
+        "correct": "استوا بخارست"
+    },
+    {
+        "question": "کدام کشور اولین دوره جام ملت‌های آسیا در سال ۱۹۵۶ را فتح کرد؟",
+        "options": ["کره جنوبی", "اسرائیل", "ایران", "هنگ کنگ"],
+        "correct": "کره جنوبی"
+    },
+    {
+        "question": "در فینال جام جهانی ۱۹۳۸، مجموعاً چند گل بین ایتالیا و مجارستان رد و بدل شد؟",
+        "options": ["۶ گل", "۴ گل", "۵ گل", "۷ گل"],
+        "correct": "۶ گل"
+    },
+    {
+        "question": "کدام بازیکن در سه جام جهانی مختلف (۱۹۵۸، ۱۹۶۲، ۱۹۷۰) برای برزیل گلزنی کرد به جز پله؟",
+        "options": ["واوا", "گارینشا", "ماریو زاگالو", "دیدی"],
+        "correct": "واوا"
+    },
+    {
+        "question": "در فینال لیگ قهرمانان ۱۹۹۹، چه کسی در دقیقه ۹۱ گل اول منچستریونایتد به بایرن مونیخ را زد؟",
+        "options": ["تدی شرینگهام", "اوله گونار سولشایر", "پل اسکولز", "دوایت یورک"],
+        "correct": "تدی شرینگهام"
+    },
+    {
+        "question": "آقای گل جام جهانی ۱۹۹۴ که در یک بازی ۵ گل به کامرون زد چه کسی بود؟",
+        "options": ["اولگ سالنکو", "هریستو استویچکوف", "روماریو", "یورگن کلینزمن"],
+        "correct": "اولگ سالنکو"
+    },
+    {
+        "question": "در فینال جام جهانی ۱۹۶۶، کمک‌داوری که گل بحث‌برانگیز انگلیس به آلمان را تایید کرد اهل کدام کشور بود؟",
+        "options": ["شوروی (آذربایجان)", "سوئیس", "یوگسلاوی", "مصر"],
+        "correct": "شوروی (آذربایجان)"
+    },
+    {
+        "question": "اولین برنده توپ طلای غیراروپایی تاریخ فرانس فوتبال در سال ۱۹۹۵ چه کسی بود؟",
+        "options": ["ژرژ وه‌آ", "روماریو", "رونالدو نازاریو", "عبدی پله"],
+        "correct": "ژرژ وه‌آ"
+    },
+    {
+        "question": "حریف ناتینگهام فارست در فینال جام باشگاه‌های اروپا ۱۹۷۹ که ۱-۰ مغلوب شد کدام تیم بود؟",
+        "options": ["مالمو سوئد", "هامبورگ", "کلن", "آژاکس"],
+        "correct": "مالمو سوئد"
+    },
+    {
+        "question": "زننده تک گل پیروزی‌بخش فینال یورو ۲۰۰۴ برای تیم ملی یونان مقابل پرتغال چه کسی بود؟",
+        "options": ["آنجلوس چاریستیاس", "تئودوروس زاگوراکیس", "گیورگوس کاراگونیس", "دیمیتریس پاپادوپولوس"],
+        "correct": "آنجلوس چاریستیاس"
+    },
+    {
+        "question": "در جام جهانی ۱۹۸۶، مارادونا گل قرن را با عبور از کدام دروازه‌بان انگلیس به ثمر رساند؟",
+        "options": ["پیتر شیلتون", "دیوید سیمن", "گوردون بنکس", "ری کلمنس"],
+        "correct": "پیتر شیلتون"
+    },
+    {
+        "question": "کدام تیم ملی در فینال یورو ۱۹۹۲ مقابل دانمارک شگفتی‌ساز شکست خورد؟",
+        "options": ["آلمان", "هلند", "سوئد", "فرانسه"],
+        "correct": "آلمان"
+    }
+]
 
 GUESS_PLAYERS_FILE = os.path.join(os.path.dirname(__file__), "guess_players.json")
 try:
@@ -222,6 +370,7 @@ ACTIVE_DUELS = {}
 ACTIVE_TEAM_DUELS = {}
 ACTIVE_SHOOTOUTS = {}
 ACTIVE_CARD_MATCHES = {}
+ACTIVE_DOUBLE_GAMES = {}
 CHEAT_MODE_USERS = set()
 TRACKED_LIVE_MATCHES = {}
 USER_JACKPOT_DRAFTS = {}
@@ -607,7 +756,32 @@ async def quests_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
     else: await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
 
-# --- ADMIN COMMANDS: ADD POINTS, BACKUP & RESTORE ---
+# --- ADMIN COMMANDS: ADD TO ALL & BACKUP ---
+
+async def add_points_to_all_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if str(user.id) != str(ADMIN_ID): return
+
+    if not context.args:
+        await update.message.reply_text("⚠️ <b>نحوه استفاده:</b> <code>/all 500</code>", parse_mode="HTML")
+        return
+
+    try: amount = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("⚠️ لطفاً یک عدد معتبر وارد کنید.")
+        return
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("UPDATE users SET points = points + ? WHERE user_id != ?", (amount, ESCOBAR_AI_ID))
+        await db.commit()
+
+    await update.message.reply_text(f"✅ <b>مبلغ {amount:,} امتیاز به تمام کاربران هدیه داده شد!</b>", parse_mode="HTML")
+
+    target_chat_id = await get_live_chat_id()
+    if target_chat_id:
+        msg = f"🎉🎁 <b>هدیه همگانی از طرف مدیریت!</b>\nمبلغ <b>{amount:,} امتیاز</b> به حساب تمام کاربران واریز شد! 💰🔥"
+        try: await context.bot.send_message(chat_id=target_chat_id, text=msg, parse_mode="HTML")
+        except Exception: pass
 
 async def add_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -1119,22 +1293,103 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(text, parse_mode="HTML")
     schedule_timer(context, guess_timeout_job, 30, data={"chat_id": chat_id, "user_id": user.id}, name=f"guess_timer_{chat_id}")
 
-# --- SUDDEN DEATH PENALTY ---
+# --- DOUBLE OR NOTHING (HARDCORE 10-SEC CHALLENGE) ---
 
-def render_shootout_board(shootout_id: str, shooter_name: str, shot_number: int = 1):
+async def double_timeout_job(context: ContextTypes.DEFAULT_TYPE):
+    job_data = context.job.data
+    g_id = job_data["g_id"]
+    game = ACTIVE_DOUBLE_GAMES.get(g_id)
+    if game and game.get("is_active"):
+        game["is_active"] = False
+        user_id = game["user_id"]
+        stake = game["stake"]
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, user_id))
+            await db.commit()
+
+        await safe_edit_message(
+            context.bot,
+            f"⌛️ <b>زمان ۱۰ ثانیه‌ای تمام شد!</b> 💀\nبه دلیل عدم پاسخ در مهلت مقرر، شرط شما سوخت و مبلغ <b>{stake:,} PTS</b> از حسابتان کسر گردید.",
+            reply_markup=None,
+            chat_id=game["chat_id"],
+            message_id=game["msg_id"]
+        )
+        ACTIVE_DOUBLE_GAMES.pop(g_id, None)
+
+async def double_or_nothing_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await ensure_user(user)
+
+    args = context.args
+    if not args:
+        text_match = re.search(r"\d+", update.effective_message.text or "")
+        amount_str = text_match.group(0) if text_match else None
+    else:
+        amount_str = args[0]
+
+    if not amount_str or not amount_str.isdigit():
+        await update.effective_message.reply_text("⚠️ <b>نحوه استفاده:</b> <code>/double 100</code> یا نوشتن: <code>دوبل 100</code>", parse_mode="HTML")
+        return
+
+    stake = int(amount_str)
+    if stake < 10:
+        await update.effective_message.reply_text("⚠️ حداقل مبلغ شرط چالش دوبرابر ۱۰ امتیاز است.")
+        return
+
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT points, last_double_date FROM users WHERE user_id = ?", (user.id,)) as cur:
+            row = await cur.fetchone()
+            pts = row[0] if row else 0
+            last_date = row[1] if row and len(row) > 1 else ""
+
+    if last_date == today_str:
+        await update.effective_message.reply_text(
+            f"⛔️ <b>{html.escape(user.first_name)}</b> عزیز، شما امروز چالش مرگبار دوبرابر را بازی کرده‌اید!\nاین چالش به دلیل ریسک بالا فقط ۱ بار در روز فعال است.",
+            parse_mode="HTML"
+        )
+        return
+
+    if pts < stake:
+        await update.effective_message.reply_text(f"⛔️ موجودی ناکافی! شما <b>{pts:,} PTS</b> دارید اما شرط <b>{stake:,} PTS</b> بسته‌اید.", parse_mode="HTML")
+        return
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("UPDATE users SET last_double_date = ? WHERE user_id = ?", (today_str, user.id))
+        await db.commit()
+
+    q_data = random.choice(HARDCORE_QUIZ_POOL)
+    opts = list(q_data["options"])
+    random.shuffle(opts)
+
+    g_id = f"dbl_{random.randint(10000, 99999)}"
+    ACTIVE_DOUBLE_GAMES[g_id] = {
+        "user_id": user.id,
+        "stake": stake,
+        "correct": q_data["correct"],
+        "options": opts,
+        "is_active": True,
+        "chat_id": update.effective_chat.id,
+        "msg_id": None
+    }
+
+    buttons = [[InlineKeyboardButton(f"🔘 {opt}", callback_data=f"ans_dbl_{g_id}_{idx}")] for idx, opt in enumerate(opts)]
+
     text = (
-        f"🥅 <b>نوبت ضربه پنالتی! (شوت {shot_number})</b> ⚽️\n────────────────────\n"
-        f"👤 زننده ضربه: <b>{html.escape(shooter_name)}</b>\nگوشه شوت خود را انتخاب کنید:"
+        "🔥 <b>چالش مرگبار دوبرابر یا پوچ (Double or Nothing)!</b> 💀\n"
+        "────────────────────\n"
+        f"👤 بازیکن: <b>{html.escape(user.first_name)}</b>\n"
+        f"💰 مبلغ شرط: <b>{stake:,} PTS</b> (برد: +{stake:,} | باخت: -{stake:,})\n"
+        "⏱ <b>مهلت پاسخ: فقط ۱۰ ثانیه!</b> ⏳\n"
+        "────────────────────\n"
+        f"❓ <b>{q_data['question']}</b>"
     )
-    buttons = [
-        [InlineKeyboardButton("↖️ بالا چپ", callback_data=f"sht_{shootout_id}_TL"),
-         InlineKeyboardButton("⬆️ طاق مرکز", callback_data=f"sht_{shootout_id}_TC"),
-         InlineKeyboardButton("↗️ بالا راست", callback_data=f"sht_{shootout_id}_TR")],
-        [InlineKeyboardButton("↙️ پایین چپ", callback_data=f"sht_{shootout_id}_BL"),
-         InlineKeyboardButton("⬇️ زمینی مرکز", callback_data=f"sht_{shootout_id}_BC"),
-         InlineKeyboardButton("↘️ پایین راست", callback_data=f"sht_{shootout_id}_BR")]
-    ]
-    return text, InlineKeyboardMarkup(buttons)
+    sent = await update.effective_message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
+    ACTIVE_DOUBLE_GAMES[g_id]["msg_id"] = sent.message_id
+
+    schedule_timer(context, double_timeout_job, 10, data={"g_id": g_id}, name=f"timer_dbl_{g_id}")
+
+# --- SUDDEN DEATH PENALTY (DICE ANIMATION ⚽️) ---
 
 async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update): return
@@ -1175,56 +1430,13 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
         [InlineKeyboardButton("🧤 قبول پنالتی", callback_data=f"acp_{p_id}"),
          InlineKeyboardButton("❌ لغو", callback_data=f"rjp_{p_id}")]
     ])
-    text = f"🥅 <b>دوئل پنالتی مرگ ناگهانی!</b> ⚽️\n{html.escape(challenger.first_name)} 🆚 {html.escape(opponent.first_name)}\nشرط: <b>{stake} PTS</b>\nآیا می‌پذیری؟"
+    text = (
+        f"🥅 <b>دوئل پنالتی مرگ ناگهانی (با تاس فوتبالی)!</b> ⚽️\n"
+        f"{html.escape(challenger.first_name)} 🆚 {html.escape(opponent.first_name)}\n"
+        f"💰 شرط: <b>{stake} PTS</b>\nآیا می‌پذیری؟"
+    )
     sent_msg = await update.message.reply_text(text, reply_markup=p_kb, parse_mode="HTML")
     ACTIVE_SHOOTOUTS[p_id]["message_id"] = sent_msg.message_id
-
-async def execute_penalty_kick(context: ContextTypes.DEFAULT_TYPE, shootout_id: str, choice: str):
-    s = ACTIVE_SHOOTOUTS.get(shootout_id)
-    if not s: return
-
-    chat_id = s["chat_id"]
-    msg_id = s["message_id"]
-    gk_dive = random.choice(["TL", "TC", "TR", "BL", "BC", "BR"])
-    is_goal = choice != gk_dive
-
-    pos_names = {"TL": "بالا چپ", "TC": "طاق مرکز", "TR": "بالا راست", "BL": "پایین چپ", "BC": "زمینی مرکز", "BR": "پایین راست"}
-
-    if s["p1"]["shot"] is None:
-        s["p1"]["shot"] = is_goal
-        s["current_turn"] = s["p2"]["id"]
-        status_text = f"⚽️ <b>گل شد!</b> ({pos_names.get(choice)})" if is_goal else f"🧤 <b>مهار شد!</b> ({pos_names.get(gk_dive)})"
-        t, k = render_shootout_board(shootout_id, s["p2"]["name"], 2)
-        await safe_edit_message(context.bot, f"👤 {s['p1']['name']}: {status_text}\n\n{t}", reply_markup=k, chat_id=chat_id, message_id=msg_id)
-    else:
-        s["p2"]["shot"] = is_goal
-        p1_res, p2_res = s["p1"]["shot"], s["p2"]["shot"]
-
-        if p1_res == p2_res:
-            s["p1"]["shot"] = None
-            s["p2"]["shot"] = None
-            s["current_turn"] = s["p1"]["id"]
-            s["round"] += 1
-            status = "🔥 هر دو گل زدند!" if p1_res else "❌ هر دو خراب کردند!"
-            t, k = render_shootout_board(shootout_id, s["p1"]["name"], 1)
-            await safe_edit_message(context.bot, f"🏁 راند {s['round']-1}: {status}\n⚠️ <b>مرگ ناگهانی!</b> راند جدید شروع شد.\n\n{t}", reply_markup=k, chat_id=chat_id, message_id=msg_id)
-        else:
-            winner = s["p1"] if p1_res else s["p2"]
-            loser = s["p2"] if p1_res else s["p1"]
-            async with aiosqlite.connect(DATABASE_PATH) as db:
-                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (s["stake"], winner["id"]))
-                await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (s["stake"], loser["id"]))
-                await db.commit()
-
-            await profile_record_penalty_win(winner["id"])
-            res = (
-                f"🏁 <b>پایان مسابقه پنالتی (راند {s['round']})</b>\n────────────────────\n"
-                f"👤 {s['p1']['name']}: {'⚽️' if p1_res else '❌'}\n"
-                f"👤 {s['p2']['name']}: {'⚽️' if p2_res else '❌'}\n\n"
-                f"🏆 برنده: <b>{winner['name']}</b> (+{s['stake']} امتیاز)"
-            )
-            await safe_edit_message(context.bot, res, chat_id=chat_id, message_id=msg_id)
-            del ACTIVE_SHOOTOUTS[shootout_id]
 
 # --- WEEKLY JACKPOT ---
 
@@ -1401,7 +1613,7 @@ async def predictions_hub_handler(query):
     text = "🎯 <b>تالار پیش‌بینی مسابقات فوتبال</b>\n────────────────────\nمسابقه مورد نظر خود را جهت ثبت پیش‌بینی انتخاب کنید:\n💰 پاداش: <b>+10 امتیاز</b>\n────────────────────"
     await safe_edit_message(query, text, reply_markup=kb.get_upcoming_matches_keyboard(upcoming_list))
 
-# --- FC CARDS, CHEMISTRY, SELLING & LEAGUE SYSTEM ---
+# --- FC CARDS, CHEMISTRY, SELLING & DEEP FC 26 ENGINE ---
 
 RARITY_COLORS = {"ICON": "💎 آیکان", "ELITE": "🔥 الیت", "RARE": "⭐️ ریر", "COMMON": "⚪️ معمولی"}
 
@@ -1619,11 +1831,70 @@ async def get_user_team_info(user_id: int):
     chem = calculate_team_chemistry(enriched)
     chem_boost = round((chem / 100.0) * 6.0, 1)
     effective_ovr = round(base_ovr + chem_boost, 1)
-    fwd = next((c["name"] for c in enriched if c["pos"] == "FWD"), "مهاجم")
-    gk = next((c["name"] for c in enriched if c["pos"] == "GK"), "دروازه‌بان")
-    return {"base_ovr": base_ovr, "chem": chem, "eff_ovr": effective_ovr, "fwd": fwd, "gk": gk, "cards": enriched}
 
-# مسابقه کارت‌ها با شرط ۱۰۰ امتیازی
+    fwd = next((c["name"] for c in enriched if c["pos"] == "FWD"), "مهاجم")
+    fwd_ovr = next((c["ovr"] for c in enriched if c["pos"] == "FWD"), 78)
+    gk = next((c["name"] for c in enriched if c["pos"] == "GK"), "دروازه‌بان")
+    gk_ovr = next((c["ovr"] for c in enriched if c["pos"] == "GK"), 78)
+    def_card = next((c["name"] for c in enriched if c["pos"] == "DEF"), "مدافع")
+    def_ovr = next((c["ovr"] for c in enriched if c["pos"] == "DEF"), 78)
+    mids = [c for c in enriched if c["pos"] == "MID"]
+    mid_ovr = round(sum(m["ovr"] for m in mids) / len(mids), 1) if mids else 78
+    mid_names = [m["name"] for m in mids]
+
+    return {
+        "base_ovr": base_ovr, "chem": chem, "eff_ovr": effective_ovr,
+        "fwd": fwd, "fwd_ovr": fwd_ovr,
+        "gk": gk, "gk_ovr": gk_ovr,
+        "def": def_card, "def_ovr": def_ovr,
+        "mid_ovr": mid_ovr, "mids": mid_names,
+        "cards": enriched
+    }
+
+# --- DEEP SIMULATION ENGINE (FC 26 LOGIC) ---
+
+def simulate_deep_quarter(attacking_team, defending_team, minute_label):
+    """
+    شبیه‌سازی یک مرحله حمله بر اساس تقابل هافبک‌ها، مهاجم و دفاع+دروازه‌بان
+    """
+    att_mid = attacking_team["mid_ovr"] + (attacking_team["chem"] / 20.0)
+    def_mid = defending_team["mid_ovr"] + (defending_team["chem"] / 20.0)
+
+    # شانس تصاحب و خلق حمله در میانه زمین
+    possession_chance = 0.50 + ((att_mid - def_mid) * 0.02)
+    possession_chance = max(0.25, min(0.75, possession_chance))
+
+    if random.random() > possession_chance:
+        return False, f"⏱ <b>دقیقه {minute_label}:</b> خط هافبک <b>{defending_team['name']}</b> نبض بازی را در دست گرفت و اجازه خلق موقعیت نداد."
+
+    # حمله خلق شد؛ حالا نبرد مهاجم و مدافع/دروازه‌بان
+    fwd_power = attacking_team["fwd_ovr"] + (attacking_team["chem"] / 25.0)
+    def_power = ((defending_team["def_ovr"] + defending_team["gk_ovr"]) / 2.0) + (defending_team["chem"] / 25.0)
+
+    # نرخ تبدیل شوت به گل (تیم ضعیف هم شانس گل دارد اما کمتر)
+    conversion_rate = 0.38 + ((fwd_power - def_power) * 0.03)
+    conversion_rate = max(0.15, min(0.70, conversion_rate))
+
+    fwd_name = attacking_team["team"]["fwd"]
+    gk_name = defending_team["team"]["gk"]
+    def_name = defending_team["team"]["def"]
+
+    if random.random() < conversion_rate:
+        scorer = fwd_name if random.random() < 0.75 else random.choice(attacking_team["team"]["mids"] or [fwd_name])
+        shot_types = [
+            f"شوت سرکش و غیرقابل مهار <b>{scorer}</b> کنج دروازه آرام گرفت!",
+            f"روی پاس در عمق تماشایی، <b>{scorer}</b> در موقعیت تک‌به‌تک گلزنی کرد!",
+            f"ضربه سر چکشی و دیدنی <b>{scorer}</b> به تور چسبید!"
+        ]
+        return True, f"⚽️🔥 <b>گـُــل برای {attacking_team['name']} (دقیقه {minute_label})!</b>\n{random.choice(shot_types)}"
+    else:
+        save_types = [
+            f"واکنش استثنایی و مهار تک‌به‌تک توسط <b>{gk_name}</b> مانع گلزنی شد!",
+            f"تکل نجات‌بخش <b>{def_name}</b> در محوطه جریمه توپ را بلوکه کرد!",
+            f"شوت خطرناک <b>{fwd_name}</b> مماس با تیرک عمودی به بیرون رفت."
+        ]
+        return False, f"🧤 <b>دقیقه {minute_label}:</b> {random.choice(save_types)}"
+
 async def trigger_card_match(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update): return
     if not update.message.reply_to_message:
@@ -1662,10 +1933,10 @@ async def trigger_card_match(update: Update, context: ContextTypes.DEFAULT_TYPE)
          InlineKeyboardButton("❌ لغو", callback_data=f"rj_cm_{m_id}")]
     ])
     text = (
-        f"🏟 <b>مسابقه کارت‌های FC (شرط ۱۰۰ امتیازی)!</b> 🔥\n────────────────────\n"
+        f"🏟 <b>مسابقه بزرگ شبیه‌سازی کارت‌های FC 26!</b> 🔥\n────────────────────\n"
         f"🔵 تیم ۱: <b>{html.escape(p1.first_name)}</b> (⭐️ {t1['eff_ovr']} | ⚗️ {t1['chem']}%)\n"
         f"🔴 تیم ۲: <b>{html.escape(p2.first_name)}</b> (⭐️ {t2['eff_ovr']} | ⚗️ {t2['chem']}%)\n"
-        f"💰 مبلغ شرط: <b>{stake} PTS</b> | مدت بازی: <b>۶۰ ثانیه</b>\n────────────────────\n"
+        f"💰 مبلغ شرط: <b>{stake} PTS</b> | مدت بازی: <b>۶۰ ثانیه تاکتیکی</b>\n────────────────────\n"
         f"آیا <b>{html.escape(p2.first_name)}</b> این چالش را می‌پذیرد؟"
     )
     sent = await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
@@ -1676,33 +1947,50 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     if not m: return
     chat_id, msg_id = m["chat_id"], m["msg_id"]
     p1, p2 = m["p1"], m["p2"]
-    ovr_diff = p1["team"]["eff_ovr"] - p2["team"]["eff_ovr"]
 
+    # دقیقه ۲۵: حمله اول (تیم ۱ حمله می‌کند)
     await asyncio.sleep(15)
-    t15 = f"⏱ <b>دقیقه ۱۵:</b>\n▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n────────────────────\n⚔️ درگیری فیزیکی هافبک‌ها در میانه میدان..."
-    await safe_edit_message(context.bot, t15, chat_id=chat_id, message_id=msg_id)
+    is_goal_25, text_25 = simulate_deep_quarter(p1, p2, "۲۵")
+    if is_goal_25: p1["score"] += 1
+    t25 = (
+        f"⏱ <b>دقیقه ۲۵ مسابقه:</b>\n"
+        f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+        "────────────────────\n"
+        f"{text_25}"
+    )
+    await safe_edit_message(context.bot, t25, chat_id=chat_id, message_id=msg_id)
 
+    # دقیقه ۴۵: پایان نیمه اول (تیم ۲ پاسخ می‌دهد)
     await asyncio.sleep(15)
-    p1_prob = 0.35 + (ovr_diff * 0.025)
-    if random.random() < p1_prob:
-        p1["score"] += 1
-        ev40 = f"⚽️🔥 <b>گـُــل برای {p1['name']}!</b> شوت استثنایی <b>{p1['team']['fwd']}</b> وارد دروازه شد!"
-    else: ev40 = f"🧤 مهار دیدنی توسط <b>{p2['team']['gk']}</b>!"
+    is_goal_45, text_45 = simulate_deep_quarter(p2, p1, "۴۵")
+    if is_goal_45: p2["score"] += 1
+    t45 = (
+        f"⏱ <b>پایان نیمه اول (دقیقه ۴۵):</b>\n"
+        f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+        "────────────────────\n"
+        f"{text_45}"
+    )
+    await safe_edit_message(context.bot, t45, chat_id=chat_id, message_id=msg_id)
 
-    t40 = f"⏱ <b>دقیقه ۴۰:</b>\n▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n────────────────────\n{ev40}"
-    await safe_edit_message(context.bot, t40, chat_id=chat_id, message_id=msg_id)
-
+    # دقیقه ۷۰: نیمه دوم و حمله مجدد
     await asyncio.sleep(15)
-    p2_prob = 0.35 - (ovr_diff * 0.025)
-    if random.random() < p2_prob:
-        p2["score"] += 1
-        ev70 = f"⚽️🔥 <b>گـُــل برای {p2['name']}!</b> فرار سریع <b>{p2['team']['fwd']}</b> به گل نشست!"
-    else: ev70 = f"🛡 تکل نجات‌بخش خط دفاعی، مانع از گلزنی <b>{p2['name']}</b> شد."
-
-    t70 = f"⏱ <b>دقیقه ۷۰:</b>\n▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n────────────────────\n{ev70}"
+    attacker, defender = (p1, p2) if random.random() < 0.5 else (p2, p1)
+    is_goal_70, text_70 = simulate_deep_quarter(attacker, defender, "۷۰")
+    if is_goal_70: attacker["score"] += 1
+    t70 = (
+        f"⏱ <b>دقیقه ۷۰ مسابقه:</b>\n"
+        f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+        "────────────────────\n"
+        f"{text_70}"
+    )
     await safe_edit_message(context.bot, t70, chat_id=chat_id, message_id=msg_id)
 
+    # دقیقه ۸۸: دقایق پایانی و اوج درام مسابقه
     await asyncio.sleep(15)
+    attacker_late, defender_late = (p2, p1) if attacker == p1 else (p1, p2)
+    is_goal_late, text_late = simulate_deep_quarter(attacker_late, defender_late, "۸۸")
+    if is_goal_late: attacker_late["score"] += 1
+
     s1, s2, stake = p1["score"], p2["score"], m["stake"]
     res_footer = ""
     winner_id = None
@@ -1719,7 +2007,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
             winner_id = p2["id"]
             res_footer = f"🏆 برنده بازی: <b>{p2['name']}</b> (+{stake} امتیاز و +100 XP)"
         else:
-            res_footer = "🤝 مسابقه مساوی شد! هیچ امتیازی کسر نشد."
+            res_footer = "🤝 مسابقه با تساوی دراماتیک به پایان رسید! هیچ امتیازی کسر نشد."
         await db.commit()
 
     if winner_id:
@@ -1728,7 +2016,14 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     await record_quest_action(p1["id"], "card_matches")
     await record_quest_action(p2["id"], "card_matches")
 
-    t90 = f"🏁 <b>سوت پایان مسابقه کارت‌ها (Full Time)</b>\n────────────────────\n▫️ <b>{p1['name']} [{s1}] - [{s2}] {p2['name']}</b>\n────────────────────\n{res_footer}"
+    t90 = (
+        f"🏁 <b>سوت پایان مسابقه کارت‌های FC 26 (Full Time)</b>\n"
+        "────────────────────\n"
+        f"▫️ نتیجه قطعی: <b>{p1['name']} [{s1}] - [{s2}] {p2['name']}</b>\n\n"
+        f"{text_late}\n"
+        "────────────────────\n"
+        f"{res_footer}"
+    )
     await safe_edit_message(context.bot, t90, chat_id=chat_id, message_id=msg_id)
     ACTIVE_CARD_MATCHES.pop(m_id, None)
 
@@ -1754,12 +2049,12 @@ async def league_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """, (s_id,)) as cur:
             table_rows = await cur.fetchall()
 
-    text = f"🏆 <b>جدول رده‌بندی لیگ کارت‌های FC</b>\n────────────────────\n<pre>"
+    text = f"🏆 <b>جدول رده‌بندی لیگ کارت‌های FC 26</b>\n────────────────────\n<pre>"
     text += "#  | Team          | P  | W  | D  | L  | GD | Pts\n---+---------------+----+----+----+----+----+----\n"
     for idx, (name, p, w, d, l, gf, ga, gd, pts) in enumerate(table_rows, 1):
         t_name = name[:13].ljust(13)
         text += f"{idx:<2} | {t_name} | {str(p):<2} | {str(w):<2} | {str(d):<2} | {str(l):<2} | {str(gd):<2} | {str(pts):<3}\n"
-    text += "</pre>\n<i>(هر روز ۲ بازی خودکار برگزار می‌شود)</i>"
+    text += "</pre>\n<i>(هر روز ۲ بازی خودکار بر پایه موتور عمیق FC برگزار می‌شود)</i>"
 
     if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())
     else: await update.message.reply_text(text, parse_mode="HTML")
@@ -1774,7 +2069,6 @@ async def league_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("⚠️ یک لیگ هم‌اکنون فعال است! ابتدا با /l_off آن را به پایان برسانید.")
                 return
 
-        # پیدا کردن تمام کاربرانی که ۵ کارت در لاین‌آپ دارند
         async with db.execute("""
             SELECT user_id FROM user_cards WHERE is_in_lineup = 1 GROUP BY user_id HAVING COUNT(*) = 5
         """) as cur:
@@ -1787,7 +2081,6 @@ async def league_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     season_id = f"L_{get_iran_now().strftime('%Y%m%d_%H%M')}"
     today_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
 
-    # ساخت مسابقات رفت و برگشت
     fixtures = []
     for h in eligible:
         for a in eligible:
@@ -1805,10 +2098,10 @@ async def league_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     total_m = len(fixtures)
     msg = (
-        f"🏆🔥 <b>سوت آغاز لیگ رسمی کارت‌های FC به صدا درآمد!</b>\n────────────────────\n"
-        f"👥 تعداد تیم‌های شرکت‌کننده: <b>{len(eligible)} تیم</b>\n"
-        f"🏟 مجموع مسابقات رفت و برگشت: <b>{total_m} بازی</b>\n"
-        f"⏰ برنامه برگزاری: <b>روزی ۲ مسابقه خودکار</b>\n\n"
+        f"🏆🔥 <b>سوت آغاز فصل جدید لیگ کارت‌های FC 26 زده شد!</b>\n────────────────────\n"
+        f"👥 تعداد تیم‌های حاضر: <b>{len(eligible)} تیم</b>\n"
+        f"🏟 مجموع مسابقات رفت و برگشت: <b>{total_m} مسابقه</b>\n"
+        f"⏰ برنامه: <b>روزی ۲ مسابقه خودکار با موتور جدید</b>\n\n"
         f"🥇 قهرمان: ۲,۵۰۰ PTS | 🥈 نایب‌قهرمان: ۱,۲۰۰ PTS | 🥉 سوم: ۶۰۰ PTS"
     )
     target_chat_id = await get_live_chat_id()
@@ -1825,7 +2118,6 @@ async def league_off_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🔴 لیگ فعال فعلی لغو و متوقف شد.")
 
 async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
-    """تسک پس‌زمینه برگزاری ۲ مسابقه از لیگ در روز"""
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
             async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
@@ -1837,7 +2129,6 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
                 pending_matches = await cur.fetchall()
 
             if not pending_matches:
-                # پایان رسمی مسابقات لیگ و توزیع جوایز
                 async with db.execute("""
                     SELECT s.user_id, u.first_name, s.points, s.gd
                     FROM league_standings s JOIN users u ON s.user_id = u.user_id
@@ -1847,7 +2138,7 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
 
                 if final_ranks:
                     prizes = {0: (2500, 600), 1: (1200, 350), 2: (600, 200)}
-                    summary = "🏁 <b>پایان رسمی فصل لیگ کارت‌های FC!</b>\n────────────────────\n"
+                    summary = "🏁 <b>پایان رسمی فصل لیگ کارت‌های FC 26!</b>\n────────────────────\n"
                     for idx, (uid, name, pts, gd) in enumerate(final_ranks):
                         p_pts, p_xp = prizes.get(idx, (150, 50))
                         await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (p_pts, uid))
@@ -1866,12 +2157,12 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
             for f_id, h_id, a_id in pending_matches:
                 t1 = await get_user_team_info(h_id)
                 t2 = await get_user_team_info(a_id)
-                ovr1 = t1["eff_ovr"] if t1 else 75
-                ovr2 = t2["eff_ovr"] if t2 else 75
-                diff = ovr1 - ovr2
 
-                s1 = max(0, int(random.gauss(1.4 + diff * 0.05, 1.1)))
-                s2 = max(0, int(random.gauss(1.2 - diff * 0.05, 1.1)))
+                p1_obj = {"name": "میزبان", "team": t1, "mid_ovr": t1["mid_ovr"] if t1 else 78, "chem": t1["chem"] if t1 else 35, "fwd_ovr": t1["fwd_ovr"] if t1 else 78}
+                p2_obj = {"name": "میهمان", "team": t2, "mid_ovr": t2["mid_ovr"] if t2 else 78, "chem": t2["chem"] if t2 else 35, "fwd_ovr": t2["fwd_ovr"] if t2 else 78}
+
+                s1 = sum([simulate_deep_quarter(p1_obj, p2_obj, "20")[0], simulate_deep_quarter(p1_obj, p2_obj, "60")[0], (random.random() < 0.25 and simulate_deep_quarter(p1_obj, p2_obj, "85")[0])])
+                s2 = sum([simulate_deep_quarter(p2_obj, p1_obj, "40")[0], simulate_deep_quarter(p2_obj, p1_obj, "75")[0], (random.random() < 0.25 and simulate_deep_quarter(p2_obj, p1_obj, "90")[0])])
 
                 await db.execute("UPDATE league_fixtures SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? WHERE id = ?",
                                  (s1, s2, get_iran_now().strftime("%Y-%m-%d %H:%M"), f_id))
@@ -1894,15 +2185,15 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
                 async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (a_id,)) as cur: a_name = (await cur.fetchone())[0]
 
                 report = (
-                    f"📢 <b>نتیجه رسمی بازی لیگ کارت‌های FC:</b>\n────────────────────\n"
+                    f"📢 <b>نتیجه مسابقه لیگ کارت‌های FC 26:</b>\n────────────────────\n"
                     f"▫️ تیم <b>{html.escape(h_name)}</b> [{s1}] - [{s2}] تیم <b>{html.escape(a_name)}</b>\n"
-                    f"📊 جدول رده‌بندی با دستور <code>/league</code> به‌روز شد."
+                    f"📊 جدول با دستور <code>/league</code> به‌روز شد."
                 )
                 target_chat_id = await get_live_chat_id()
                 if target_chat_id: await context.bot.send_message(chat_id=target_chat_id, text=report, parse_mode="HTML")
     except Exception as e: logger.error(f"Error in simulate_daily_league_task: {e}")
 
-# --- TRIVIA DUELS (100% FIXED QUESTION 3 DEADLOCK) ---
+# --- TRIVIA DUELS (RESOLVED QUESTION 3 DEADLOCK) ---
 
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update): return
@@ -1967,7 +2258,6 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     chat_id, msg_id = duel["chat_id"], duel["message_id"]
     q_idx = duel["current_q"]
 
-    # ثبت نتیجه قطعی پس از اتمام سوال ۳ (با رفع کامل باگ قفل دیتابیس)
     if q_idx >= len(duel["questions"]):
         try:
             c_score, o_score = duel["challenger"]["score"], duel["opponent"]["score"]
@@ -2016,7 +2306,7 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
 async def trigger_team_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update): return
     if not update.message.reply_to_message:
-        await update.message.reply_text("⚔️ برای بتل ۲ به ۲، روی پیام حریف ریپلای کن و بنویس: <code>بتل</code>", parse_mode="HTML")
+        await update.message.reply_text("⚔️ برای بتل ۲ به ۲، روی پیام حریف ریپلای کن و بنویس:\n<code>بتل</code>", parse_mode="HTML")
         return
 
     challenger, opponent = update.effective_user, update.message.reply_to_message.from_user
@@ -2204,6 +2494,47 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await quests_cmd(update, context)
             else:
                 await query.answer("ماموریت‌ها هنوز تکمیل نشده است!", show_alert=True)
+
+    elif data.startswith("ans_dbl_"):
+        parts = data.split("_")
+        g_id, opt_idx = f"{parts[2]}_{parts[3]}", int(parts[4])
+        game = ACTIVE_DOUBLE_GAMES.get(g_id)
+        if not game or not game.get("is_active"):
+            await query.answer("این چالش به پایان رسیده است.", show_alert=True)
+            return
+
+        if uid != game["user_id"]:
+            await query.answer("شما شرکت‌کننده این چالش نیستید!", show_alert=True)
+            return
+
+        game["is_active"] = False
+        cancel_timer(context, f"timer_dbl_{g_id}")
+
+        chosen_opt = game["options"][opt_idx]
+        is_correct = (chosen_opt == game["correct"])
+        stake = game["stake"]
+
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            if is_correct:
+                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, uid))
+                await db.commit()
+                await profile_add_xp(uid, 50)
+                result_text = (
+                    f"🎉🔥 <b>پاسخ شگفت‌انگیز و کاملاً درست!</b>\n"
+                    f"▫️ پاسخ صحیح: <b>{game['correct']}</b>\n"
+                    f"💰 تبریک! شما مبلغ <b>+{stake:,} PTS</b> برنده شدید و حسابتان دوبرابر شد! (+50 XP)"
+                )
+            else:
+                await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, uid))
+                await db.commit()
+                result_text = (
+                    f"💀 <b>پاسخ اشتباه بود!</b>\n"
+                    f"▫️ پاسخ صحیح: <b>{game['correct']}</b> بود.\n"
+                    f"💸 متاسفانه کل شرط شما سوخت و مبلغ <b>-{stake:,} PTS</b> از حسابتان کسر گردید."
+                )
+
+        await safe_edit_message(context.bot, result_text, reply_markup=None, chat_id=game["chat_id"], message_id=game["msg_id"])
+        ACTIVE_DOUBLE_GAMES.pop(g_id, None)
 
     elif data == "select_matches_today":
         await safe_edit_message(query, "🔥 <b>لیگ مورد نظر برای مسابقات امروز:</b>", reply_markup=kb.get_matches_leagues_keyboard("today"))
@@ -2409,8 +2740,13 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if s and uid == s["p2"]["id"]:
             await increment_penalty_count_db(s["p1"]["id"])
             await increment_penalty_count_db(s["p2"]["id"])
-            t, k = render_shootout_board(p_id, s["p1"]["name"], 1)
-            await safe_edit_message(query, t, reply_markup=k)
+            text = (
+                f"🥅 <b>ماراتن پنالتی مرگ ناگهانی آغاز شد!</b> ⚽️\n────────────────────\n"
+                f"👤 نوبت شوت‌زن اول: <b>{s['p1']['name']}</b> (راند ۱)\n"
+                "روی دکمه زیر بزنید تا ضربه شلیک شود:"
+            )
+            k = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ شلیک ضربه پنالتی", callback_data=f"pkick_{p_id}")]])
+            await safe_edit_message(query, text, reply_markup=k)
 
     elif data.startswith("rjp_"):
         p_id = data.replace("rjp_", "")
@@ -2418,17 +2754,76 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             del ACTIVE_SHOOTOUTS[p_id]
             await safe_edit_message(query, "❌ چالش پنالتی لغو شد.")
 
-    elif data.startswith("sht_"):
-        parts = data.split("_")
-        p_id, choice = f"{parts[1]}_{parts[2]}", parts[3]
-        if p_id in ACTIVE_SHOOTOUTS and uid == ACTIVE_SHOOTOUTS[p_id]["current_turn"]:
-            await execute_penalty_kick(context, p_id, choice)
+    elif data.startswith("pkick_"):
+        p_id = data.replace("pkick_", "")
+        s = ACTIVE_SHOOTOUTS.get(p_id)
+        if not s:
+            await query.answer("این پنالتی به پایان رسیده است.", show_alert=True)
+            return
+
+        if uid != s["current_turn"]:
+            await query.answer("اکنون نوبت شوت شما نیست!", show_alert=True)
+            return
+
+        chat_id = s["chat_id"]
+        dice_msg = await context.bot.send_dice(chat_id=chat_id, emoji="⚽")
+        await asyncio.sleep(2.5)
+
+        is_goal = dice_msg.dice.value in [3, 4, 5]
+
+        if s["p1"]["shot"] is None:
+            s["p1"]["shot"] = is_goal
+            s["current_turn"] = s["p2"]["id"]
+            goal_status = "⚽️ گل شد!" if is_goal else "🧤 مهار شد!"
+            next_text = (
+                f"👤 شوت <b>{s['p1']['name']}</b>: {goal_status}\n────────────────────\n"
+                f"👤 اکنون نوبت <b>{s['p2']['name']}</b> است!\nروی دکمه زیر بزنید:"
+            )
+            k = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ شلیک ضربه پنالتی", callback_data=f"pkick_{p_id}")]])
+            await safe_edit_message(context.bot, next_text, reply_markup=k, chat_id=chat_id, message_id=s["message_id"])
+        else:
+            s["p2"]["shot"] = is_goal
+            p1_goal, p2_goal = s["p1"]["shot"], s["p2"]["shot"]
+
+            if p1_goal == p2_goal:
+                s["round"] += 1
+                s["p1"]["shot"] = None
+                s["p2"]["shot"] = None
+                s["current_turn"] = s["p1"]["id"]
+                both_status = "🔥 هر دو گل زدند!" if p1_goal else "❌ هر دو خراب کردند!"
+                round_msg = (
+                    f"🏁 پایان راند {s['round']-1}: {both_status}\n"
+                    f"⚠️ <b>مرگ ناگهانی! هر دو مساوی شدند و ماراتن به راند {s['round']} کشیده شد.</b>\n────────────────────\n"
+                    f"👤 نوبت شوت‌زن اول: <b>{s['p1']['name']}</b>\nروی دکمه زیر بزنید:"
+                )
+                k = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ شلیک ضربه پنالتی", callback_data=f"pkick_{p_id}")]])
+                await safe_edit_message(context.bot, round_msg, reply_markup=k, chat_id=chat_id, message_id=s["message_id"])
+            else:
+                winner = s["p1"] if p1_goal else s["p2"]
+                loser = s["p2"] if p1_goal else s["p1"]
+                stake = s["stake"]
+
+                async with aiosqlite.connect(DATABASE_PATH) as db:
+                    await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, winner["id"]))
+                    await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, loser["id"]))
+                    await db.commit()
+
+                await profile_record_penalty_win(winner["id"])
+
+                res = (
+                    f"🏁 <b>سوت پایان ماراتن پنالتی مرگ ناگهانی (راند {s['round']})</b>\n────────────────────\n"
+                    f"👤 {s['p1']['name']}: {'⚽️ گل' if p1_goal else '❌ مهار'}\n"
+                    f"👤 {s['p2']['name']}: {'⚽️ گل' if p2_goal else '❌ مهار'}\n\n"
+                    f"🏆 برنده ماراتن: <b>{winner['name']}</b> (+{stake} امتیاز)"
+                )
+                await safe_edit_message(context.bot, res, reply_markup=None, chat_id=chat_id, message_id=s["message_id"])
+                ACTIVE_SHOOTOUTS.pop(p_id, None)
 
     elif data.startswith("ac_cm_"):
         m_id = data.replace("ac_cm_", "")
         m = ACTIVE_CARD_MATCHES.get(m_id)
         if m and uid == m["p2"]["id"]:
-            await safe_edit_message(query, "⚽️ <b>مسابقه آغاز شد! شبیه‌سازی زنده در جریان است...</b>")
+            await safe_edit_message(query, "⚽️ <b>مسابقه FC 26 آغاز شد! موتور شبیه‌سازی عمیق در حال پردازش بازی...</b>")
             asyncio.create_task(run_live_card_match_simulation(context, m_id))
 
     elif data.startswith("rj_cm_"):
@@ -2448,7 +2843,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             del ACTIVE_DUELS[duel_id]
             await safe_edit_message(query, "❌ چالش دوئل لغو گردید.")
 
-    # ثبت پاسخ دوئل (بدون تداخل و همراه با مدیریت تمیز)
     elif data.startswith("ad_"):
         parts = data.split("_")
         duel_id, opt_idx = f"{parts[1]}_{parts[2]}", int(parts[3])
@@ -2576,7 +2970,9 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
         await user_profile_handler(update.message, target_user=target_user)
         return
 
-    if msg in ["دوئل", "duel", "چالش"]: await trigger_duel(update, context)
+    if re.match(r"^\s*(?:دوبل|قمار|ریسک)\s+(\d+)\s*$", msg):
+        await double_or_nothing_cmd(update, context)
+    elif msg in ["دوئل", "duel", "چالش"]: await trigger_duel(update, context)
     elif msg in ["پنالتی", "پنالتی کشی", "penalty"]: await trigger_penalty_shootout(update, context)
     elif msg in ["مسابقه کارت", "کارت مچ", "cardmatch", "کارت"]: await trigger_card_match(update, context)
     elif msg in ["مارکت", "market", "خرید کارت"]: await market_cmd(update, context)
@@ -2595,6 +2991,12 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def post_init(application: Application):
     await init_db()
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN last_double_date TEXT DEFAULT ''")
+            await db.commit()
+        except Exception: pass
+
     await ensure_escobar_ai()
     if getattr(application, "job_queue", None):
         application.job_queue.run_repeating(monitor_live_matches_and_banter, interval=90, first=5)
@@ -2626,6 +3028,8 @@ def main():
     app.add_handler(CommandHandler("mycards", my_cards_cmd))
     app.add_handler(CommandHandler("lineup", lineup_cmd))
     app.add_handler(CommandHandler("quests", quests_cmd))
+    app.add_handler(CommandHandler("double", double_or_nothing_cmd))
+    app.add_handler(CommandHandler("risk", double_or_nothing_cmd))
     app.add_handler(CommandHandler("league", league_cmd))
     app.add_handler(CommandHandler("l_on", league_on_cmd))
     app.add_handler(CommandHandler("l_off", league_off_cmd))
@@ -2635,6 +3039,7 @@ def main():
     app.add_handler(CommandHandler("wheel", spin_wheel_cmd))
     app.add_handler(CommandHandler("jackpot", jackpot_cmd))
     app.add_handler(CommandHandler("add", add_points_cmd))
+    app.add_handler(CommandHandler("all", add_points_to_all_cmd))
     app.add_handler(CommandHandler("backup", backup_db_cmd))
     app.add_handler(CommandHandler("restore", restore_db_cmd))
     app.add_handler(CommandHandler("reset_points", reset_points_cmd))
@@ -2647,7 +3052,7 @@ def main():
     app.add_handler(MessageHandler(filters.Regex(r"^\s*بتل\s*$"), trigger_team_duel))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Football Hub Bot running smoothly!")
+    logger.info("Football Hub Bot running smoothly with FC 26 Engine and Authentic 200 Players!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
