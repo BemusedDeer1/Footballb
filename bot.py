@@ -23,7 +23,7 @@ from database import init_db
 from football_provider import provider
 import keyboards as kb
 from trivia import get_random_duel_questions
-from fc_catalog import FC_CATALOG, FC_CATALOG_DICT, RARITY_COLORS, SELL_PRICES
+from fc_catalog import FC_CATALOG, FC_CATALOG_DICT, RARITY_COLORS
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -34,6 +34,14 @@ logger = logging.getLogger(__name__)
 ESCOBAR_AI_ID = 999999999
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 LRM = "\u200E"
+
+# --- RE-BALANCED QUICK SELL PRICES ---
+SELL_PRICES = {
+    "ICON": 1500,
+    "ELITE": 550,
+    "RARE": 180,
+    "COMMON": 50
+}
 
 # --- HARDCORE FOOTBALL QUIZ POOL ---
 HARDCORE_QUIZ_POOL = [
@@ -410,12 +418,14 @@ async def ensure_escobar_ai():
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
 async def get_wealth_multiplier():
+    """محاسبه ضریب تورم هوشمند: حداقل ۱.۰ برای حفظ کف قیمت‌های قطعی"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT AVG(points) FROM users WHERE user_id != ?", (ESCOBAR_AI_ID,)) as cur:
             row = await cur.fetchone()
-            avg_pts = row[0] if row and row[0] else 150
-    mult = avg_pts / 200.0
-    return max(0.7, min(3.5, mult))
+            avg_pts = row[0] if row and row[0] else 200
+    # اگر میانگین از ۳۰۰ بالاتر رفت، قیمت‌ها به مرور کمی رشد می‌کنند تا احتکار نشود
+    mult = 1.0 + max(0.0, (avg_pts - 300) / 1000.0)
+    return min(2.5, mult)
 
 async def get_penalty_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
@@ -518,7 +528,51 @@ async def quests_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
     else: await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
 
-# --- ADMIN COMMANDS ---
+# --- ADMIN ECONOMIC CONTROLS ---
+
+async def halve_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """نصف کردن امتیاز تمام کاربران برای کنترل تورم و بازسازی اقتصاد"""
+    user = update.effective_user
+    if str(user.id) != str(ADMIN_ID): return
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("""
+            UPDATE users 
+            SET points = MAX(10, CAST(points / 2 AS INTEGER)) 
+            WHERE user_id != ?
+        """, (ESCOBAR_AI_ID,))
+        await db.commit()
+
+    await update.effective_message.reply_text(
+        "📉 <b>شوک اقتصادی اعمال شد!</b>\n"
+        "موجودی تمام کاربران به نصف کاهش یافت (با کف ۱۰ امتیاز) تا نقدینگی کنترل شود.",
+        parse_mode="HTML"
+    )
+
+    target_chat_id = await get_live_chat_id()
+    if target_chat_id:
+        msg = (
+            "🏦📉 <b>اصلاحیه مالی و کنترل نقدینگی بازی!</b>\n"
+            "────────────────────\n"
+            "جهت ایجاد تعادل و رقابتی‌تر شدن مارکت، موجودی کلیه حساب‌ها ۵۰٪ تعدیل شد. اکنون شکار کارت‌ها جذاب‌تر خواهد بود!"
+        )
+        try: await context.bot.send_message(chat_id=target_chat_id, text=msg, parse_mode="HTML")
+        except Exception: pass
+
+async def reset_market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """ریست کردن روزانه مارکت برای همه تا با قیمت‌های متعادل تازه لود شوند"""
+    user = update.effective_user
+    if str(user.id) != str(ADMIN_ID): return
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("DELETE FROM daily_market")
+        await db.commit()
+
+    await update.effective_message.reply_text(
+        "🔄 <b>مارکت روزانه برای تمام کاربران ریست شد!</b>\n"
+        "در اولین باز کردن <code>/market</code> کارت‌ها با قیمت‌های تنظیم‌شده جدید ظاهر خواهند شد.",
+        parse_mode="HTML"
+    )
 
 async def add_points_to_all_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -1373,7 +1427,7 @@ async def predictions_hub_handler(query):
     text = "🎯 <b>تالار پیش‌بینی مسابقات فوتبال</b>\n────────────────────\nمسابقه مورد نظر خود را جهت ثبت پیش‌بینی انتخاب کنید:\n💰 پاداش: <b>+10 امتیاز</b>\n────────────────────"
     await safe_edit_message(query, text, reply_markup=kb.get_upcoming_matches_keyboard(upcoming_list))
 
-# --- FC CARDS & DYNAMIC MARKET ENGINE ---
+# --- FC CARDS & BALANCED DYNAMIC MARKET ENGINE ---
 
 def calculate_team_chemistry(cards):
     if len(cards) < 5: return 0
@@ -1421,9 +1475,16 @@ async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             offers = []
             for i, c in enumerate(selected):
-                base_price = (random.randint(110, 150) if c["rarity"] == "COMMON" else
-                              (random.randint(320, 450) if c["rarity"] == "RARE" else
-                               (random.randint(1000, 1350) if c["rarity"] == "ELITE" else random.randint(2600, 3300))))
+                # تعیین کف قطعی و بازه پایه هر رده کارت
+                if c["rarity"] == "COMMON":
+                    base_price = random.randint(120, 180)
+                elif c["rarity"] == "RARE":
+                    base_price = random.randint(400, 580)
+                elif c["rarity"] == "ELITE":
+                    base_price = random.randint(1250, 1650)
+                else:  # ICON (حداقل ۳,۴۰۰ تا ۴,۵۰۰ به بالا)
+                    base_price = random.randint(3400, 4500)
+
                 dyn_price = int(base_price * mult)
                 offers.append({"idx": i, "card": c, "price": dyn_price, "bought": False})
 
@@ -1434,7 +1495,7 @@ async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         async with db.execute("SELECT points FROM users WHERE user_id = ?", (user.id,)) as cur:
             u_pts = (await cur.fetchone())[0]
 
-    text = f"🛒 <b>مارکت نقل‌وانتقالات FC (قیمت‌گذاری شناور بازار)</b>\n────────────────────\n💰 موجودی شما: <b>{u_pts:,} PTS</b>\n────────────────────\n\n"
+    text = f"🛒 <b>مارکت نقل‌وانتقالات FC (قیمت‌های متعادل بازار)</b>\n────────────────────\n💰 موجودی شما: <b>{u_pts:,} PTS</b>\n────────────────────\n\n"
     buttons = []
     for o in offers:
         c = o["card"]
@@ -1475,7 +1536,7 @@ async def sell_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = "💰 <b>فروشگاه بازخرید کارت‌ها (Quick Sell)</b>\n────────────────────\nوجه فروش فوراً به حسابتان اضافه می‌شود:\n────────────────────\n\n"
     buttons = []
     for cid, name, ovr, pos, rar, in_lineup in cards:
-        price = SELL_PRICES.get(rar, 70)
+        price = SELL_PRICES.get(rar, 50)
         badge = "🟢 " if in_lineup else ""
         buttons.append([InlineKeyboardButton(f"فروش {badge}{name} ({ovr}) ➔ +{price} PTS", callback_data=f"sell_c_{cid}")])
 
@@ -1680,7 +1741,7 @@ def simulate_chained_fc26_attack(att_dict, def_dict, minute_label, momentum_boos
 async def trigger_card_match(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_action_allowed_in_chat(update): return
     if not update.message.reply_to_message:
-        await update.message.reply_text("⚽️ برای مسابقه کارت‌ها، روی پیام حریف ریپلای کن و بنویس:\n<code>مسابقه کارت</code> یا <code>/cardmatch</code>", parse_mode="HTML")
+        await update.message.reply_to_message.reply_text("⚽️ برای مسابقه کارت‌ها، روی پیام حریف ریپلای کن و بنویس:\n<code>مسابقه کارت</code> یا <code>/cardmatch</code>", parse_mode="HTML")
         return
 
     p1, p2 = update.effective_user, update.message.reply_to_message.from_user
@@ -1730,7 +1791,6 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     chat_id, msg_id = m["chat_id"], m["msg_id"]
     p1, p2 = m["p1"], m["p2"]
 
-    # توزیع وزن‌دار موقعیت‌ها بر اساس قدرت تیم
     p1_power = (p1["team"]["eff_ovr"] ** 1.3) * (1 + p1["team"]["chem"] / 100.0)
     p2_power = (p2["team"]["eff_ovr"] ** 1.3) * (1 + p2["team"]["chem"] / 100.0)
     p1_chance_prob = max(0.25, min(0.75, p1_power / (p1_power + p2_power)))
@@ -1748,7 +1808,6 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     momentum = {"p1": 0.0, "p2": 0.0}
 
     def execute_chance(minute_label, extra_boost=0.0):
-        # انتخاب حمله بر اساس احتمال برتری تیم قوی‌تر
         attacker, defender = (p1, p2) if random.random() < p1_chance_prob else (p2, p1)
         att_key = "p1" if attacker == p1 else "p2"
         boost = momentum[att_key] + extra_boost
@@ -1763,7 +1822,6 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
             stats["scorers"].append(f"⚽️ {s} ({attacker['name']})")
             stats["motm_points"][s] += 3
             if a: stats["motm_points"][a] += 2
-            # حریف انگیزه جبران پیدا می‌کند
             opp_key = "p2" if att_key == "p1" else "p1"
             momentum[opp_key] += 0.08
             momentum[att_key] = 0.0
@@ -1776,7 +1834,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
         return txt
 
     try:
-        # فاز ۱: دقایق ۱۵ و ۲۴ (۲ موقعیت خطرناک)
+        # فاز ۱: دقایق ۱۶ و ۲۴
         await asyncio.sleep(15)
         txt_1a = execute_chance("۱۶")
         txt_1b = execute_chance("۲۴")
@@ -1788,7 +1846,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
         )
         await safe_edit_message(context.bot, t1, chat_id=chat_id, message_id=msg_id)
 
-        # فاز ۲: دقایق ۳۵ و ۴۴ (پایان نیمه اول)
+        # فاز ۲: دقایق ۳۵ و ۴۴
         await asyncio.sleep(15)
         txt_2a = execute_chance("۳۵")
         txt_2b = execute_chance("۴۴")
@@ -1800,7 +1858,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
         )
         await safe_edit_message(context.bot, t2, chat_id=chat_id, message_id=msg_id)
 
-        # فاز ۳: دقایق ۶۲ و ۷۱ (نیمه دوم)
+        # فاز ۳: دقایق ۶۲ و ۷۱
         await asyncio.sleep(15)
         txt_3a = execute_chance("۶۲")
         txt_3b = execute_chance("۷۱")
@@ -1812,7 +1870,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
         )
         await safe_edit_message(context.bot, t3, chat_id=chat_id, message_id=msg_id)
 
-        # فاز ۴: دقیقه ۸۹ و ۹۰+۲ (فرگی تایم کلاچ)
+        # فاز ۴: دقیقه ۸۶ و ۹۰+۲ (فرگی تایم کلاچ)
         await asyncio.sleep(15)
         clutch_boost = 0.12 if abs(p1["score"] - p2["score"]) <= 1 else 0.0
         txt_4a = execute_chance("۸۶", clutch_boost)
@@ -2441,7 +2499,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 row = await cur.fetchone()
             if not row: return
             p_name, rar, in_lineup = row
-            sell_price = SELL_PRICES.get(rar, 70)
+            sell_price = SELL_PRICES.get(rar, 50)
             await db.execute("DELETE FROM user_cards WHERE id = ?", (card_id,))
             await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (sell_price, uid))
             await db.commit()
@@ -2471,7 +2529,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(pop_msg, parse_mode="HTML")
         await market_cmd(update, context)
 
-    # ۲. اولتیمیت پک (750 PTS)
+    # ۲. اولتیمیت پک (750 PTS) - با حفظ ریسک کارت معمولی
     elif data == "buy_pack_ultimate":
         pack_price = 750
         async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -2497,7 +2555,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(pop_msg, parse_mode="HTML")
         await market_cmd(update, context)
 
-    # ۳. سوپر پک ویژه (2,500 PTS)
+    # ۳. سوپر پک ویژه (2,500 PTS) - ۱۰۰٪ تضمین الیت و آیکان
     elif data == "buy_pack_super":
         pack_price = 2500
         async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -2940,13 +2998,15 @@ def main():
     app.add_handler(CommandHandler("set_live", set_live_group))
     app.add_handler(CommandHandler("ch_on", cheat_mode_command))
     app.add_handler(CommandHandler("ch_off", cheat_mode_command))
+    app.add_handler(CommandHandler(["nesf", "Nesf"], halve_points_cmd))
+    app.add_handler(CommandHandler(["mr", "Mr"], reset_market_cmd))
     app.add_handler(CommandHandler("info", lambda u, c: handle_group_messages(u, c)))
 
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.Regex(r"^\s*بتل\s*$"), trigger_team_duel))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
 
-    logger.info("Football Hub Bot running smoothly with Enhanced Dynamic FC 26 Engine!")
+    logger.info("Football Hub Bot running smoothly with Solid Balanced Economy!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
