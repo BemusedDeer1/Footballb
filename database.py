@@ -5,8 +5,12 @@ from config import DATABASE_PATH
 logger = logging.getLogger(__name__)
 
 async def init_db():
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        # 1. جدول اصلی کاربران
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        # فعال‌سازی حالت WAL و مهلت ۳۰ ثانیه‌ای جهت جلوگیری دائمی از خطای database is locked
+        await db.execute("PRAGMA journal_mode=WAL;")
+        await db.execute("PRAGMA busy_timeout=30000;")
+
+        # ۱. جدول اصلی کاربران
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
@@ -19,7 +23,7 @@ async def init_db():
                 penalty_wins INTEGER DEFAULT 0,
                 guess_wins INTEGER DEFAULT 0,
                 total_predictions INTEGER DEFAULT 0,
-                correct_results INTEGER DEFAULT 0,
+                correct_predictions INTEGER DEFAULT 0,
                 exact_predictions INTEGER DEFAULT 0,
                 season_gold INTEGER DEFAULT 0,
                 season_silver INTEGER DEFAULT 0,
@@ -32,6 +36,7 @@ async def init_db():
                 guess_count INTEGER DEFAULT 0,
                 penalty_date TEXT DEFAULT '',
                 penalty_count INTEGER DEFAULT 0,
+                last_double_date TEXT DEFAULT '',
                 profile_xp INTEGER DEFAULT 0,
                 profile_level INTEGER DEFAULT 1,
                 profile_correct INTEGER DEFAULT 0,
@@ -40,14 +45,18 @@ async def init_db():
             )
         """)
 
-        # 2. بررسی و اضافه کردن خودکار ستون‌های جاافتاده در کاربران موجود (Safe Migration)
+        # ۲. بررسی و اضافه کردن خودکار ستون‌های جدید به کاربران (Safe Migration)
         async with db.execute("PRAGMA table_info(users)") as cur:
-            columns = [row[1] for row in await cur.fetchall()]
+            user_columns = [row[1] for row in await cur.fetchall()]
 
         required_user_columns = {
             "level": "INTEGER DEFAULT 1",
+            "duel_wins": "INTEGER DEFAULT 0",
             "penalty_wins": "INTEGER DEFAULT 0",
             "guess_wins": "INTEGER DEFAULT 0",
+            "total_predictions": "INTEGER DEFAULT 0",
+            "correct_predictions": "INTEGER DEFAULT 0",
+            "exact_predictions": "INTEGER DEFAULT 0",
             "season_gold": "INTEGER DEFAULT 0",
             "season_silver": "INTEGER DEFAULT 0",
             "season_bronze": "INTEGER DEFAULT 0",
@@ -62,18 +71,19 @@ async def init_db():
             "last_guess_date": "TEXT DEFAULT ''",
             "guess_count": "INTEGER DEFAULT 0",
             "penalty_date": "TEXT DEFAULT ''",
-            "penalty_count": "INTEGER DEFAULT 0"
+            "penalty_count": "INTEGER DEFAULT 0",
+            "last_double_date": "TEXT DEFAULT ''"
         }
 
         for col_name, col_def in required_user_columns.items():
-            if col_name not in columns:
+            if col_name not in user_columns:
                 try:
                     await db.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}")
                     logger.info(f"Added column {col_name} to users table.")
                 except Exception as e:
-                    logger.debug(f"Column {col_name} already exists or error: {e}")
+                    logger.debug(f"Column {col_name} note: {e}")
 
-        # 3. جدول پیش‌بینی‌های مسابقات روزانه
+        # ۳. جدول پیش‌بینی‌های مسابقات روزانه
         await db.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,12 +93,22 @@ async def init_db():
                 predicted_home INTEGER DEFAULT 0,
                 predicted_away INTEGER DEFAULT 0,
                 status TEXT DEFAULT 'PENDING',
+                settled INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(user_id, match_id)
             )
         """)
 
-        # 4. جدول استخر ۳۰۰ امتیازی مسابقات ویژه
+        # اطمینان از وجود ستون settled در صورت وجود دیتابیس قبلی
+        async with db.execute("PRAGMA table_info(predictions)") as cur:
+            pred_columns = [row[1] for row in await cur.fetchall()]
+        if "settled" not in pred_columns:
+            try:
+                await db.execute("ALTER TABLE predictions ADD COLUMN settled INTEGER DEFAULT 0")
+            except Exception:
+                pass
+
+        # ۴. جدول استخر ۳۰۰ امتیازی مسابقات ویژه
         await db.execute("""
             CREATE TABLE IF NOT EXISTS special_pool_predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,7 +121,7 @@ async def init_db():
             )
         """)
 
-        # 5. جدول تنظیمات سیستمی و ادمین
+        # ۵. جدول تنظیمات سیستمی و ادمین
         await db.execute("""
             CREATE TABLE IF NOT EXISTS bot_settings (
                 key TEXT PRIMARY KEY,
@@ -109,7 +129,7 @@ async def init_db():
             )
         """)
 
-        # 6. جدول راندهای جک‌پات هفتگی
+        # ۶. جدول راندهای جک‌پات هفتگی
         await db.execute("""
             CREATE TABLE IF NOT EXISTS jackpot_rounds (
                 round_id TEXT PRIMARY KEY,
@@ -123,7 +143,7 @@ async def init_db():
             )
         """)
 
-        # 7. جدول فرم‌های ثبت‌شده جک‌پات کاربران
+        # ۷. جدول فرم‌های ثبت‌شده جک‌پات کاربران
         await db.execute("""
             CREATE TABLE IF NOT EXISTS jackpot_combos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,7 +158,7 @@ async def init_db():
             )
         """)
 
-        # 8. جدول کارت‌های خریداری‌شده بازیکنان FC
+        # ۸. جدول کارت‌های خریداری‌شده بازیکنان FC
         await db.execute("""
             CREATE TABLE IF NOT EXISTS user_cards (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -152,7 +172,7 @@ async def init_db():
             )
         """)
 
-        # 9. جدول مارکت و پیشنهادات روزانه نقل‌وانتقالات
+        # ۹. جدول مارکت و پیشنهادات روزانه نقل‌وانتقالات
         await db.execute("""
             CREATE TABLE IF NOT EXISTS daily_market (
                 user_id INTEGER,
@@ -162,7 +182,7 @@ async def init_db():
             )
         """)
 
-        # 10. جدول ماموریت‌های روزانه (Daily Quests)
+        # ۱۰. جدول ماموریت‌های روزانه (Daily Quests)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS daily_quests (
                 user_id INTEGER,
@@ -175,7 +195,7 @@ async def init_db():
             )
         """)
 
-        # 11. جداول لیگ رفت و برگشت کارت‌های FC
+        # ۱۱. جداول لیگ رفت و برگشت کارت‌های FC
         await db.execute("""
             CREATE TABLE IF NOT EXISTS league_seasons (
                 season_id TEXT PRIMARY KEY,
@@ -197,6 +217,15 @@ async def init_db():
             )
         """)
 
+        # اطمینان از وجود ستون status در league_fixtures
+        async with db.execute("PRAGMA table_info(league_fixtures)") as cur:
+            fix_columns = [row[1] for row in await cur.fetchall()]
+        if "status" not in fix_columns:
+            try:
+                await db.execute("ALTER TABLE league_fixtures ADD COLUMN status TEXT DEFAULT 'PENDING'")
+            except Exception:
+                pass
+
         await db.execute("""
             CREATE TABLE IF NOT EXISTS league_standings (
                 season_id TEXT,
@@ -214,4 +243,4 @@ async def init_db():
         """)
 
         await db.commit()
-        logger.info("Database initialized and verified successfully.")
+        logger.info("Database initialized with WAL mode and verified successfully.")
