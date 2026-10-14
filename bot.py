@@ -570,6 +570,8 @@ async def play_league_day_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
 
+    chat_id = update.effective_chat.id
+
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
             row = await cur.fetchone()
@@ -578,17 +580,16 @@ async def play_league_day_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE
                 return
             s_id = row[0]
 
-        # پاک کردن قفل تاریخ روز تا حتی در صورت اجرای قبلی، مجدداً اجرا شود
+        # پاک کردن قفل تاریخ روز
         setting_key = f"last_league_run_{s_id}"
         await db.execute("DELETE FROM bot_settings WHERE key = ?", (setting_key,))
         await db.commit()
 
     await update.effective_message.reply_text(
-        "⚽️ <b>سوت مسابقات لیگ زده شد!</b>\n"
-        "در حال شبیه‌سازی ۲ مسابقه برای هر تیم و محاسبه نتایج...",
+        "⚽️ <b>سوت مسابقات لیگ زده شد!</b>\nدر حال شبیه‌سازی ۲ مسابقه برای هر تیم و محاسبه نتایج...",
         parse_mode="HTML"
     )
-    await simulate_daily_league_task(context)
+    await simulate_daily_league_task(context, reply_chat_id=chat_id)
 
 async def add_points_to_all_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -803,7 +804,6 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
                 try: await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
                 except Exception: pass
 
-        # تسویه پیش‌بینی‌های عادی و استخر ویژه در زمان پایان رسمی
         if is_finished and track["last_status"] != "FINISHED":
             track["last_status"] = "FINISHED"
             final_h = h_score if h_score is not None else track["home_score"]
@@ -814,7 +814,6 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
             correct_regular_users = []
 
             async with aiosqlite.connect(DATABASE_PATH) as db:
-                # 1. تسویه پیش‌بینی‌های عادی جدول predictions
                 async with db.execute("""
                     SELECT p.user_id, u.first_name 
                     FROM predictions p JOIN users u ON p.user_id = u.user_id
@@ -829,7 +828,6 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
 
                 await db.execute("UPDATE predictions SET settled = 1 WHERE match_id = ?", (m_id,))
 
-                # 2. تسویه استخر ویژه ۳۰۰ امتیازی
                 if track.get("pool_opened"):
                     async with db.execute("SELECT user_id, user_name FROM special_pool_predictions WHERE match_id = ? AND choice = ?", (m_id, actual_outcome)) as cur:
                         winners = await cur.fetchall()
@@ -1740,9 +1738,9 @@ async def get_user_team_info(user_id: int):
 
 # --- DEEP FC 26 DYNAMIC CHANCES MATCH ENGINE ---
 
-def simulate_chained_fc26_attack(att_dict, def_dict, minute_label, momentum_boost=0.0):
-    t_att = att_dict.get("team") if isinstance(att_dict.get("team"), dict) else att_dict
-    t_def = def_dict.get("team") if isinstance(def_dict.get("team"), dict) else def_dict
+def simulate_chained_fc26_attack(att_dict, def_dict, minute_label="", momentum_boost=0.0):
+    t_att = att_dict.get("team") if isinstance(att_dict.get("team"), dict) else (att_dict or {})
+    t_def = def_dict.get("team") if isinstance(def_dict.get("team"), dict) else (def_dict or {})
     att_name = att_dict.get("name", "تیم ۱")
     def_name = def_dict.get("name", "تیم ۲")
 
@@ -1754,13 +1752,16 @@ def simulate_chained_fc26_attack(att_dict, def_dict, minute_label, momentum_boos
 
     min_lbl = f" (دقیقه {minute_label})" if minute_label else ""
 
+    def_mids = t_def.get("mids") or ["هافبک حریف"]
+    att_mids = t_att.get("mids") or [t_att.get("fwd") or "مهاجم"]
+
     if random.random() > creation_rate:
-        def_mid_player = random.choice(t_def.get("mids", ["هافبک حریف"]))
+        def_mid_player = random.choice(def_mids)
         return False, None, None, f"⏱ <b>میانه میدان{min_lbl}:</b> نبرد تن‌به‌تن؛ <b>{def_mid_player}</b> توپ‌گیری کرد و مانع ضدحمله شد.", False, False
 
-    assist_maker = random.choice(t_att.get("mids", [t_att.get("fwd", "مهاجم")]))
-    fwd_player = t_att.get("fwd", "مهاجم")
-    def_card = t_def.get("def", "مدافع")
+    assist_maker = random.choice(att_mids)
+    fwd_player = t_att.get("fwd") or "مهاجم"
+    def_card = t_def.get("def") or "مدافع"
 
     if random.random() < 0.04:
         is_red = random.random() < 0.35
@@ -1774,7 +1775,7 @@ def simulate_chained_fc26_attack(att_dict, def_dict, minute_label, momentum_boos
     if random.random() < def_tackle_chance:
         return False, None, None, f"🛡 <b>دفاع مطمئن{min_lbl}:</b> تکل تمیز و به‌موقع <b>{def_card}</b> مانع از شوت‌زنی {fwd_player} شد.", False, False
 
-    gk_player = t_def.get("gk", "دروازه‌بان")
+    gk_player = t_def.get("gk") or "دروازه‌بان"
     shot_power = t_att.get("fwd_ovr", 78) + (t_att.get("chem", 35) / 30.0) + (momentum_boost * 5.0)
     gk_power = t_def.get("gk_ovr", 78) + (t_def.get("chem", 35) / 30.0)
 
@@ -2056,7 +2057,7 @@ async def league_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("INSERT INTO league_seasons (season_id, status, created_at) VALUES (?, 'ACTIVE', ?)", (season_id, today_str))
         for s_id, h_id, a_id in fixtures:
-            await db.execute("INSERT INTO league_fixtures (season_id, home_id, away_id) VALUES (?, ?, ?)", (s_id, h_id, a_id))
+            await db.execute("INSERT INTO league_fixtures (season_id, home_id, away_id, status) VALUES (?, ?, ?, 'PENDING')", (s_id, h_id, a_id))
         for uid in eligible:
             await db.execute("INSERT INTO league_standings (season_id, user_id) VALUES (?, ?)", (season_id, uid))
         await db.commit()
@@ -2109,33 +2110,34 @@ async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str
                 await context.bot.send_message(chat_id=target_chat_id, text=summary, parse_mode="HTML")
             except Exception: pass
 
-async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
-    try:
-        iran_now = get_iran_now()
-        today_str = iran_now.strftime("%Y-%m-%d")
+async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_chat_id: int = None):
+    """شبیه‌سازی ۲ مسابقه روزانه برای هر تیم در لیگ با گزارش مستقیم به چت ادمین"""
+    iran_now = get_iran_now()
+    today_str = iran_now.strftime("%Y-%m-%d")
 
+    try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
             async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
                 row = await cur.fetchone()
-                if not row: return
+                if not row:
+                    if reply_chat_id:
+                        await context.bot.send_message(chat_id=reply_chat_id, text="⚠️ هیچ لیگی در وضعیت فعال (ACTIVE) پیدا نشد.")
+                    return
                 s_id = row[0]
 
-            setting_key = f"last_league_run_{s_id}"
-            async with db.execute("SELECT value FROM bot_settings WHERE key = ?", (setting_key,)) as cur:
-                last_run_row = await cur.fetchone()
-                last_run_date = last_run_row[0] if last_run_row else None
-
-            if last_run_date == today_str:
-                return
-
-            async with db.execute(
-                "SELECT id, home_id, away_id FROM league_fixtures WHERE season_id = ? AND status = 'PENDING' ORDER BY id ASC",
-                (s_id,)
-            ) as cur:
+            # خواندن بازی‌های انجام‌نشده
+            async with db.execute("""
+                SELECT id, home_id, away_id 
+                FROM league_fixtures 
+                WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')
+                ORDER BY id ASC
+            """, (s_id,)) as cur:
                 pending_matches = await cur.fetchall()
 
             if not pending_matches:
                 await settle_league_season(context, db, s_id)
+                if reply_chat_id:
+                    await context.bot.send_message(chat_id=reply_chat_id, text="🏁 تمام بازی‌های این فصل قبلاً انجام شده و لیگ پایان یافته است.")
                 return
 
             team_games = Counter()
@@ -2152,7 +2154,10 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
                 team_games[best[2]] += 1
                 remaining.remove(best)
 
-            if not selected_matches: return
+            if not selected_matches:
+                if reply_chat_id:
+                    await context.bot.send_message(chat_id=reply_chat_id, text="⚠️ هیچ مسابقه‌ای با شرایط برگزاری روزانه پیدا نشد.")
+                return
 
             match_results = []
             for f_id, h_id, a_id in selected_matches:
@@ -2164,38 +2169,48 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
                 p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
 
                 s1, s2 = 0, 0
-                num_chances = random.randint(6, 8)
-                for _ in range(num_chances):
+                for _ in range(random.randint(6, 8)):
                     if random.random() < p1_chance_prob:
-                        goal = simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]
-                        if goal: s1 += 1
+                        if simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]:
+                            s1 += 1
                     else:
-                        goal = simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]
-                        if goal: s2 += 1
+                        if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:
+                            s2 += 1
 
                 now_time = iran_now.strftime("%Y-%m-%d %H:%M")
-                await db.execute(
-                    "UPDATE league_fixtures SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? WHERE id = ?",
-                    (s1, s2, now_time, f_id)
-                )
+                await db.execute("""
+                    UPDATE league_fixtures 
+                    SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? 
+                    WHERE id = ?
+                """, (s1, s2, now_time, f_id))
 
                 w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
                 w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
 
                 await db.execute("""
-                    UPDATE league_standings SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
-                    gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? WHERE season_id = ? AND user_id = ?
+                    UPDATE league_standings 
+                    SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
+                        gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
+                    WHERE season_id = ? AND user_id = ?
                 """, (w1, d1, l1, s1, s2, s1 - s2, pts1, s_id, h_id))
 
                 await db.execute("""
-                    UPDATE league_standings SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
-                    gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? WHERE season_id = ? AND user_id = ?
+                    UPDATE league_standings 
+                    SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
+                        gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
+                    WHERE season_id = ? AND user_id = ?
                 """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
 
-                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (h_id,)) as cur: h_name = (await cur.fetchone())[0]
-                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (a_id,)) as cur: a_name = (await cur.fetchone())[0]
+                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (h_id,)) as cur:
+                    r1 = await cur.fetchone()
+                    h_name = r1[0] if r1 and r1[0] else f"تیم {h_id}"
+                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (a_id,)) as cur:
+                    r2 = await cur.fetchone()
+                    a_name = r2[0] if r2 and r2[0] else f"تیم {a_id}"
+
                 match_results.append((h_name, s1, s2, a_name))
 
+            setting_key = f"last_league_run_{s_id}"
             await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)", (setting_key, today_str))
             await db.commit()
 
@@ -2206,23 +2221,33 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE):
             for h_name, s1, s2, a_name in match_results:
                 report_lines.append(f"▫️ <b>{html.escape(h_name)}</b> [{s1}] - [{s2}] <b>{html.escape(a_name)}</b>")
             report_lines.append("────────────────────")
-            report_lines.append("📊 <i>جدول رده‌بندی با دستور <code>/league</code> به‌روزرسانی شد.</i>")
+            report_lines.append("📊 <i>جدول با دستور <code>/league</code> به‌روزرسانی شد.</i>")
             report_msg = "\n".join(report_lines)
 
+            # ارسال به گروه اختصاصی
             target_chat_id = await get_live_chat_id()
             if target_chat_id:
                 try:
                     await context.bot.send_message(chat_id=target_chat_id, text=report_msg, parse_mode="HTML")
                 except Exception as e:
-                    logger.error(f"Error sending league results: {e}")
+                    logger.error(f"Error sending league results to group: {e}")
 
-            async with db.execute("SELECT COUNT(*) FROM league_fixtures WHERE season_id = ? AND status = 'PENDING'", (s_id,)) as cur:
+            # ارسال مستقیم به چتی که دستور /pl را زده است
+            if reply_chat_id and reply_chat_id != target_chat_id:
+                try:
+                    await context.bot.send_message(chat_id=reply_chat_id, text=report_msg, parse_mode="HTML")
+                except Exception:
+                    pass
+
+            async with db.execute("SELECT COUNT(*) FROM league_fixtures WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')", (s_id,)) as cur:
                 rem_cnt = (await cur.fetchone())[0]
             if rem_cnt == 0:
                 await settle_league_season(context, db, s_id)
 
     except Exception as e:
-        logger.error(f"Error in simulate_daily_league_task: {e}")
+        logger.error(f"Fatal error in simulate_daily_league_task: {e}", exc_info=True)
+        if reply_chat_id:
+            await context.bot.send_message(chat_id=reply_chat_id, text=f"❌ خطا در پردازش لیگ:\n<code>{html.escape(str(e))}</code>", parse_mode="HTML")
 
 # --- TRIVIA DUELS ---
 
@@ -3069,6 +3094,10 @@ async def post_init(application: Application):
             await db.execute("ALTER TABLE predictions ADD COLUMN settled INTEGER DEFAULT 0")
             await db.commit()
         except Exception: pass
+        try:
+            await db.execute("ALTER TABLE league_fixtures ADD COLUMN status TEXT DEFAULT 'PENDING'")
+            await db.commit()
+        except Exception: pass
 
     await ensure_escobar_ai()
     if getattr(application, "job_queue", None):
@@ -3107,6 +3136,7 @@ def main():
     app.add_handler(CommandHandler("l_on", league_on_cmd))
     app.add_handler(CommandHandler("l_off", league_off_cmd))
     app.add_handler(CommandHandler(["pl", "Pl"], play_league_day_cmd))
+    app.add_handler(CommandHandler("run_league", play_league_day_cmd))
     app.add_handler(CommandHandler("shoot", daily_shoot_cmd))
     app.add_handler(CommandHandler("daily", daily_reward_cmd))
     app.add_handler(CommandHandler("guess", start_guess_game))
