@@ -277,7 +277,7 @@ def render_xp_bar(percent: int, width: int = 10) -> str:
 async def profile_add_xp(user_id: int, amount: int):
     if amount <= 0: return
     try:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT profile_xp FROM users WHERE user_id = ?", (user_id,)) as cur:
                 row = await cur.fetchone()
                 cur_xp = row[0] if row and row[0] is not None else 0
@@ -289,7 +289,7 @@ async def profile_add_xp(user_id: int, amount: int):
         logger.error(f"Error adding XP: {e}")
 
 async def profile_record_answer(user_id: int, is_correct: bool):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         if is_correct:
             await db.execute("""
                 UPDATE users SET profile_answered = profile_answered + 1, profile_correct = profile_correct + 1
@@ -301,19 +301,19 @@ async def profile_record_answer(user_id: int, is_correct: bool):
     await profile_add_xp(user_id, 15 if is_correct else 3)
 
 async def profile_record_duel_win(user_id: int):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("UPDATE users SET duel_wins = duel_wins + 1 WHERE user_id = ?", (user_id,))
         await db.commit()
     await profile_add_xp(user_id, 120)
 
 async def profile_record_penalty_win(user_id: int):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("UPDATE users SET penalty_wins = penalty_wins + 1 WHERE user_id = ?", (user_id,))
         await db.commit()
     await profile_add_xp(user_id, 100)
 
 async def profile_record_guess_win(user_id: int):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("UPDATE users SET guess_wins = guess_wins + 1 WHERE user_id = ?", (user_id,))
         await db.commit()
     await profile_add_xp(user_id, 80)
@@ -355,7 +355,7 @@ def identify_tracked_team(team_name: str):
     return None
 
 async def get_live_chat_id():
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT value FROM bot_settings WHERE key = 'live_chat_id'") as cur:
             row = await cur.fetchone()
             if row and row[0]: return int(row[0])
@@ -394,7 +394,7 @@ async def safe_edit_message(query_or_bot, text, reply_markup=None, chat_id=None,
 
 async def ensure_user(user):
     try:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("""
                 INSERT OR IGNORE INTO users (user_id, first_name, username, points, xp)
                 VALUES (?, ?, ?, 100, 0)
@@ -408,7 +408,7 @@ async def ensure_user(user):
 
 async def ensure_escobar_ai():
     try:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("""
                 INSERT OR IGNORE INTO users (user_id, first_name, username, points, xp)
                 VALUES (?, ?, ?, 100, 0)
@@ -418,7 +418,7 @@ async def ensure_escobar_ai():
         logger.error(f"Error in ensure_escobar_ai: {e}")
 
 async def get_wealth_multiplier():
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT AVG(points) FROM users WHERE user_id != ?", (ESCOBAR_AI_ID,)) as cur:
             row = await cur.fetchone()
             avg_pts = row[0] if row and row[0] else 200
@@ -427,7 +427,7 @@ async def get_wealth_multiplier():
 
 async def get_penalty_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT penalty_date, penalty_count FROM users WHERE user_id = ?", (user_id,)) as cur:
             row = await cur.fetchone()
             if row and row[0] == today_str: return row[1] or 0
@@ -436,7 +436,7 @@ async def get_penalty_count_db(user_id: int) -> int:
 async def increment_penalty_count_db(user_id: int):
     today_str = get_iran_now().strftime("%Y-%m-%d")
     cur_count = await get_penalty_count_db(user_id)
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("""
             UPDATE users SET penalty_date = ?, penalty_count = ? WHERE user_id = ?
         """, (today_str, cur_count + 1, user_id))
@@ -445,7 +445,7 @@ async def increment_penalty_count_db(user_id: int):
 
 async def get_guess_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT last_guess_date, guess_count FROM users WHERE user_id = ?", (user_id,)) as cur:
             row = await cur.fetchone()
             if row and row[0] == today_str: return row[1] or 0
@@ -454,7 +454,7 @@ async def get_guess_count_db(user_id: int) -> int:
 async def increment_guess_count_db(user_id: int):
     today_str = get_iran_now().strftime("%Y-%m-%d")
     cur_count = await get_guess_count_db(user_id)
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("""
             UPDATE users SET last_guess_date = ?, guess_count = ? WHERE user_id = ?
         """, (today_str, cur_count + 1, user_id))
@@ -470,7 +470,7 @@ async def record_quest_action(user_id: int, action_type: str):
     elif action_type == "predictions": col = "predictions_made"
     if not col: return
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute(f"""
             INSERT INTO daily_quests (user_id, date_str, {col})
             VALUES (?, ?, 1)
@@ -483,7 +483,7 @@ async def quests_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(user)
     today_str = get_iran_now().strftime("%Y-%m-%d")
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT penalties_played, card_matches_played, predictions_made, is_claimed FROM daily_quests WHERE user_id = ? AND date_str = ?", (user.id, today_str)) as cur:
             row = await cur.fetchone()
 
@@ -532,7 +532,7 @@ async def halve_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("""
             UPDATE users 
             SET points = MAX(10, CAST(points / 2 AS INTEGER)) 
@@ -559,7 +559,7 @@ async def reset_market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("DELETE FROM daily_market")
         await db.commit()
 
@@ -572,11 +572,15 @@ async def play_league_day_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     chat_id = update.effective_chat.id
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        await db.execute("PRAGMA journal_mode=WAL;")
         async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
             row = await cur.fetchone()
             if not row:
-                await update.effective_message.reply_text("⚠️ <b>هیچ لیگی در حال حاضر فعال نیست!</b>\nابتدا با دستور <code>/l_on</code> لیگ جدید را آغاز کن.", parse_mode="HTML")
+                await update.effective_message.reply_text(
+                    "⚠️ <b>هیچ لیگی در حال حاضر فعال نیست!</b>\nابتدا با دستور <code>/l_on</code> لیگ جدید را آغاز کن.",
+                    parse_mode="HTML"
+                )
                 return
             s_id = row[0]
 
@@ -604,7 +608,7 @@ async def add_points_to_all_cmd(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_text("⚠️ لطفاً یک عدد معتبر وارد کنید.")
         return
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("UPDATE users SET points = points + ? WHERE user_id != ?", (amount, ESCOBAR_AI_ID))
         await db.commit()
 
@@ -635,7 +639,7 @@ async def add_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         target_id, target_name = target_u.id, target_u.first_name
         await ensure_user(target_u)
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (amount, target_id))
         await db.commit()
 
@@ -676,7 +680,7 @@ async def reset_points_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
     try:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("UPDATE users SET points = 100")
             await db.commit()
         await update.message.reply_text("✅ <b>امتیاز تمامی کاربران با موفقیت روی ۱۰۰ ریست شد!</b>", parse_mode="HTML")
@@ -688,7 +692,7 @@ async def set_live_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(user.id) != str(ADMIN_ID): return
     chat = update.effective_chat
     if chat.type in ["group", "supergroup"]:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES ('live_chat_id', ?)", (str(chat.id),))
             await db.commit()
         await update.message.reply_text(f"✅ <b>این گروه به عنوان گروه اختصاصی ثبت شد!</b> شناسه: <code>{chat.id}</code>", parse_mode="HTML")
@@ -804,6 +808,7 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
                 try: await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
                 except Exception: pass
 
+        # تسویه پیش‌بینی‌های عادی و استخر ویژه در زمان پایان رسمی
         if is_finished and track["last_status"] != "FINISHED":
             track["last_status"] = "FINISHED"
             final_h = h_score if h_score is not None else track["home_score"]
@@ -813,7 +818,7 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
             winners_text = ""
             correct_regular_users = []
 
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
                 async with db.execute("""
                     SELECT p.user_id, u.first_name 
                     FROM predictions p JOIN users u ON p.user_id = u.user_id
@@ -859,7 +864,7 @@ async def check_and_settle_monthly_season(context: ContextTypes.DEFAULT_TYPE):
     iran_now = get_iran_now()
     cur_month_str = iran_now.strftime("%Y-%m")
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT value FROM bot_settings WHERE key = 'last_settled_month'") as cur:
             row = await cur.fetchone()
             last_settled = row[0] if row else None
@@ -903,7 +908,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT points, profile_level, profile_xp FROM users WHERE user_id = ?", (user.id,)) as cur:
             row = await cur.fetchone()
             pts = row[0] if row else 100
@@ -929,7 +934,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else: await update.message.reply_text(text, reply_markup=kb.get_main_menu(), parse_mode="HTML")
 
 async def show_leaderboard_text(requesting_user_id: int = None) -> str:
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT user_id, first_name, points, duel_wins FROM users WHERE user_id != ? ORDER BY points DESC, duel_wins DESC LIMIT 30", (ESCOBAR_AI_ID,)) as cur:
             all_users = await cur.fetchall()
 
@@ -970,7 +975,7 @@ async def user_profile_handler(query, target_user=None):
     team_ovr = team_info["eff_ovr"] if team_info else 0
     team_chem = team_info["chem"] if team_info else 0
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("""
             SELECT points, profile_xp, profile_level, profile_correct, profile_answered,
                    duel_wins, penalty_wins, guess_wins,
@@ -1024,7 +1029,7 @@ async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(user)
     today_str = get_iran_now().strftime("%Y-%m-%d")
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT last_daily_date FROM users WHERE user_id = ?", (user.id,)) as cur:
             row = await cur.fetchone()
             if row and row[0] == today_str:
@@ -1044,7 +1049,7 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(user)
     today_str = get_iran_now().strftime("%Y-%m-%d")
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT last_shoot_date FROM users WHERE user_id = ?", (user.id,)) as cur:
             row = await cur.fetchone()
             if row and row[0] == today_str:
@@ -1059,7 +1064,7 @@ async def daily_shoot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if dice_val in [3, 4, 5]:
         reward = 30
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, user.id))
             await db.commit()
         await profile_add_xp(user.id, 25)
@@ -1073,7 +1078,7 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(user)
     today_str = get_iran_now().strftime("%Y-%m-%d")
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT last_wheel_date FROM users WHERE user_id = ?", (user.id,)) as cur:
             row = await cur.fetchone()
             if row and row[0] == today_str:
@@ -1086,7 +1091,7 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     weights = [15, 30, 25, 16, 10, 3, 1]
     win = random.choices(prizes, weights=weights)[0]
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         if win > 0:
             await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (win, user.id))
             await db.commit()
@@ -1162,7 +1167,7 @@ async def double_timeout_job(context: ContextTypes.DEFAULT_TYPE):
         game["is_active"] = False
         user_id = game["user_id"]
         stake = game["stake"]
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, user_id))
             await db.commit()
 
@@ -1196,7 +1201,7 @@ async def double_or_nothing_cmd(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     today_str = get_iran_now().strftime("%Y-%m-%d")
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT points, last_double_date FROM users WHERE user_id = ?", (user.id,)) as cur:
             row = await cur.fetchone()
             pts = row[0] if row else 0
@@ -1213,7 +1218,7 @@ async def double_or_nothing_cmd(update: Update, context: ContextTypes.DEFAULT_TY
         await update.effective_message.reply_text(f"⛔️ موجودی ناکافی! شما <b>{pts:,} PTS</b> دارید اما شرط <b>{stake:,} PTS</b> بسته‌اید.", parse_mode="HTML")
         return
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("UPDATE users SET last_double_date = ? WHERE user_id = ?", (today_str, user.id))
         await db.commit()
 
@@ -1269,7 +1274,7 @@ async def trigger_penalty_shootout(update: Update, context: ContextTypes.DEFAULT
     await ensure_user(opponent)
 
     stake = 25
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (challenger.id, opponent.id)) as cur:
             balances = {row[0]: row[1] for row in await cur.fetchall()}
 
@@ -1303,7 +1308,7 @@ async def get_or_create_jackpot_round():
     iran_now = get_iran_now()
     week_id = f"JKW{iran_now.strftime('%U%Y')}"
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT round_id, title, matches_json, pool_amount, is_active FROM jackpot_rounds WHERE round_id = ?", (week_id,)) as cur:
             row = await cur.fetchone()
             if row:
@@ -1351,7 +1356,7 @@ async def get_or_create_jackpot_round():
 
     selected_5 = candidates[:5]
     now_str = iran_now.strftime("%Y-%m-%d %H:%M")
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("""
             INSERT OR REPLACE INTO jackpot_rounds (round_id, title, matches_json, pool_amount, is_active, is_settled, created_at)
             VALUES (?, ?, ?, 500, 1, 0, ?)
@@ -1362,7 +1367,7 @@ async def get_or_create_jackpot_round():
 
 async def settle_jackpot_task(context: ContextTypes.DEFAULT_TYPE):
     try:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT round_id, matches_json, pool_amount FROM jackpot_rounds WHERE is_settled = 0 AND is_active = 1") as cur:
                 rounds = await cur.fetchall()
 
@@ -1382,7 +1387,7 @@ async def settle_jackpot_task(context: ContextTypes.DEFAULT_TYPE):
                 results[str(idx)] = "HOME" if h > a else ("AWAY" if a > h else "DRAW")
 
             if all_finished and len(results) == 5:
-                async with aiosqlite.connect(DATABASE_PATH) as db:
+                async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
                     async with db.execute("SELECT user_id, predictions_json, user_name FROM jackpot_combos WHERE round_id = ?", (r_id,)) as cur:
                         entries = await cur.fetchall()
 
@@ -1412,7 +1417,7 @@ async def jackpot_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     round_id, matches, pool, is_open = round_data["round_id"], round_data["matches"], round_data.get("pool_amount", 500), round_data.get("is_open", True)
 
     user_combo = None
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT predictions_json FROM jackpot_combos WHERE user_id = ? AND round_id = ?", (user.id, round_id)) as cur:
             row = await cur.fetchone()
             if row: user_combo = json.loads(row[0])
@@ -1504,7 +1509,7 @@ async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(user)
     today_str = get_iran_now().strftime("%Y-%m-%d")
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT offers_json FROM daily_market WHERE user_id = ? AND date_str = ?", (user.id, today_str)) as cur:
             row = await cur.fetchone()
 
@@ -1563,7 +1568,7 @@ async def sell_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT id, player_name, rating, position, rarity, is_in_lineup FROM user_cards WHERE user_id = ? ORDER BY rating DESC", (user.id,)) as cur:
             cards = await cur.fetchall()
 
@@ -1591,7 +1596,7 @@ async def my_cards_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT id, player_name, rating, position, rarity, is_in_lineup FROM user_cards WHERE user_id = ? ORDER BY rating DESC", (user.id,)) as cur:
             cards = await cur.fetchall()
 
@@ -1619,7 +1624,7 @@ async def lineup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user.id,)) as cur:
             lineup = await cur.fetchall()
 
@@ -1669,7 +1674,7 @@ async def lineup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else: await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
 
 async def auto_lineup_logic(user_id: int):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE user_id = ?", (user_id,))
         for pos, count in [("GK", 1), ("DEF", 1), ("MID", 2), ("FWD", 1)]:
             async with db.execute("SELECT id FROM user_cards WHERE user_id = ? AND position = ? ORDER BY rating DESC LIMIT ?", (user_id, pos, count)) as cur:
@@ -1680,13 +1685,13 @@ async def auto_lineup_logic(user_id: int):
 # --- SAFE TEAM INFO RETRIEVAL (HANDLES MISSING/SOLD PLAYERS) ---
 
 async def get_user_team_info(user_id: int):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:
             cards = await cur.fetchall()
 
     if len(cards) < 5:
         await auto_lineup_logic(user_id)
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:
                 cards = await cur.fetchall()
 
@@ -1817,7 +1822,7 @@ async def trigger_card_match(update: Update, context: ContextTypes.DEFAULT_TYPE)
     t1, t2 = await get_user_team_info(p1.id), await get_user_team_info(p2.id)
 
     stake = 100
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (p1.id, p2.id)) as cur:
             balances = {r[0]: r[1] for r in await cur.fetchall()}
 
@@ -1946,7 +1951,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
         res_footer = ""
         winner_id = None
 
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             if s1 > s2:
                 await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, p1["id"]))
                 await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, p2["id"]))
@@ -1996,7 +2001,7 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
 # --- FC CARDS LEAGUE ENGINE ---
 
 async def league_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' ORDER BY created_at DESC LIMIT 1") as cur:
             row = await cur.fetchone()
             if not row:
@@ -2029,7 +2034,7 @@ async def league_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE'") as cur:
             if await cur.fetchone():
                 await update.message.reply_text("⚠️ یک لیگ هم‌اکنون فعال است! ابتدا با /l_off آن را به پایان برسانید.")
@@ -2054,7 +2059,7 @@ async def league_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     random.shuffle(fixtures)
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("INSERT INTO league_seasons (season_id, status, created_at) VALUES (?, 'ACTIVE', ?)", (season_id, today_str))
         for s_id, h_id, a_id in fixtures:
             await db.execute("INSERT INTO league_fixtures (season_id, home_id, away_id, status) VALUES (?, ?, ?, 'PENDING')", (s_id, h_id, a_id))
@@ -2078,7 +2083,7 @@ async def league_off_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("UPDATE league_seasons SET status = 'CANCELLED' WHERE status = 'ACTIVE'")
         await db.commit()
     await update.message.reply_text("🔴 لیگ فعال فعلی لغو و متوقف شد.")
@@ -2111,12 +2116,14 @@ async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str
             except Exception: pass
 
 async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_chat_id: int = None):
-    """شبیه‌سازی ۲ مسابقه روزانه برای هر تیم در لیگ با گزارش مستقیم به چت ادمین"""
+    """شبیه‌سازی ۲ مسابقه روزانه برای هر تیم بدون قفل شدن دیتابیس"""
     iran_now = get_iran_now()
     today_str = iran_now.strftime("%Y-%m-%d")
 
     try:
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        # فاز اول: خواندن بازی‌های انجام‌نشده و بستن فوری کانکشن
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            await db.execute("PRAGMA journal_mode=WAL;")
             async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
                 row = await cur.fetchone()
                 if not row:
@@ -2125,7 +2132,14 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
                     return
                 s_id = row[0]
 
-            # خواندن بازی‌های انجام‌نشده
+            setting_key = f"last_league_run_{s_id}"
+            async with db.execute("SELECT value FROM bot_settings WHERE key = ?", (setting_key,)) as cur:
+                last_run_row = await cur.fetchone()
+                last_run_date = last_run_row[0] if last_run_row else None
+
+            if last_run_date == today_str and not reply_chat_id:
+                return
+
             async with db.execute("""
                 SELECT id, home_id, away_id 
                 FROM league_fixtures 
@@ -2134,50 +2148,78 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
             """, (s_id,)) as cur:
                 pending_matches = await cur.fetchall()
 
-            if not pending_matches:
+        if not pending_matches:
+            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
                 await settle_league_season(context, db, s_id)
-                if reply_chat_id:
-                    await context.bot.send_message(chat_id=reply_chat_id, text="🏁 تمام بازی‌های این فصل قبلاً انجام شده و لیگ پایان یافته است.")
-                return
+            if reply_chat_id:
+                await context.bot.send_message(chat_id=reply_chat_id, text="🏁 تمام بازی‌های این فصل قبلاً انجام شده و لیگ پایان یافته است.")
+            return
 
-            team_games = Counter()
-            selected_matches = []
-            remaining = list(pending_matches)
+        team_games = Counter()
+        selected_matches = []
+        remaining = list(pending_matches)
 
-            while True:
-                candidates = [f for f in remaining if team_games[f[1]] < 2 and team_games[f[2]] < 2]
-                if not candidates: break
-                candidates.sort(key=lambda f: (team_games[f[1]] + team_games[f[2]]))
-                best = candidates[0]
-                selected_matches.append(best)
-                team_games[best[1]] += 1
-                team_games[best[2]] += 1
-                remaining.remove(best)
+        while True:
+            candidates = [f for f in remaining if team_games[f[1]] < 2 and team_games[f[2]] < 2]
+            if not candidates: break
+            candidates.sort(key=lambda f: (team_games[f[1]] + team_games[f[2]]))
+            best = candidates[0]
+            selected_matches.append(best)
+            team_games[best[1]] += 1
+            team_games[best[2]] += 1
+            remaining.remove(best)
 
-            if not selected_matches:
-                if reply_chat_id:
-                    await context.bot.send_message(chat_id=reply_chat_id, text="⚠️ هیچ مسابقه‌ای با شرایط برگزاری روزانه پیدا نشد.")
-                return
+        if not selected_matches:
+            if reply_chat_id:
+                await context.bot.send_message(chat_id=reply_chat_id, text="⚠️ مسابقه‌ای با شرایط برگزاری روزانه پیدا نشد.")
+            return
 
-            match_results = []
-            for f_id, h_id, a_id in selected_matches:
-                t1 = await get_user_team_info(h_id)
-                t2 = await get_user_team_info(a_id)
+        # فاز دوم: آماده‌سازی ترکیب‌ها و اسامی کاربران
+        all_uids = set()
+        for _, h_id, a_id in selected_matches:
+            all_uids.add(h_id)
+            all_uids.add(a_id)
 
-                p1_power = (t1["eff_ovr"] ** 1.3) * (1 + t1["chem"] / 100.0)
-                p2_power = (t2["eff_ovr"] ** 1.3) * (1 + t2["chem"] / 100.0)
-                p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
+        teams_data = {}
+        for uid in all_uids:
+            teams_data[uid] = await get_user_team_info(uid)
 
-                s1, s2 = 0, 0
-                for _ in range(random.randint(6, 8)):
-                    if random.random() < p1_chance_prob:
-                        if simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]:
-                            s1 += 1
-                    else:
-                        if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:
-                            s2 += 1
+        user_names = {}
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            for uid in all_uids:
+                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (uid,)) as cur:
+                    r = await cur.fetchone()
+                    user_names[uid] = r[0] if r and r[0] else f"تیم {uid}"
 
-                now_time = iran_now.strftime("%Y-%m-%d %H:%M")
+        # فاز سوم: شبیه‌سازی در حافظه موقت (RAM)
+        now_time = iran_now.strftime("%Y-%m-%d %H:%M")
+        match_results = []
+        match_updates = []
+
+        for f_id, h_id, a_id in selected_matches:
+            t1 = teams_data[h_id]
+            t2 = teams_data[a_id]
+
+            p1_power = (t1["eff_ovr"] ** 1.3) * (1 + t1["chem"] / 100.0)
+            p2_power = (t2["eff_ovr"] ** 1.3) * (1 + t2["chem"] / 100.0)
+            p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
+
+            s1, s2 = 0, 0
+            for _ in range(random.randint(6, 8)):
+                if random.random() < p1_chance_prob:
+                    if simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]:
+                        s1 += 1
+                else:
+                    if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:
+                        s2 += 1
+
+            match_results.append((user_names[h_id], s1, s2, user_names[a_id]))
+            match_updates.append((f_id, h_id, a_id, s1, s2))
+
+        # فاز چهارم: ثبت اتمیک و سریع تمام نتایج
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            await db.execute("PRAGMA journal_mode=WAL;")
+            for f_id, h_id, a_id, s1, s2 in match_updates:
                 await db.execute("""
                     UPDATE league_fixtures 
                     SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? 
@@ -2201,48 +2243,40 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
                     WHERE season_id = ? AND user_id = ?
                 """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
 
-                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (h_id,)) as cur:
-                    r1 = await cur.fetchone()
-                    h_name = r1[0] if r1 and r1[0] else f"تیم {h_id}"
-                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (a_id,)) as cur:
-                    r2 = await cur.fetchone()
-                    a_name = r2[0] if r2 and r2[0] else f"تیم {a_id}"
-
-                match_results.append((h_name, s1, s2, a_name))
-
-            setting_key = f"last_league_run_{s_id}"
             await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)", (setting_key, today_str))
             await db.commit()
 
-            report_lines = [
-                "🏆⚽️ <b>نتایج مسابقات لیگ کارت‌های FC 26 (۲ مسابقه برای هر تیم):</b>",
-                "────────────────────"
-            ]
-            for h_name, s1, s2, a_name in match_results:
-                report_lines.append(f"▫️ <b>{html.escape(h_name)}</b> [{s1}] - [{s2}] <b>{html.escape(a_name)}</b>")
-            report_lines.append("────────────────────")
-            report_lines.append("📊 <i>جدول با دستور <code>/league</code> به‌روزرسانی شد.</i>")
-            report_msg = "\n".join(report_lines)
-
-            # ارسال به گروه اختصاصی
-            target_chat_id = await get_live_chat_id()
-            if target_chat_id:
-                try:
-                    await context.bot.send_message(chat_id=target_chat_id, text=report_msg, parse_mode="HTML")
-                except Exception as e:
-                    logger.error(f"Error sending league results to group: {e}")
-
-            # ارسال مستقیم به چتی که دستور /pl را زده است
-            if reply_chat_id and reply_chat_id != target_chat_id:
-                try:
-                    await context.bot.send_message(chat_id=reply_chat_id, text=report_msg, parse_mode="HTML")
-                except Exception:
-                    pass
-
-            async with db.execute("SELECT COUNT(*) FROM league_fixtures WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')", (s_id,)) as cur:
+            async with db.execute("""
+                SELECT COUNT(*) FROM league_fixtures 
+                WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')
+            """, (s_id,)) as cur:
                 rem_cnt = (await cur.fetchone())[0]
             if rem_cnt == 0:
                 await settle_league_season(context, db, s_id)
+
+        # فاز پنجم: ارسال نتایج مسابقات
+        report_lines = [
+            "🏆⚽️ <b>نتایج مسابقات لیگ کارت‌های FC 26 (۲ مسابقه برای هر تیم):</b>",
+            "────────────────────"
+        ]
+        for h_name, s1, s2, a_name in match_results:
+            report_lines.append(f"▫️ <b>{html.escape(h_name)}</b> [{s1}] - [{s2}] <b>{html.escape(a_name)}</b>")
+        report_lines.append("────────────────────")
+        report_lines.append("📊 <i>جدول با دستور <code>/league</code> به‌روزرسانی شد.</i>")
+        report_msg = "\n".join(report_lines)
+
+        target_chat_id = await get_live_chat_id()
+        if target_chat_id:
+            try:
+                await context.bot.send_message(chat_id=target_chat_id, text=report_msg, parse_mode="HTML")
+            except Exception as e:
+                logger.error(f"Error sending league results to group: {e}")
+
+        if reply_chat_id and reply_chat_id != target_chat_id:
+            try:
+                await context.bot.send_message(chat_id=reply_chat_id, text=report_msg, parse_mode="HTML")
+            except Exception:
+                pass
 
     except Exception as e:
         logger.error(f"Fatal error in simulate_daily_league_task: {e}", exc_info=True)
@@ -2263,7 +2297,7 @@ async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(opponent)
 
     stake = 25
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (challenger.id, opponent.id)) as cur:
             balances = {row[0]: row[1] for row in await cur.fetchall()}
 
@@ -2327,7 +2361,7 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
             )
 
             winner_id = None
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
                 if c_score > o_score:
                     await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, c_id))
                     await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, o_id))
@@ -2371,7 +2405,7 @@ async def trigger_team_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(opponent)
     stake = 30
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (challenger.id, opponent.id)) as cur:
             balances = {int(uid): int(pts or 0) for uid, pts in await cur.fetchall()}
 
@@ -2467,7 +2501,7 @@ async def finish_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     )
 
     winning_team = []
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         if t1_score > t2_score:
             text += f"🎉 تبریک! <b>تیم ۱</b> پیروز شد و هر بازیکن <b>+{stake} امتیاز</b> پاداش گرفت!"
             for p in duel["team1"]:
@@ -2538,7 +2572,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "claim_quests":
         today_str = get_iran_now().strftime("%Y-%m-%d")
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT penalties_played, card_matches_played, predictions_made, is_claimed FROM daily_quests WHERE user_id = ? AND date_str = ?", (uid, today_str)) as cur:
                 row = await cur.fetchone()
             if row and row[0] >= 2 and row[1] >= 1 and row[2] >= 1 and not row[3]:
@@ -2570,7 +2604,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_correct = (chosen_opt == game["correct"])
         stake = game["stake"]
 
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             if is_correct:
                 await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, uid))
                 await db.commit()
@@ -2605,7 +2639,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("buy_m_"):
         idx = int(data.split("_")[2])
         today_str = get_iran_now().strftime("%Y-%m-%d")
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT offers_json FROM daily_market WHERE user_id = ? AND date_str = ?", (uid, today_str)) as cur:
                 row = await cur.fetchone()
             if not row: return
@@ -2633,7 +2667,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data.startswith("sell_c_"):
         card_id = int(data.split("_")[2])
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT player_name, rarity, is_in_lineup FROM user_cards WHERE id = ? AND user_id = ?", (card_id, uid)) as cur:
                 row = await cur.fetchone()
             if not row: return
@@ -2650,7 +2684,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ۱. گلد پک (250 PTS)
     elif data == "buy_pack_gold":
         pack_price = 250
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
                 pts = (await cur.fetchone())[0]
             if pts < pack_price:
@@ -2671,7 +2705,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ۲. اولتیمیت پک (750 PTS)
     elif data == "buy_pack_ultimate":
         pack_price = 750
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
                 pts = (await cur.fetchone())[0]
             if pts < pack_price:
@@ -2697,7 +2731,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ۳. سوپر پک ویژه (2,500 PTS)
     elif data == "buy_pack_super":
         pack_price = 2500
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
                 pts = (await cur.fetchone())[0]
             if pts < pack_price:
@@ -2777,7 +2811,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("pred_out_"):
         parts = data.split("_")
         match_id, choice = parts[2], parts[3]
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             try:
                 await db.execute("INSERT INTO predictions (user_id, match_id, outcome_choice, settled) VALUES (?, ?, ?, 0)", (uid, match_id, choice))
                 await db.execute("UPDATE users SET points = points + 10, total_predictions = total_predictions + 1 WHERE user_id = ?", (uid,))
@@ -2791,7 +2825,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("pool_"):
         parts = data.split("_")
         match_id, choice = parts[1], parts[2]
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("""
                 INSERT INTO special_pool_predictions (match_id, user_id, user_name, choice) VALUES (?, ?, ?, ?)
                 ON CONFLICT(match_id, user_id) DO UPDATE SET choice = excluded.choice
@@ -2838,7 +2872,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             draft = USER_JACKPOT_DRAFTS.pop(uid, None)
             if draft:
-                async with aiosqlite.connect(DATABASE_PATH) as db:
+                async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
                     await db.execute("""
                         INSERT OR REPLACE INTO jackpot_combos (user_id, user_name, round_id, predictions_json, status, created_at)
                         VALUES (?, ?, ?, ?, 'PENDING', ?)
@@ -2903,7 +2937,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 loser = s["p2"] if p1_goal else s["p1"]
                 stake = s["stake"]
 
-                async with aiosqlite.connect(DATABASE_PATH) as db:
+                async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
                     await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake, winner["id"]))
                     await db.execute("UPDATE users SET points = MAX(0, points - ?) WHERE user_id = ?", (stake, loser["id"]))
                     await db.commit()
@@ -3051,7 +3085,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
             reward = game["reward"]
             game["is_active"] = False
             cancel_timer(context, f"guess_timer_{chat_id}")
-            async with aiosqlite.connect(DATABASE_PATH) as db:
+            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
                 await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, winner.id))
                 await db.commit()
             await profile_record_guess_win(winner.id)
@@ -3085,7 +3119,9 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def post_init(application: Application):
     await init_db()
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        await db.execute("PRAGMA journal_mode=WAL;")
+        await db.execute("PRAGMA busy_timeout=30000;")
         try:
             await db.execute("ALTER TABLE users ADD COLUMN last_double_date TEXT DEFAULT ''")
             await db.commit()
