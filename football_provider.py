@@ -1,6 +1,6 @@
 import logging
 import aiohttp
-from datetime import datetime
+from datetime import datetime, timezone
 from config import LEAGUE_CODES
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class FootballDataProvider:
     async def get_matches(self, date_str=None, league_code="eng.1"):
         """دریافت زنده مسابقات باشگاهی و بازی‌های ملی (فیفادی)"""
         if not date_str:
-            date_str = datetime.utcnow().strftime("%Y%m%d")
+            date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
 
         session = await self.get_session()
 
@@ -116,7 +116,7 @@ class FootballDataProvider:
                             h_name = ev.get("strHomeTeam", "میزبان")
                             a_name = ev.get("strAwayTeam", "میهمان")
                             st = ev.get("strStatus", "")
-                            
+
                             if st in ["Match Finished", "FT", "AET"]:
                                 status = "FINISHED"
                             elif "In Progress" in st or "Live" in st:
@@ -161,7 +161,7 @@ class FootballDataProvider:
                         else:
                             home = competitors[1]
                             away = competitors[0]
-                        
+
                         status_obj = event.get("status", {})
                         status_type = status_obj.get("type", {})
                         type_name = status_type.get("name", "").upper()
@@ -183,7 +183,7 @@ class FootballDataProvider:
 
                         league_name = data.get("leagues", [{}])[0].get("name", "فوتبال")
                         matches.append({
-                            "id": event["id"],
+                            "id": str(event["id"]),
                             "league": league_name,
                             "home_team": self.translate_team(home["team"]["displayName"]),
                             "away_team": self.translate_team(away["team"]["displayName"]),
@@ -203,27 +203,32 @@ class FootballDataProvider:
         session = await self.get_session()
 
         if league_code == "irn.1":
-            url = f"{self.tsdb_base}/lookuptable.php?l=4742&s=2024-2025"
-            try:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        table_rows = data.get("table") or []
-                        standings = []
-                        for row in table_rows[:12]:
-                            en_team = row.get("strTeam", "")
-                            standings.append({
-                                "team": self.translate_team(en_team),
-                                "p": str(row.get("intPlayed", "0")),
-                                "w": str(row.get("intWin", "0")),
-                                "d": str(row.get("intDraw", "0")),
-                                "l": str(row.get("intLoss", "0")),
-                                "pts": str(row.get("intPoints", "0"))
-                            })
-                        if standings:
-                            return standings
-            except Exception as e:
-                logger.error(f"Iran Standings fetch error: {e}")
+            now = datetime.now(timezone.utc)
+            start_year = now.year if now.month >= 7 else now.year - 1
+            candidate_seasons = [f"{start_year}-{start_year + 1}", f"{start_year - 1}-{start_year}", "2024-2025"]
+
+            for s_str in candidate_seasons:
+                url = f"{self.tsdb_base}/lookuptable.php?l=4742&s={s_str}"
+                try:
+                    async with session.get(url) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            table_rows = data.get("table") or []
+                            standings = []
+                            for row in table_rows[:12]:
+                                en_team = row.get("strTeam", "")
+                                standings.append({
+                                    "team": self.translate_team(en_team),
+                                    "p": str(row.get("intPlayed", "0")),
+                                    "w": str(row.get("intWin", "0")),
+                                    "d": str(row.get("intDraw", "0")),
+                                    "l": str(row.get("intLoss", "0")),
+                                    "pts": str(row.get("intPoints", "0"))
+                                })
+                            if standings:
+                                return standings
+                except Exception as e:
+                    logger.error(f"Iran Standings fetch error for season {s_str}: {e}")
             return []
 
         url = f"https://site.api.espn.com/apis/v2/sports/soccer/{league_code}/standings"
