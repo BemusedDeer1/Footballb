@@ -1,8 +1,8 @@
-# --- FC 26 AUTHENTIC 400 PLAYERS CATALOG ---
+# --- FC 26 AUTHENTIC 450 PLAYERS CATALOG ---
 
 FC_CATALOG = [
     # =========================================================================
-    # 💎 ICONS & LEGENDS (OVR 90+) [40 PLAYERS] - (3 to 4 PlayStyles)
+    # 💎 ICONS & LEGENDS (OVR 90+) [50 PLAYERS] - (2 to 4 PlayStyles)
     # =========================================================================
     {"name": "پله", "pos": "FWD", "ovr": 95, "rarity": "ICON", "nation": "برزیل 🇧🇷", "club": "سانتوس", "playstyles": ["Power Shot 🚀", "Finesse Shot 🎯", "Acrobatic 🤸‍♂️", "Aerial ✈️"]},
     {"name": "دیگو مارادونا", "pos": "MID", "ovr": 95, "rarity": "ICON", "nation": "آرژانتین 🇦🇷", "club": "ناپولی", "playstyles": ["Finesse Shot 🎯", "Incisive Pass 🪄", "Tiki-Taka 🔀"]},
@@ -32,7 +32,7 @@ FC_CATALOG = [
     {"name": "کاکا", "pos": "MID", "ovr": 91, "rarity": "ICON", "nation": "برزیل 🇧🇷", "club": "میلان", "playstyles": ["Power Shot 🚀", "Incisive Pass 🪄"]},
     {"name": "اوزه‌بیو", "pos": "FWD", "ovr": 91, "rarity": "ICON", "nation": "پرتغال 🇵🇹", "club": "بنفیکا", "playstyles": ["Power Shot 🚀", "Finesse Shot 🎯"]},
     {"name": "بابی چارلتون", "pos": "MID", "ovr": 91, "rarity": "ICON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "منچستر یونایتد", "playstyles": ["Power Shot 🚀", "Long Ball Pass 🎯"]},
-    {"name": "آندره‌آ پیرلو", "pos": "MID", "90": 90, "ovr": 90, "rarity": "ICON", "nation": "ایتالیا 🇮🇹", "club": "یوونتوس", "playstyles": ["Long Ball Pass 🎯", "Finesse Shot 🎯"]},
+    {"name": "آندره‌آ پیرلو", "pos": "MID", "ovr": 90, "rarity": "ICON", "nation": "ایتالیا 🇮🇹", "club": "یوونتوس", "playstyles": ["Long Ball Pass 🎯", "Finesse Shot 🎯"]},
     {"name": "الساندرو نستا", "pos": "DEF", "ovr": 90, "rarity": "ICON", "nation": "ایتالیا 🇮🇹", "club": "میلان", "playstyles": ["Anticipate 🛑", "Intercept ⛓"]},
     {"name": "پیتر اشمایکل", "pos": "GK", "ovr": 90, "rarity": "ICON", "nation": "دانمارک 🇩🇰", "club": "منچستر یونایتد", "playstyles": ["Far Reach 🧤", "Cross Claimer 🪽"]},
     {"name": "جورج بست", "pos": "FWD", "ovr": 90, "rarity": "ICON", "nation": "ایرلند شمالی 🇬🇧", "club": "منچستر یونایتد", "playstyles": ["Finesse Shot 🎯", "Tiki-Taka 🔀"]},
@@ -44,9 +44,20 @@ FC_CATALOG = [
     {"name": "علی دایی", "pos": "FWD", "ovr": 90, "rarity": "ICON", "nation": "ایران 🇮🇷", "club": "هرتابرلین", "playstyles": ["Aerial ✈️", "Power Shot 🚀"]},
     {"name": "علی کریمی", "pos": "MID", "ovr": 90, "rarity": "ICON", "nation": "ایران 🇮🇷", "club": "بایرن مونیخ", "playstyles": ["Tiki-Taka 🔀", "Finesse Shot 🎯"]},
     {"name": "مهدی مهدوی‌کیا", "pos": "DEF", "ovr": 90, "rarity": "ICON", "nation": "ایران 🇮🇷", "club": "هامبورگ", "playstyles": ["Relentless ⚡️", "Long Ball Pass 🎯"]},
+    # --- 10 NEW ICONS ---
+    {"name": "فرانتس بکن‌باوئر", "pos": "DEF", "ovr": 93, "rarity": "ICON", "nation": "آلمان 🇩🇪", "club": "بایرن مونیخ", "playstyles": ["Anticipate 🛑", "Intercept ⛓", "Long Ball Pass 🎯"]},
+    {"name": "میشل پلاتینی", "pos": "MID", "ovr": 92, "rarity": "ICON", "nation": "فرانسه 🇫🇷", "club": "یوونتوس", "playstyles": ["Incisive Pass 🪄", "Finesse Shot 🎯", "Tiki-Taka 🔀"]},
+    {"name": "زیکو", "pos": "MID", "ovr": 91, "rarity": "ICON", "nation": "برزیل 🇧🇷", "club": "فلامنگو", "playstyles": ["Finesse Shot 🎯", "Incisive Pass 🪄", "Power Shot 🚀"]},
+    {"name": "روبرتو باجو", "pos": "FWD", "ovr": 91, "rarity": "ICON", "nation": "ایتالیا 🇮🇹", "club": "یوونتوس", "playstyles": ["Finesse Shot 🎯", "Tiki-Taka 🔀"]},
+    {"name": "فابیو کاناوارو", "pos": "DEF", "ovr": 91, "rarity": "ICON", "nation": "ایتالیا 🇮🇹", "club": "رئال مادرید", "playstyles": ["Aerial ✈️", "Anticipate 🛑", "Block 🧱"]},
+    {"name": "پاتریک ویرا", "pos": "MID", "ovr": 90, "rarity": "ICON", "nation": "فرانسه 🇫🇷", "club": "آرسنال", "playstyles": ["Intercept ⛓", "Bruiser 🛡", "Relentless ⚡️"]},
+    {"name": "روی کین", "pos": "MID", "ovr": 90, "rarity": "ICON", "nation": "ایرلند 🇮🇪", "club": "منچستر یونایتد", "playstyles": ["Bruiser 🛡", "Relentless ⚡️", "Intercept ⛓"]},
+    {"name": "دیدیه دروگبا", "pos": "FWD", "ovr": 90, "rarity": "ICON", "nation": "ساحل عاج 🇨🇮", "club": "چلسی", "playstyles": ["Power Shot 🚀", "Aerial ✈️", "Bruiser 🛡"]},
+    {"name": "اریک کانتونا", "pos": "FWD", "ovr": 90, "rarity": "ICON", "nation": "فرانسه 🇫🇷", "club": "منچستر یونایتد", "playstyles": ["Power Shot 🚀", "Acrobatic 🤸‍♂️", "Bruiser 🛡"]},
+    {"name": "زلاتان ابراهیموویچ", "pos": "FWD", "ovr": 90, "rarity": "ICON", "nation": "سوئد 🇸🇪", "club": "میلان", "playstyles": ["Acrobatic 🤸‍♂️", "Power Shot 🚀", "Aerial ✈️"]},
 
     # =========================================================================
-    # 🔥 ELITE / WALKOUT (OVR 86 - 89) [80 PLAYERS] - (1 to 2 PlayStyles)
+    # 🔥 ELITE / WALKOUT (OVR 86 - 89) [90 PLAYERS] - (1 to 2 PlayStyles)
     # =========================================================================
     {"name": "وینیسیوس جونیور", "pos": "FWD", "ovr": 89, "rarity": "ELITE", "nation": "برزیل 🇧🇷", "club": "رئال مادرید", "playstyles": ["Power Shot 🚀"]},
     {"name": "جود بلینگهام", "pos": "MID", "ovr": 89, "rarity": "ELITE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "رئال مادرید", "playstyles": ["Relentless ⚡️", "Incisive Pass 🪄"]},
@@ -128,9 +139,20 @@ FC_CATALOG = [
     {"name": "داوید آلابا", "pos": "DEF", "ovr": 86, "rarity": "ELITE", "nation": "اتریش 🇦🇹", "club": "رئال مادرید", "playstyles": ["Intercept ⛓"]},
     {"name": "مارکو وراتی", "pos": "MID", "ovr": 86, "rarity": "ELITE", "nation": "ایتالیا 🇮🇹", "club": "العربی", "playstyles": ["Tiki-Taka 🔀"]},
     {"name": "سرگی میلینکوویچ ساویچ", "pos": "MID", "ovr": 86, "rarity": "ELITE", "nation": "صربستان 🇷🇸", "club": "الهلال", "playstyles": ["Aerial ✈️"]},
+    # --- 10 NEW ELITE PLAYERS ---
+    {"name": "نیمار جونیور", "pos": "FWD", "ovr": 87, "rarity": "ELITE", "nation": "برزیل 🇧🇷", "club": "الهلال", "playstyles": ["Tiki-Taka 🔀", "Finesse Shot 🎯"]},
+    {"name": "کریم بنزما", "pos": "FWD", "ovr": 86, "rarity": "ELITE", "nation": "فرانسه 🇫🇷", "club": "الاتحاد", "playstyles": ["Finesse Shot 🎯", "Incisive Pass 🪄"]},
+    {"name": "انگولو کانته", "pos": "MID", "ovr": 86, "rarity": "ELITE", "nation": "فرانسه 🇫🇷", "club": "الاتحاد", "playstyles": ["Intercept ⛓", "Relentless ⚡️"]},
+    {"name": "ریاض محرز", "pos": "FWD", "ovr": 86, "rarity": "ELITE", "nation": "الجزایر 🇩🇿", "club": "الاهلی", "playstyles": ["Finesse Shot 🎯"]},
+    {"name": "ژوائو کانسلو", "pos": "DEF", "ovr": 86, "rarity": "ELITE", "nation": "پرتغال 🇵🇹", "club": "الهلال", "playstyles": ["Incisive Pass 🪄"]},
+    {"name": "کینگزلی کومان", "pos": "FWD", "ovr": 86, "rarity": "ELITE", "nation": "فرانسه 🇫🇷", "club": "بایرن مونیخ", "playstyles": ["Acrobatic 🤸‍♂️"]},
+    {"name": "لوئیس دیاز", "pos": "FWD", "ovr": 86, "rarity": "ELITE", "nation": "کلمبیا 🇨🇴", "club": "لیورپول", "playstyles": ["Finesse Shot 🎯", "Relentless ⚡️"]},
+    {"name": "کوکی", "pos": "MID", "ovr": 86, "rarity": "ELITE", "nation": "اسپانیا 🇪🇸", "club": "اتلتیکو مادرید", "playstyles": ["Long Ball Pass 🎯"]},
+    {"name": "یاسین بونو", "pos": "GK", "ovr": 86, "rarity": "ELITE", "nation": "مراکش 🇲🇦", "club": "الهلال", "playstyles": ["Far Reach 🧤"]},
+    {"name": "نونو مندس", "pos": "DEF", "ovr": 86, "rarity": "ELITE", "nation": "پرتغال 🇵🇹", "club": "پاری‌سن‌ژرمن", "playstyles": ["Relentless ⚡️"]},
 
     # =========================================================================
-    # ⭐️ RARE GOLD (OVR 82 - 85) [140 PLAYERS] - (Mostly 1 PlayStyle, Some 0)
+    # ⭐️ RARE GOLD (OVR 82 - 85) [155 PLAYERS] - (Mostly 1 PlayStyle, Some 0)
     # =========================================================================
     {"name": "فرنکی دی‌یونگ", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "هلند 🇳🇱", "club": "بارسلونا", "playstyles": ["Incisive Pass 🪄"]},
     {"name": "پدری", "pos": "MID", "ovr": 85, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا", "playstyles": ["Tiki-Taka 🔀"]},
@@ -180,7 +202,6 @@ FC_CATALOG = [
     {"name": "بن وایت", "pos": "DEF", "ovr": 83, "rarity": "RARE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "آرسنال", "playstyles": ["Anticipate 🛑"]},
     {"name": "لئاندرو تروسار", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "بلژیک 🇧🇪", "club": "آرسنال", "playstyles": ["Finesse Shot 🎯"]},
     {"name": "سرژ گنابری", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "آلمان 🇩🇪", "club": "بایرن مونیخ", "playstyles": ["Power Shot 🚀"]},
-    {"name": "کینگزلی کومان", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "بایرن مونیخ", "playstyles": ["Acrobatic 🤸‍♂️"]},
     {"name": "انزو فرناندز", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "آرژانتین 🇦🇷", "club": "چلسی", "playstyles": ["Long Ball Pass 🎯"]},
     {"name": "مویسس کایسدو", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "اکوادور 🇪🇨", "club": "چلسی", "playstyles": ["Intercept ⛓"]},
     {"name": "دومینیک سوبوسلای", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "مجارستان 🇭🇺", "club": "لیورپول", "playstyles": ["Power Shot 🚀"]},
@@ -307,9 +328,25 @@ FC_CATALOG = [
     {"name": "آنتونی گوردون", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "نیوکاسل", "playstyles": ["Power Shot 🚀"]},
     {"name": "هاروی بارنز", "pos": "FWD", "ovr": 82, "rarity": "RARE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "نیوکاسل", "playstyles": []},
     {"name": "کالوم ویلسون", "pos": "FWD", "ovr": 82, "rarity": "RARE", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "نیوکاسل", "playstyles": []},
+    # --- 15 NEW RARE GOLD PLAYERS ---
+    {"name": "وارن زئیر امری", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "فرانسه 🇫🇷", "club": "پاری‌سن‌ژرمن", "playstyles": ["Relentless ⚡️"]},
+    {"name": "ژوائو نوس", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "پرتغال 🇵🇹", "club": "پاری‌سن‌ژرمن", "playstyles": ["Tiki-Taka 🔀"]},
+    {"name": "اسکات مک‌تومینای", "pos": "MID", "ovr": 82, "rarity": "RARE", "nation": "اسکاتلند 🏴󠁧󠁢󠁳󠁣󠁴󠁿", "club": "ناپولی", "playstyles": ["Aerial ✈️"]},
+    {"name": "روملو لوکاکو", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "بلژیک 🇧🇪", "club": "ناپولی", "playstyles": ["Bruiser 🛡"]},
+    {"name": "ماتئو رتگی", "pos": "FWD", "ovr": 82, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "آتالانتا", "playstyles": ["Aerial ✈️"]},
+    {"name": "مویزه کین", "pos": "FWD", "ovr": 82, "rarity": "RARE", "nation": "ایتالیا 🇮🇹", "club": "فیورنتینا", "playstyles": ["Power Shot 🚀"]},
+    {"name": "داوید دخیا", "pos": "GK", "ovr": 83, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "فیورنتینا", "playstyles": ["Footwork ⚡️"]},
+    {"name": "فرمین لوپز", "pos": "MID", "ovr": 82, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا", "playstyles": ["Power Shot 🚀"]},
+    {"name": "مارک کاسادو", "pos": "MID", "ovr": 82, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا", "playstyles": ["Intercept ⛓"]},
+    {"name": "الخاندرو بالده", "pos": "DEF", "ovr": 83, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا", "playstyles": ["Relentless ⚡️"]},
+    {"name": "اینیاکی ویلیامز", "pos": "FWD", "ovr": 83, "rarity": "RARE", "nation": "غنا 🇬🇭", "club": "اتلتیک بیلبائو", "playstyles": ["Relentless ⚡️"]},
+    {"name": "سادیو مانه", "pos": "FWD", "ovr": 84, "rarity": "RARE", "nation": "سنگال 🇸🇳", "club": "النصر", "playstyles": ["Acrobatic 🤸‍♂️"]},
+    {"name": "آیمریک لاپورت", "pos": "DEF", "ovr": 84, "rarity": "RARE", "nation": "اسپانیا 🇪🇸", "club": "النصر", "playstyles": ["Long Ball Pass 🎯"]},
+    {"name": "مارسلو بروزوویچ", "pos": "MID", "ovr": 83, "rarity": "RARE", "nation": "کرواسی 🇭🇷", "club": "النصر", "playstyles": ["Relentless ⚡️"]},
+    {"name": "روبن نوس", "pos": "MID", "ovr": 84, "rarity": "RARE", "nation": "پرتغال 🇵🇹", "club": "الهلال", "playstyles": ["Long Ball Pass 🎯"]},
 
     # =========================================================================
-    # ⚪️ COMMON (OVR 75 - 81) [140 PLAYERS] - (Mostly 0 PlayStyles, Exceptional Ones 1)
+    # ⚪️ COMMON (OVR 75 - 81) [155 PLAYERS] - (Mostly 0 PlayStyles, Exceptional Ones 1)
     # =========================================================================
     # بازیکنان تیم ملی و لیگ برتر ایران
     {"name": "علیرضا جهانبخش", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "هیرنفین", "playstyles": ["Finesse Shot 🎯"]},
@@ -469,7 +506,23 @@ FC_CATALOG = [
     {"name": "دنی ولبک", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "برایتون", "playstyles": []},
     {"name": "سیمون آیدینگرا", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "ساحل عاج 🇨🇮", "club": "برایتون", "playstyles": []},
     {"name": "ایوان فرگوسن", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "ایرلند 🇮🇪", "club": "برایتون", "playstyles": []},
-    {"name": "خولیو انسیسو", "pos": "MID", "ovr": 78, "rarity": "COMMON", "nation": "پاراگوئه 🇵🇾", "club": "برایتون", "playstyles": []}
+    {"name": "خولیو انسیسو", "pos": "MID", "ovr": 78, "rarity": "COMMON", "nation": "پاراگوئه 🇵🇾", "club": "برایتون", "playstyles": []},
+    # --- 15 NEW COMMON PLAYERS ---
+    {"name": "لنی یورو", "pos": "DEF", "ovr": 79, "rarity": "COMMON", "nation": "فرانسه 🇫🇷", "club": "منچستر یونایتد", "playstyles": ["Anticipate 🛑"]},
+    {"name": "دزیره دوئه", "pos": "FWD", "ovr": 79, "rarity": "COMMON", "nation": "فرانسه 🇫🇷", "club": "پاری‌سن‌ژرمن", "playstyles": ["Tiki-Taka 🔀"]},
+    {"name": "ساوینیو", "pos": "FWD", "ovr": 81, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "منچسترسیتی", "playstyles": ["Finesse Shot 🎯"]},
+    {"name": "استوائو ویلیان", "pos": "FWD", "ovr": 78, "rarity": "COMMON", "nation": "برزیل 🇧🇷", "club": "چلسی", "playstyles": ["Finesse Shot 🎯"]},
+    {"name": "کلودیو اچوری", "pos": "MID", "ovr": 77, "rarity": "COMMON", "nation": "آرژانتین 🇦🇷", "club": "منچسترسیتی", "playstyles": []},
+    {"name": "آرچی گری", "pos": "MID", "ovr": 77, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "تاتنهام", "playstyles": []},
+    {"name": "لوکاس برگوال", "pos": "MID", "ovr": 77, "rarity": "COMMON", "nation": "سوئد 🇸🇪", "club": "تاتنهام", "playstyles": []},
+    {"name": "فرانچسکو کاماردا", "pos": "FWD", "ovr": 75, "rarity": "COMMON", "nation": "ایتالیا 🇮🇹", "club": "میلان", "playstyles": []},
+    {"name": "مارک گویو", "pos": "FWD", "ovr": 76, "rarity": "COMMON", "nation": "اسپانیا 🇪🇸", "club": "چلسی", "playstyles": []},
+    {"name": "پائو ویکتور", "pos": "FWD", "ovr": 76, "rarity": "COMMON", "nation": "اسپانیا 🇪🇸", "club": "بارسلونا", "playstyles": []},
+    {"name": "جاناتان دیوید", "pos": "FWD", "ovr": 81, "rarity": "COMMON", "nation": "کانادا 🇨🇦", "club": "لیل", "playstyles": ["Finesse Shot 🎯"]},
+    {"name": "امیل هویلوند", "pos": "FWD", "ovr": 75, "rarity": "COMMON", "nation": "دانمارک 🇩🇰", "club": "شالکه", "playstyles": []},
+    {"name": "جوب بلینگهام", "pos": "MID", "ovr": 77, "rarity": "COMMON", "nation": "انگلیس 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "ساندرلند", "playstyles": []},
+    {"name": "محمد دانشگر", "pos": "DEF", "ovr": 75, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "سپاهان", "playstyles": []},
+    {"name": "دانیال اسماعیلی‌فر", "pos": "DEF", "ovr": 76, "rarity": "COMMON", "nation": "ایران 🇮🇷", "club": "تراکتور", "playstyles": ["Relentless ⚡️"]}
 ]
 
 # ساخت دیکشنری سریع بر پایه نام بازیکن جهت جستجوی مستقیم
@@ -479,14 +532,4 @@ FC_CATALOG_DICT = {c["name"]: c for c in FC_CATALOG}
 RARITY_COLORS = {
     "ICON": "💎 آیکان افسانه‌ای",
     "ELITE": "🔥 ستاره الیت",
-    "RARE": "⭐️ گلد ریر",
-    "COMMON": "⚪️ معمولی"
-}
-
-# نرخ پایه بازخرید سریع (Quick Sell)
-SELL_PRICES = {
-    "ICON": 1400,
-    "ELITE": 550,
-    "RARE": 200,
-    "COMMON": 70
-}
+    "RARE": "⭐️ گلد ر
