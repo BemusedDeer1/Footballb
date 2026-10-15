@@ -533,13 +533,13 @@ RARITY_COLORS = {
     "ICON": "💎 آیکان افسانه‌ای",
     "ELITE": "🔥 ستاره الیت",
     "RARE": "⭐️ گلد ریر",
-    "COMMON": "⚪️ معمولی"
+    "COMMON": "⚪️ معمولی"
 }
 
 # نرخ پایه بازخرید سریع (Quick Sell)
 SELL_PRICES = {
-    "ICON": 1400,
-    "ELITE": 550,
-    "RARE": 200,
-    "COMMON": 70
+    "ICON": 1400,
+    "ELITE": 550,
+    "RARE": 200,
+    "COMMON": 70
 }
