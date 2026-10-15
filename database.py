@@ -37,6 +37,7 @@ async def init_db():
                 penalty_date TEXT DEFAULT '',
                 penalty_count INTEGER DEFAULT 0,
                 last_double_date TEXT DEFAULT '',
+                last_free_pack_date TEXT DEFAULT '',
                 profile_xp INTEGER DEFAULT 0,
                 profile_level INTEGER DEFAULT 1,
                 profile_correct INTEGER DEFAULT 0,
@@ -72,7 +73,8 @@ async def init_db():
             "guess_count": "INTEGER DEFAULT 0",
             "penalty_date": "TEXT DEFAULT ''",
             "penalty_count": "INTEGER DEFAULT 0",
-            "last_double_date": "TEXT DEFAULT ''"
+            "last_double_date": "TEXT DEFAULT ''",
+            "last_free_pack_date": "TEXT DEFAULT ''"
         }
 
         for col_name, col_def in required_user_columns.items():
@@ -120,6 +122,14 @@ async def init_db():
                 UNIQUE(match_id, user_id)
             )
         """)
+
+        async with db.execute("PRAGMA table_info(special_pool_predictions)") as cur:
+            pool_columns = [row[1] for row in await cur.fetchall()]
+        if "settled" not in pool_columns:
+            try:
+                await db.execute("ALTER TABLE special_pool_predictions ADD COLUMN settled INTEGER DEFAULT 0")
+            except Exception:
+                pass
 
         # ۵. جدول تنظیمات سیستمی و ادمین
         await db.execute("""
@@ -242,5 +252,11 @@ async def init_db():
             )
         """)
 
+        # ۱۲. ایندکس‌های بهینه‌ساز سرعت کوئری‌ها
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_users_points ON users(points DESC);")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_predictions_match ON predictions(match_id, settled);")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_user_cards_uid ON user_cards(user_id, is_in_lineup);")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_league_fixtures_season ON league_fixtures(season_id, status);")
+
         await db.commit()
-        logger.info("Database initialized with WAL mode and verified successfully.")
+        logger.info("Database initialized with WAL mode, migrations, and indexes verified successfully.")
