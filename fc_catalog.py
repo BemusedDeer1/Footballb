@@ -532,4 +532,14 @@ FC_CATALOG_DICT = {c["name"]: c for c in FC_CATALOG}
 RARITY_COLORS = {
     "ICON": "💎 آیکان افسانه‌ای",
     "ELITE": "🔥 ستاره الیت",
-    "RARE": "⭐️ گلد ر
+    "RARE": "⭐️ گلد ریر",
+    "COMMON": "⚪️ معمولی"
+}
+
+# نرخ پایه بازخرید سریع (Quick Sell)
+SELL_PRICES = {
+    "ICON": 1400,
+    "ELITE": 550,
+    "RARE": 200,
+    "COMMON": 70
+}
