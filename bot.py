@@ -241,7 +241,6 @@ def format_iran_time(dt_str: str) -> str:
         return "نامشخص"
 
 def is_match_still_open_for_prediction(match_dict: dict) -> bool:
-    """جلوگیری از ثبت پیش‌بینی پس از شروع مسابقه"""
     if not match_dict:
         return False
     status = str(match_dict.get("status", "UPCOMING")).upper()
@@ -583,6 +582,109 @@ async def reset_market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.effective_message.reply_text("🔄 <b>مارکت روزانه برای تمام کاربران ریست شد!</b>", parse_mode="HTML")
 
+async def finish_league_instantly_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """شبیه‌سازی یکجای تمام مسابقات باقی‌مانده لیگ جاری و اعلام قهرمان با دستور /l_end"""
+    user = update.effective_user
+    if str(user.id) != str(ADMIN_ID): return
+
+    chat_id = update.effective_chat.id
+
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        await db.execute("PRAGMA journal_mode=WAL;")
+        async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
+            row = await cur.fetchone()
+            if not row:
+                await update.effective_message.reply_text("⚠️ هیچ لیگی در وضعیت فعال (ACTIVE) پیدا نشد.", parse_mode="HTML")
+                return
+            s_id = row[0]
+
+        async with db.execute("""
+            SELECT id, home_id, away_id 
+            FROM league_fixtures 
+            WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')
+            ORDER BY id ASC
+        """, (s_id,)) as cur:
+            pending_matches = await cur.fetchall()
+
+    if not pending_matches:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            await settle_league_season(context, db, s_id)
+        await update.effective_message.reply_text("🏁 تمام بازی‌ها قبلاً انجام شده بود؛ فصل تسویه گردید.", parse_mode="HTML")
+        return
+
+    await update.effective_message.reply_text(
+        f"⚡️ <b>شبیه‌سازی سریع کل فصل آغاز شد!</b>\nدر حال محاسبه <b>{len(pending_matches)} مسابقه</b> باقی‌مانده و بستن فوری پرونده لیگ...",
+        parse_mode="HTML"
+    )
+
+    all_uids = {uid for _, h, a in pending_matches for uid in (h, a)}
+    teams_data = {uid: await get_user_team_info(uid) for uid in all_uids}
+    tactics_data = {uid: await get_user_tactics(uid) for uid in all_uids}
+
+    now_time = get_iran_now().strftime("%Y-%m-%d %H:%M")
+    match_updates = []
+
+    for f_id, h_id, a_id in pending_matches:
+        t1, t2 = teams_data[h_id], teams_data[a_id]
+        tac1, tac2 = tactics_data[h_id], tactics_data[a_id]
+        b1, b2, _ = calculate_tactical_clash(tac1, tac2)
+
+        p1_power = (t1["eff_ovr"] ** 1.3) * (1 + t1["chem"] / 100.0) * (1.0 + b1)
+        p2_power = (t2["eff_ovr"] ** 1.3) * (1 + t2["chem"] / 100.0) * (1.0 + b2)
+        p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
+
+        s1, s2 = 0, 0
+        for _ in range(random.randint(6, 8)):
+            if random.random() < p1_chance_prob:
+                if simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]:
+                    s1 += 1
+            else:
+                if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:
+                    s2 += 1
+
+        reward_h = (50 if s1 > s2 else (20 if s1 == s2 else 0)) + (s1 * 5)
+        reward_a = (50 if s2 > s1 else (20 if s1 == s2 else 0)) + (s2 * 5)
+        match_updates.append((f_id, h_id, a_id, s1, s2, reward_h, reward_a))
+
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        await db.execute("PRAGMA journal_mode=WAL;")
+        for f_id, h_id, a_id, s1, s2, reward_h, reward_a in match_updates:
+            await db.execute("""
+                UPDATE league_fixtures 
+                SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? 
+                WHERE id = ?
+            """, (s1, s2, now_time, f_id))
+
+            w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
+            w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
+
+            await db.execute("""
+                UPDATE league_standings 
+                SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
+                    gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
+                WHERE season_id = ? AND user_id = ?
+            """, (w1, d1, l1, s1, s2, s1 - s2, pts1, s_id, h_id))
+
+            await db.execute("""
+                UPDATE league_standings 
+                SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
+                    gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
+                WHERE season_id = ? AND user_id = ?
+            """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
+
+            if reward_h > 0:
+                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_h, h_id))
+            if reward_a > 0:
+                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_a, a_id))
+
+        await db.commit()
+        await settle_league_season(context, db, s_id)
+
+    await update.effective_message.reply_text(
+        f"✅ <b>تمام {len(pending_matches)} مسابقه با موفقیت شبیه‌سازی و پرونده لیگ بسته شد!</b>",
+        parse_mode="HTML"
+    )
+
 async def play_league_day_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """اجرای دستی و فوری ۲ مسابقه روزانه هر تیم در لیگ با دستور /pl"""
     user = update.effective_user
@@ -745,7 +847,6 @@ async def generate_pool_message_text(match, participants):
 # --- MONITORING LIVE MATCHES & REWARDING REGULAR PREDICTIONS ---
 
 async def settle_regular_predictions_for_match(m_id: str, final_h: int, final_a: int) -> list[str]:
-    """تسویه پیش‌بینی‌های عادی برای هر مسابقه‌ای که به پایان رسیده است"""
     actual_outcome = "HOME" if final_h > final_a else ("AWAY" if final_a > final_h else "DRAW")
     correct_regular_users = []
 
@@ -801,7 +902,6 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
         home_tracked, away_tracked = identify_tracked_team(h_name), identify_tracked_team(a_name)
         is_iran_match = "ایران" in h_name or "ایران" in a_name
 
-        # اگر مسابقه تمام شده ولی جزو ۶ تیم خاص نیست، باز هم پیش‌بینی‌های عادی‌اش را تسویه کن
         if not home_tracked and not away_tracked and not is_iran_match:
             if raw_status == "FINISHED" and h_score is not None and a_score is not None:
                 await settle_regular_predictions_for_match(m_id, h_score, a_score)
@@ -866,7 +966,6 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
                 try: await context.bot.send_message(chat_id=target_chat_id, text=goal_msg, parse_mode="HTML")
                 except Exception: pass
 
-        # تسویه پیش‌بینی‌های عادی و استخر ویژه در زمان پایان رسمی
         if is_finished and track["last_status"] != "FINISHED":
             track["last_status"] = "FINISHED"
             final_h = h_score if h_score is not None else track["home_score"]
@@ -1096,7 +1195,6 @@ async def daily_reward_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(f"🎁 <b>پاداش ورود روزانه واریز شد!</b>\n💰 <b>+{reward} امتیاز</b> دریافت کردید.", parse_mode="HTML")
 
 async def daily_pack_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """دریافت پک روزانه رایگان شامل ۳ بازیکن با شانس کمتر از پک‌های استور"""
     if not await is_action_allowed_in_chat(update): return
     user = update.effective_user
     await ensure_user(user)
@@ -1113,7 +1211,6 @@ async def daily_pack_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await update.effective_message.reply_text(msg, parse_mode="HTML")
                 return
 
-        # شانس کمتر نسبت به پک‌های استور، اما اهدای ۳ بازیکن همزمان
         daily_weights = {"COMMON": 82.0, "RARE": 16.0, "ELITE": 1.8, "ICON": 0.2}
         pulled_cards = [generate_random_card_by_rarity(daily_weights) for _ in range(3)]
 
@@ -1271,7 +1368,6 @@ async def double_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     if game and game.get("is_active"):
         game["is_active"] = False
         stake = game["stake"]
-        # مبلغ شرط در ابتدای شروع چالش کسر شده است
         await safe_edit_message(
             context.bot,
             f"⌛️ <b>زمان ۱۰ ثانیه‌ای تمام شد!</b> 💀\nبه دلیل عدم پاسخ در مهلت مقرر، شرط شما سوخت و مبلغ <b>{stake:,} PTS</b> از حسابتان کسر گردید.",
@@ -1320,7 +1416,6 @@ async def double_or_nothing_cmd(update: Update, context: ContextTypes.DEFAULT_TY
             await update.effective_message.reply_text(f"⛔️ موجودی ناکافی! شما <b>{pts:,} PTS</b> دارید اما شرط <b>{stake:,} PTS</b> بسته‌اید.", parse_mode="HTML")
             return
 
-        # کسر و فریز فوری مبلغ شرط در لحظه شروع (Escrow)
         await db.execute("UPDATE users SET points = points - ?, last_double_date = ? WHERE user_id = ?", (stake, today_str, user.id))
         await db.commit()
 
@@ -1593,7 +1688,7 @@ async def predictions_hub_handler(query):
     text = "🎯 <b>تالار پیش‌بینی مسابقات فوتبال</b>\n────────────────────\nمسابقه مورد نظر خود را جهت ثبت پیش‌بینی انتخاب کنید:\n💰 پاداش ثبت: <b>+10 امتیاز</b> | جایزه حدس درست: <b>+40 امتیاز</b>\n────────────────────"
     await safe_edit_message(query, text, reply_markup=kb.get_upcoming_matches_keyboard(upcoming_list))
 
-# --- FC CARDS & BALANCED DYNAMIC MARKET ENGINE ---
+# --- FC CARDS, LINEUP & TACTICAL AI ENGINE ---
 
 def calculate_team_chemistry(cards):
     if len(cards) < 5: return 0
@@ -1619,6 +1714,114 @@ def generate_random_card_by_rarity(rarity_weights=None):
     chosen_rarity = random.choices(rarities, weights=weights)[0]
     filtered = [c for c in FC_CATALOG if c["rarity"] == chosen_rarity]
     return random.choice(filtered)
+
+TACTIC_NAMES = {
+    "TIKI_TAKA": "🪄 تیکی‌تاکا و مالکیت توپ",
+    "GEGENPRESS": "⚡️ گگن‌پرسینگ (پرس وحشتناک)",
+    "FAST_COUNTER": "🚀 ضدحمله سرعتی و برق‌آسا",
+    "PARK_BUS": "🧱 اتوبوسی و دفاع متمرکز",
+    "HIGH_LINE": "🔴 دفاع بالا (تله آفساید)",
+    "BALANCED": "🟡 دفاع متعادل و متوازن",
+    "DEEP": "🔵 دفاع عمیق در محوطه",
+    "SHORT": "🎯 پاس‌های کوتاه و تک‌ضرب",
+    "LONG": "✈️ پاس‌های بلند و قطری",
+    "ALL_OUT": "🔥 انتحاری و هجوم همه‌جانبه"
+}
+
+async def get_user_tactics(user_id: int) -> dict:
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        async with db.execute("SELECT style, depth, buildup, risk FROM user_tactics WHERE user_id = ?", (user_id,)) as cur:
+            row = await cur.fetchone()
+            if row:
+                return {"style": row[0], "depth": row[1], "buildup": row[2], "risk": row[3]}
+    return {"style": "TIKI_TAKA", "depth": "BALANCED", "buildup": "SHORT", "risk": "BALANCED"}
+
+def calculate_tactical_clash(tac1: dict, tac2: dict):
+    b1, b2 = 0.0, 0.0
+    notes = []
+
+    s1, s2 = tac1["style"], tac2["style"]
+    if s1 == "GEGENPRESS" and s2 == "TIKI_TAKA":
+        b1 += 0.08
+        notes.append("⚡️ پرس سنگین تیم ۱ خطوط بازیسازی تیکی‌تاکای تیم ۲ را مختل کرده است!")
+    elif s2 == "GEGENPRESS" and s1 == "TIKI_TAKA":
+        b2 += 0.08
+        notes.append("⚡️ پرس شدید تیم ۲ کار را برای تیکی‌تاکای تیم ۱ دشوار کرده است!")
+
+    if s1 == "FAST_COUNTER" and s2 == "GEGENPRESS":
+        b1 += 0.09
+        notes.append("🚀 تیم ۱ از فضای پشت خط پرس حریف با ضدحملات سریع استفاده می‌کند!")
+    elif s2 == "FAST_COUNTER" and s1 == "GEGENPRESS":
+        b2 += 0.09
+        notes.append("🚀 تیم ۲ از خلأ ناشی از پرس حریف برای ضدحملات برق‌آسا سود می‌برد!")
+
+    if s1 == "PARK_BUS" and s2 == "FAST_COUNTER":
+        b1 += 0.07
+        notes.append("🧱 دفاع متراکم و اتوبوسی تیم ۱ اجازه فرار در ضدحملات را به حریف نمی‌دهد.")
+    elif s2 == "PARK_BUS" and s1 == "FAST_COUNTER":
+        b2 += 0.07
+        notes.append("🧱 اتوبوس تیم ۲ جلوی ضدحملات مستقیم حریف دیوار کشیده است.")
+
+    if s1 == "TIKI_TAKA" and s2 == "PARK_BUS":
+        b1 += 0.07
+        notes.append("🪄 چرخش مداوم توپ و پاس‌های ریز تیم ۱ اتوبوس حریف را خسته و باز می‌کند.")
+    elif s2 == "TIKI_TAKA" and s1 == "PARK_BUS":
+        b2 += 0.07
+        notes.append("🪄 پاس‌کاری تیکی‌تاکای تیم ۲ دفاع فشرده تیم ۱ را دور می‌زند.")
+
+    if tac1["depth"] == "HIGH_LINE" and tac2["buildup"] == "LONG":
+        b2 += 0.08
+        notes.append("⚠️ خط دفاعی بسیار بالای تیم ۱ روی پاس‌های بلند هوایی حریف کاملاً جا ماند!")
+    if tac2["depth"] == "HIGH_LINE" and tac1["buildup"] == "LONG":
+        b1 += 0.08
+        notes.append("⚠️ تیم ۱ با ارسال پاس‌های قطری از بالا بودن خط دفاعی حریف بهره می‌برد!")
+
+    if tac1["depth"] == "DEEP" and tac2["buildup"] == "SHORT":
+        b2 += 0.05
+        notes.append("🎯 تیم ۲ به راحتی پشت محوطه تیم ۱ خیمه زده و شوت‌زنی می‌کند.")
+    if tac2["depth"] == "DEEP" and tac1["buildup"] == "SHORT":
+        b1 += 0.05
+        notes.append("🎯 تیم ۱ با پاس‌های تک‌ضرب اطراف محوطه جریمه حریف فرصت‌سازی می‌کند.")
+
+    if tac1["risk"] == "ALL_OUT":
+        b1 += 0.06
+        b2 += 0.04
+    if tac2["risk"] == "ALL_OUT":
+        b2 += 0.06
+        b1 += 0.04
+
+    return b1, b2, notes
+
+async def tactics_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await ensure_user(user)
+    tac = await get_user_tactics(user.id)
+
+    text = (
+        f"📋 <b>اتاق آنالیز و تاکتیک هوشمند تیم: {html.escape(user.first_name)}</b>\n"
+        "────────────────────\n"
+        f"▫️ سبک بازی اصلی: <b>{TACTIC_NAMES.get(tac['style'], tac['style'])}</b>\n"
+        f"▫️ عمق خط دفاعی: <b>{TACTIC_NAMES.get(tac['depth'], tac['depth'])}</b>\n"
+        f"▫️ نحوه بازیسازی: <b>{TACTIC_NAMES.get(tac['buildup'], tac['buildup'])}</b>\n"
+        f"▫️ ریسک هجومی: <b>{TACTIC_NAMES.get(tac['risk'], tac['risk'])}</b>\n"
+        "────────────────────\n"
+        "🧠 <i>هوش مصنوعی مسابقات در هر بازی تاکتیک شما را با حریف تطبیق داده و برتری‌های میدانی ایجاد می‌کند!</i>\n\n"
+        "👇 برای تنظیم بخش‌ها انتخاب کنید:"
+    )
+
+    kb_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("1️⃣ تغییر سبک بازی (Style)", callback_data="set_tac_step1")],
+        [InlineKeyboardButton("2️⃣ عمق خط دفاعی (Depth)", callback_data="set_tac_step2")],
+        [InlineKeyboardButton("3️⃣ نحوه بازیسازی (Build-Up)", callback_data="set_tac_step3")],
+        [InlineKeyboardButton("4️⃣ ریسک تیمی (Risk)", callback_data="set_tac_step4")],
+        [InlineKeyboardButton("🛡 مشاهده ترکیب تیم", callback_data="view_lineup"),
+         InlineKeyboardButton("‹ بازگشت", callback_data="home")]
+    ])
+
+    if update.callback_query:
+        await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
+    else:
+        await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
 
 async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -1672,11 +1875,11 @@ async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons.append([InlineKeyboardButton("🎁 باز کردن پک روزانه رایگان (۳ بازیکن)", callback_data="claim_daily_pack")])
 
     buttons.append([
-        InlineKeyboardButton("📦 گلد پک (250 PTS)", callback_data="buy_pack_gold"),
-        InlineKeyboardButton("🔥 اولتیمیت پک (750 PTS)", callback_data="buy_pack_ultimate")
+        InlineKeyboardButton("📦 گلد پک (500 PTS)", callback_data="buy_pack_gold"),
+        InlineKeyboardButton("🔥 اولتیمیت پک (1,500 PTS)", callback_data="buy_pack_ultimate")
     ])
     buttons.append([
-        InlineKeyboardButton("👑 سوپر پک ویژه (2,500 PTS)", callback_data="buy_pack_super")
+        InlineKeyboardButton("👑 سوپر پک ویژه (4,000 PTS)", callback_data="buy_pack_super")
     ])
     buttons.append([InlineKeyboardButton("💰 فروش کارت‌های مازاد به ربات", callback_data="open_sell_menu")])
     buttons.append([InlineKeyboardButton("‹ بازگشت", callback_data="home")])
@@ -1744,6 +1947,7 @@ async def my_cards_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def lineup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
+    tac = await get_user_tactics(user.id)
 
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user.id,)) as cur:
@@ -1777,7 +1981,8 @@ async def lineup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🛡 <b>ترکیب ۵ نفره تیم: {html.escape(user.first_name)}</b>\n────────────────────\n"
         f"⭐️ <b>قدرت پایه تیمی:</b> <code>{avg_ovr} OVR</code>\n"
         f"⚗️ <b>کمیستری تیم:</b> <code>{chem}%</code> (بوست: <b>+{chem_boost}</b>)\n"
-        f"⚡️ <b>قدرت نهایی تیم:</b> <code>{effective_ovr} OVR</code> 🔥\n\n"
+        f"⚡️ <b>قدرت نهایی تیم:</b> <code>{effective_ovr} OVR</code> 🔥\n"
+        f"📋 <b>تاکتیک تیمی:</b> <code>{TACTIC_NAMES.get(tac['style'], tac['style'])}</code>\n\n"
         f"🧤 دروازه‌بان (GK): {p_line(positions['GK'])}\n"
         f"🛡 مدافع (DEF): {p_line(positions['DEF'])}\n"
         f"⚡️ هافبک ۱ (MID): {p_line(positions['MID1'])}\n"
@@ -1786,9 +1991,20 @@ async def lineup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     buttons = [
+        [
+            InlineKeyboardButton("🧤 تغییر GK", callback_data="manual_pos_GK"),
+            InlineKeyboardButton("🛡 تغییر DEF", callback_data="manual_pos_DEF")
+        ],
+        [
+            InlineKeyboardButton("⚡️ تغییر MID", callback_data="manual_pos_MID"),
+            InlineKeyboardButton("🎯 تغییر FWD", callback_data="manual_pos_FWD")
+        ],
+        [InlineKeyboardButton("📋 تنظیم تاکتیک هوشمند تیم", callback_data="open_tactics")],
         [InlineKeyboardButton("⚡️ چیدن خودکار بهترین ترکیب", callback_data="auto_lineup")],
-        [InlineKeyboardButton("🎴 کل کارت‌ها", callback_data="view_my_cards"),
-         InlineKeyboardButton("💰 فروش کارت‌ها", callback_data="open_sell_menu")],
+        [
+            InlineKeyboardButton("🎴 کل کارت‌ها", callback_data="view_my_cards"),
+            InlineKeyboardButton("💰 فروش کارت‌ها", callback_data="open_sell_menu")
+        ],
         [InlineKeyboardButton("‹ بازگشت", callback_data="home")]
     ]
     if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=InlineKeyboardMarkup(buttons))
@@ -1802,8 +2018,6 @@ async def auto_lineup_logic(user_id: int):
                 ids = [r[0] for r in await cur.fetchall()]
                 for cid in ids: await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))
         await db.commit()
-
-# --- SAFE TEAM INFO RETRIEVAL (HANDLES MISSING/SOLD PLAYERS) ---
 
 async def get_user_team_info(user_id: int):
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -1895,7 +2109,6 @@ def simulate_chained_fc26_attack(att_dict, def_dict, minute_label="", momentum_b
         pen_scorer = fwd_player
         return True, pen_scorer, None, f"🚨 <b>خطای پنالتی در محوطه جریمه{min_lbl}!</b>\nتکل خشن <b>{def_card}</b> پنالتی اعلام شد ({card_text}). <b>{pen_scorer}</b> با خونسردی توپ را به تور دوخت! ⚽️🎯", True, is_red
 
-    # تاثیر PlayStyleهای دفاعی و هجومی
     def_style_bonus = len(t_def.get("def_styles", [])) * 0.02
     fwd_style_bonus = len(t_att.get("fwd_styles", [])) * 0.025
     gk_style_bonus = len(t_def.get("gk_styles", [])) * 0.02
@@ -1984,9 +2197,13 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     chat_id, msg_id = m["chat_id"], m["msg_id"]
     p1, p2 = m["p1"], m["p2"]
 
-    p1_power = (p1["team"]["eff_ovr"] ** 1.3) * (1 + p1["team"]["chem"] / 100.0)
-    p2_power = (p2["team"]["eff_ovr"] ** 1.3) * (1 + p2["team"]["chem"] / 100.0)
-    p1_chance_prob = max(0.25, min(0.75, p1_power / (p1_power + p2_power)))
+    tac1 = await get_user_tactics(p1["id"])
+    tac2 = await get_user_tactics(p2["id"])
+    boost1, boost2, tactical_notes = calculate_tactical_clash(tac1, tac2)
+
+    p1_power = (p1["team"]["eff_ovr"] ** 1.3) * (1 + p1["team"]["chem"] / 100.0) * (1.0 + boost1)
+    p2_power = (p2["team"]["eff_ovr"] ** 1.3) * (1 + p2["team"]["chem"] / 100.0) * (1.0 + boost2)
+    p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
 
     p1_pos = int(max(35, min(65, p1_chance_prob * 100)))
     p2_pos = 100 - p1_pos
@@ -2024,17 +2241,19 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
                 else: stats["p1_saves"] += 1
         if red:
             stats["red_cards"].append(f"🟥 اخراج مدافع {defender['name']}")
-            # تضعیف خط دفاعی تیمی که مدافعش اخراج شده است
             defender["team"]["def_ovr"] = max(40, defender["team"].get("def_ovr", 75) - 15)
         return txt
 
     try:
+        analysis_line = f"\n📋 <b>آنالیز تاکتیکی هوش مصنوعی:</b>\n{tactical_notes[0]}\n" if tactical_notes else ""
+
         await asyncio.sleep(15)
         txt_1a = execute_chance("۱۶")
         txt_1b = execute_chance("۲۴")
         t1 = (
             f"⏱ <b>دقیقه ۲۵ مسابقه:</b>\n"
             f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+            f"{analysis_line}"
             "────────────────────\n"
             f"{txt_1a}\n\n{txt_1b}"
         )
@@ -2080,7 +2299,6 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
         res_footer = ""
         winner_id = None
 
-        # مبلغ شرط در لحظه پذیرش از هر دو کسر شده است؛ برنده کل استخر (2 * stake) را می‌برد
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             if s1 > s2:
                 await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake * 2, p1["id"]))
@@ -2123,7 +2341,6 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
 
     except Exception as e:
         logger.error(f"Error in deep card match simulation: {e}")
-        # در صورت بروز خطای غیرمنتظره، شرط بلوکه‌شده به هر دو برگردانده شود
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("UPDATE users SET points = points + ? WHERE user_id IN (?, ?)", (m["stake"], p1["id"], p2["id"]))
             await db.commit()
@@ -2158,7 +2375,7 @@ async def league_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for idx, (name, p, w, d, l, gf, ga, gd, pts) in enumerate(table_rows, 1):
         t_name = name[:13].ljust(13)
         text += f"{idx:<2} | {t_name} | {str(p):<2} | {str(w):<2} | {str(d):<2} | {str(l):<2} | {str(gd):<2} | {str(pts):<3}\n"
-    text += "</pre>\n💰 <b>پاداش هر بازی:</b> برد <code>+50 PTS</code> | مساوی <code>+20 PTS</code> | هر گل <code>+5 PTS</code>\n<i>(هر شب بعد از ساعت ۱۲، برای هر تیم ۲ مسابقه خودکار برگزار می‌شود | اجرای فوری: <code>/pl</code>)</i>"
+    text += "</pre>\n💰 <b>پاداش هر بازی:</b> برد <code>+50 PTS</code> | مساوی <code>+20 PTS</code> | هر گل <code>+5 PTS</code>\n<i>(شبیه‌سازی روزانه ۲ مسابقه یا اتمام یکجای سیزن با <code>/l_end</code>)</i>"
 
     if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())
     else: await update.message.reply_text(text, parse_mode="HTML")
@@ -2170,7 +2387,7 @@ async def league_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE'") as cur:
             if await cur.fetchone():
-                await update.message.reply_text("⚠️ یک لیگ هم‌اکنون فعال است! ابتدا با /l_off آن را به پایان برسانید.")
+                await update.message.reply_text("⚠️ یک لیگ هم‌اکنون فعال است! ابتدا با /l_off یا /l_end آن را به پایان برسانید.")
                 return
 
         async with db.execute("""
@@ -2254,12 +2471,10 @@ async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str
             except Exception: pass
 
 async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_chat_id: int = None):
-    """شبیه‌سازی ۲ مسابقه روزانه برای هر تیم همراه با پاداش ۵۰ برد، ۲۰ مساوی و ۵ امتیاز به ازای هر گل"""
     iran_now = get_iran_now()
     today_str = iran_now.strftime("%Y-%m-%d")
 
     try:
-        # فاز اول: خواندن بازی‌های انجام‌نشده و بستن فوری کانکشن
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("PRAGMA journal_mode=WAL;")
             async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
@@ -2312,15 +2527,16 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
                 await context.bot.send_message(chat_id=reply_chat_id, text="⚠️ مسابقه‌ای با شرایط برگزاری روزانه پیدا نشد.")
             return
 
-        # فاز دوم: آماده‌سازی ترکیب‌ها و اسامی کاربران
         all_uids = set()
         for _, h_id, a_id in selected_matches:
             all_uids.add(h_id)
             all_uids.add(a_id)
 
         teams_data = {}
+        tactics_data = {}
         for uid in all_uids:
             teams_data[uid] = await get_user_team_info(uid)
+            tactics_data[uid] = await get_user_tactics(uid)
 
         user_names = {}
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -2329,7 +2545,6 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
                     r = await cur.fetchone()
                     user_names[uid] = r[0] if r and r[0] else f"تیم {uid}"
 
-        # فاز سوم: شبیه‌سازی در حافظه موقت (RAM) و محاسبه پاداش‌ها
         now_time = iran_now.strftime("%Y-%m-%d %H:%M")
         match_results = []
         match_updates = []
@@ -2337,9 +2552,13 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
         for f_id, h_id, a_id in selected_matches:
             t1 = teams_data[h_id]
             t2 = teams_data[a_id]
+            tac1 = tactics_data[h_id]
+            tac2 = tactics_data[a_id]
 
-            p1_power = (t1["eff_ovr"] ** 1.3) * (1 + t1["chem"] / 100.0)
-            p2_power = (t2["eff_ovr"] ** 1.3) * (1 + t2["chem"] / 100.0)
+            b1, b2, _ = calculate_tactical_clash(tac1, tac2)
+
+            p1_power = (t1["eff_ovr"] ** 1.3) * (1 + t1["chem"] / 100.0) * (1.0 + b1)
+            p2_power = (t2["eff_ovr"] ** 1.3) * (1 + t2["chem"] / 100.0) * (1.0 + b2)
             p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
 
             s1, s2 = 0, 0
@@ -2347,18 +2566,16 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
                 if random.random() < p1_chance_prob:
                     if simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]:
                         s1 += 1
-                else:
-                    if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:
-                        s2 += 1
+            else:
+                if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:
+                    s2 += 1
 
-            # محاسبه پاداش PTS هر تیم (برد: ۵۰ | مساوی: ۲۰ | هر گل: ۵ امتیاز)
             reward_h = (50 if s1 > s2 else (20 if s1 == s2 else 0)) + (s1 * 5)
             reward_a = (50 if s2 > s1 else (20 if s1 == s2 else 0)) + (s2 * 5)
 
             match_results.append((user_names[h_id], s1, s2, user_names[a_id], reward_h, reward_a))
             match_updates.append((f_id, h_id, a_id, s1, s2, reward_h, reward_a))
 
-        # فاز چهارم: ثبت اتمیک و سریع تمام نتایج و پاداش‌ها
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             await db.execute("PRAGMA journal_mode=WAL;")
             for f_id, h_id, a_id, s1, s2, reward_h, reward_a in match_updates:
@@ -2368,7 +2585,6 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
                     WHERE id = ?
                 """, (s1, s2, now_time, f_id))
 
-                # امتیاز جدول لیگ مثل لیگ‌های واقعی (برد ۳، مساوی ۱، باخت ۰)
                 w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
                 w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
 
@@ -2386,7 +2602,6 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
                     WHERE season_id = ? AND user_id = ?
                 """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
 
-                # واریز پاداش مسابقه (۵۰ برد، ۲۰ مساوی، ۵ به ازای هر گل) به حساب کاربران
                 if reward_h > 0:
                     await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_h, h_id))
                 if reward_a > 0:
@@ -2403,7 +2618,6 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
             if rem_cnt == 0:
                 await settle_league_season(context, db, s_id)
 
-        # فاز پنجم: ارسال نتایج مسابقات همراه با جوایز دریافت‌شده
         report_lines = [
             "🏆⚽️ <b>نتایج مسابقات لیگ کارت‌های FC 26 (۲ مسابقه برای هر تیم):</b>",
             "────────────────────"
@@ -2513,7 +2727,6 @@ async def proceed_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
             )
 
             winner_id = None
-            # مبلغ شرط در لحظه پذیرش از هر دو کسر شده است؛ برنده کل استخر (2 * stake) را می‌گیرد
             async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
                 if c_score > o_score:
                     await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake * 2, c_id))
@@ -2653,7 +2866,6 @@ async def finish_team_duel(context: ContextTypes.DEFAULT_TYPE, duel_id: str):
     )
 
     winning_team = []
-    # مبلغ شرط در لحظه شروع بازی از هر ۴ نفر کسر شده است
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         if t1_score > t2_score:
             text += f"🎉 تبریک! <b>تیم ۱</b> پیروز شد و هر بازیکن <b>+{stake} امتیاز</b> خالص پاداش گرفت!"
@@ -2760,7 +2972,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_correct = (chosen_opt == game["correct"])
         stake = game["stake"]
 
-        # مبلغ شرط در ابتدای شروع کسر شده است؛ در صورت برد 2 برابر آن برمی‌گردد
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             if is_correct:
                 await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake * 2, uid))
@@ -2798,6 +3009,136 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await auto_lineup_logic(uid)
         await query.answer("⚡️ قوی‌ترین ترکیب چیده شد!", show_alert=True)
         await lineup_cmd(update, context)
+
+    # --- MANUAL LINEUP CONTROLS ---
+    elif data.startswith("manual_pos_"):
+        pos = data.replace("manual_pos_", "")
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            async with db.execute("""
+                SELECT id, player_name, rating, is_in_lineup 
+                FROM user_cards 
+                WHERE user_id = ? AND position = ? 
+                ORDER BY is_in_lineup DESC, rating DESC
+            """, (uid, pos)) as cur:
+                cards = await cur.fetchall()
+
+        if not cards:
+            await query.answer(f"⚠️ شما هیچ کارتی در پست {pos} ندارید!", show_alert=True)
+            return
+
+        await query.answer()
+        limit = 2 if pos == "MID" else 1
+        text = f"⚙️ <b>انتخاب بازیکن برای پست {pos} (حداکثر {limit} بازیکن):</b>\nکلیک کنید تا بازیکن وارد یا خارج شود:"
+
+        buttons = []
+        seen = set()
+        for cid, name, ovr, in_lineup in cards:
+            if not in_lineup and name in seen:
+                continue
+            seen.add(name)
+            c_info = FC_CATALOG_DICT.get(name, {})
+            status = "🟢 [در ترکیب]" if in_lineup else "⚪️"
+            buttons.append([InlineKeyboardButton(f"{status} {name} ({ovr}) {c_info.get('nation','')}", callback_data=f"setcard_{pos}_{cid}")])
+
+        buttons.append([InlineKeyboardButton("‹ بازگشت به ترکیب", callback_data="view_lineup")])
+        await safe_edit_message(query, text, reply_markup=InlineKeyboardMarkup(buttons))
+
+    elif data.startswith("setcard_"):
+        _, pos, cid_str = data.split("_")
+        cid = int(cid_str)
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            async with db.execute("SELECT player_name, is_in_lineup FROM user_cards WHERE id = ? AND user_id = ?", (cid, uid)) as cur:
+                row = await cur.fetchone()
+            if not row:
+                await query.answer("کارت یافت نشد!", show_alert=True)
+                return
+            p_name, in_lineup = row
+
+            if pos != "MID":
+                await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE user_id = ? AND position = ?", (uid, pos))
+                await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))
+                await db.commit()
+                await query.answer(f"✅ {p_name} فیکس شد!")
+                await lineup_cmd(update, context)
+            else:
+                if in_lineup:
+                    await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE id = ?", (cid,))
+                    await db.commit()
+                    await query.answer(f"🔻 {p_name} از ترکیب خارج شد.")
+                else:
+                    async with db.execute("SELECT id, player_name FROM user_cards WHERE user_id = ? AND position = 'MID' AND is_in_lineup = 1", (uid,)) as cur:
+                        active_mids = await cur.fetchall()
+                    if any(m[1] == p_name for m in active_mids):
+                        await query.answer("⚠️ این بازیکن قبلاً در خط هافبک قرار گرفته است!", show_alert=True)
+                        return
+                    if len(active_mids) >= 2:
+                        await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE id = ?", (active_mids[0][0],))
+                    await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))
+                    await db.commit()
+                    await query.answer(f"✅ {p_name} به هافبک اضافه شد!")
+                query.data = "manual_pos_MID"
+                await callback_router(update, context)
+
+    # --- TACTICAL AI CONFIGURATION CONTROLS ---
+    elif data == "open_tactics":
+        await query.answer()
+        await tactics_menu_cmd(update, context)
+
+    elif data == "set_tac_step1":
+        await query.answer()
+        kb_s = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🪄 تیکی‌تاکا و مالکیت توپ", callback_data="save_tac_style_TIKI_TAKA")],
+            [InlineKeyboardButton("⚡️ گگن‌پرسینگ (پرس در زمین حریف)", callback_data="save_tac_style_GEGENPRESS")],
+            [InlineKeyboardButton("🚀 ضدحملات برق‌آسا و سریع", callback_data="save_tac_style_FAST_COUNTER")],
+            [InlineKeyboardButton("🧱 دفاع اتوبوسی متمرکز", callback_data="save_tac_style_PARK_BUS")],
+            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
+        ])
+        await safe_edit_message(query, "🎯 <b>سبک کلی بازی تیم خود را مشخص کنید:</b>", reply_markup=kb_s)
+
+    elif data == "set_tac_step2":
+        await query.answer()
+        kb_d = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔴 دفاع بالا (تله آفساید - هجومی)", callback_data="save_tac_depth_HIGH_LINE")],
+            [InlineKeyboardButton("🟡 خط دفاعی متعادل", callback_data="save_tac_depth_BALANCED")],
+            [InlineKeyboardButton("🔵 دفاع عقب‌کشیده و عمیق (بستن فضا)", callback_data="save_tac_depth_DEEP")],
+            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
+        ])
+        await safe_edit_message(query, "🛡 <b>ارتفاع و عمق استقرار مدافعان در زمین:</b>", reply_markup=kb_d)
+
+    elif data == "set_tac_step3":
+        await query.answer()
+        kb_b = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎯 پاس‌های تک‌ضرب و کوتاه", callback_data="save_tac_buildup_SHORT")],
+            [InlineKeyboardButton("✈️ پاس‌های بلند و ارسال قطری", callback_data="save_tac_buildup_LONG")],
+            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
+        ])
+        await safe_edit_message(query, "📐 <b>نحوه انتقال توپ از دفاع به خط حمله:</b>", reply_markup=kb_b)
+
+    elif data == "set_tac_step4":
+        await query.answer()
+        kb_r = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔥 انتحاری و هجوم همه‌جانبه", callback_data="save_tac_risk_ALL_OUT")],
+            [InlineKeyboardButton("⚖️ منظم و ریسک کنترل‌شده", callback_data="save_tac_risk_BALANCED")],
+            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
+        ])
+        await safe_edit_message(query, "⚖️ <b>سطح ریسک بازیکنان در دقایق مختلف مسابقه:</b>", reply_markup=kb_r)
+
+    elif data.startswith("save_tac_"):
+        parts = data.split("_")
+        field, val = parts[2], parts[3]
+        now_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
+
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            await db.execute("""
+                INSERT INTO user_tactics (user_id, style, depth, buildup, risk, updated_at)
+                VALUES (?, 'TIKI_TAKA', 'BALANCED', 'SHORT', 'BALANCED', ?)
+                ON CONFLICT(user_id) DO NOTHING
+            """, (uid, now_str))
+            await db.execute(f"UPDATE user_tactics SET {field} = ?, updated_at = ? WHERE user_id = ?", (val, now_str, uid))
+            await db.commit()
+
+        await query.answer("✅ استراتژی ذخیره شد!")
+        await tactics_menu_cmd(update, context)
 
     elif data.startswith("buy_m_"):
         idx = int(data.split("_")[2])
@@ -2850,9 +3191,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer(f"💰 کارت {p_name} با قیمت {sell_price} PTS فروخته شد!", show_alert=True)
         await sell_menu_cmd(update, context)
 
-    # ۱. گلد پک (250 PTS)
+    # ۱. گلد پک (500 PTS)
     elif data == "buy_pack_gold":
-        pack_price = 250
+        pack_price = 500
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
                 pts = (await cur.fetchone())[0]
@@ -2872,14 +3213,14 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(pop_msg, parse_mode="HTML")
         await market_cmd(update, context)
 
-    # ۲. اولتیمیت پک (750 PTS)
+    # ۲. اولتیمیت پک (1,500 PTS)
     elif data == "buy_pack_ultimate":
-        pack_price = 750
+        pack_price = 1500
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
                 pts = (await cur.fetchone())[0]
             if pts < pack_price:
-                await query.answer(f"امتیاز ناکافی! به {pack_price} PTS نیاز دارید.", show_alert=True)
+                await query.answer(f"امتیاز ناکافی! به {pack_price:,} PTS نیاز دارید.", show_alert=True)
                 return
             await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (pack_price, uid))
             c = generate_random_card_by_rarity({"COMMON": 22, "RARE": 52, "ELITE": 20, "ICON": 6})
@@ -2899,9 +3240,9 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(pop_msg, parse_mode="HTML")
         await market_cmd(update, context)
 
-    # ۳. سوپر پک ویژه (2,500 PTS)
+    # ۳. سوپر پک ویژه (4,000 PTS)
     elif data == "buy_pack_super":
-        pack_price = 2500
+        pack_price = 4000
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
                 pts = (await cur.fetchone())[0]
@@ -3098,7 +3439,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.answer("موجودی یکی از طرفین دیگر برای شروع کافی نیست!", show_alert=True)
                 ACTIVE_SHOOTOUTS.pop(p_id, None)
                 return
-            # کسر و بلوکه کردن شرط هر دو بازیکن در لحظه شروع
             await db.execute("UPDATE users SET points = points - ? WHERE user_id IN (?, ?)", (stake, s["p1"]["id"], s["p2"]["id"]))
             await db.commit()
 
@@ -3420,6 +3760,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 
     if re.match(r"^\s*(?:دوبل|قمار|ریسک)\s+(\d+)\s*$", msg):
         await double_or_nothing_cmd(update, context)
+    elif msg in ["تاکتیک", "tactic", "tactics", "استراتژی"]: await tactics_menu_cmd(update, context)
     elif msg in ["پک روزانه", "پک رایگان", "dailypack"]: await daily_pack_cmd(update, context)
     elif msg in ["دوئل", "duel", "چالش"]: await trigger_duel(update, context)
     elif msg in ["پنالتی", "پنالتی کشی", "penalty"]: await trigger_penalty_shootout(update, context)
@@ -3459,6 +3800,19 @@ async def post_init(application: Application):
             await db.execute("ALTER TABLE league_fixtures ADD COLUMN status TEXT DEFAULT 'PENDING'")
             await db.commit()
         except Exception: pass
+        try:
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS user_tactics (
+                    user_id INTEGER PRIMARY KEY,
+                    style TEXT DEFAULT 'TIKI_TAKA',
+                    depth TEXT DEFAULT 'BALANCED',
+                    buildup TEXT DEFAULT 'SHORT',
+                    risk TEXT DEFAULT 'BALANCED',
+                    updated_at TEXT
+                )
+            """)
+            await db.commit()
+        except Exception: pass
 
     await ensure_escobar_ai()
     if getattr(application, "job_queue", None):
@@ -3491,6 +3845,8 @@ def main():
     app.add_handler(CommandHandler("dailypack", daily_pack_cmd))
     app.add_handler(CommandHandler("mycards", my_cards_cmd))
     app.add_handler(CommandHandler("lineup", lineup_cmd))
+    app.add_handler(CommandHandler("tactic", tactics_menu_cmd))
+    app.add_handler(CommandHandler("tactics", tactics_menu_cmd))
     app.add_handler(CommandHandler("quests", quests_cmd))
     app.add_handler(CommandHandler("double", double_or_nothing_cmd))
     app.add_handler(CommandHandler("risk", double_or_nothing_cmd))
@@ -3498,6 +3854,7 @@ def main():
     app.add_handler(CommandHandler("l_on", league_on_cmd))
     app.add_handler(CommandHandler("l_off", league_off_cmd))
     app.add_handler(CommandHandler(["pl", "Pl"], play_league_day_cmd))
+    app.add_handler(CommandHandler(["l_end", "L_end"], finish_league_instantly_cmd))
     app.add_handler(CommandHandler("run_league", play_league_day_cmd))
     app.add_handler(CommandHandler("shoot", daily_shoot_cmd))
     app.add_handler(CommandHandler("daily", daily_reward_cmd))
