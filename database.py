@@ -46,7 +46,7 @@ async def init_db():
             )
         """)
 
-        # ۲. بررسی و اضافه کردن خودکار ستون‌های جدید به کاربران (Safe Migration)
+        # ۲. بررسی و اضافه کردن خودکار ستون‌های جدید به جدول کاربران (Safe Migration)
         async with db.execute("PRAGMA table_info(users)") as cur:
             user_columns = [row[1] for row in await cur.fetchall()]
 
@@ -101,7 +101,7 @@ async def init_db():
             )
         """)
 
-        # اطمینان از وجود ستون settled در صورت وجود دیتابیس قبلی
+        # اطمینان از وجود ستون settled در جدول predictions
         async with db.execute("PRAGMA table_info(predictions)") as cur:
             pred_columns = [row[1] for row in await cur.fetchall()]
         if "settled" not in pred_columns:
@@ -227,7 +227,6 @@ async def init_db():
             )
         """)
 
-        # اطمینان از وجود ستون status در league_fixtures
         async with db.execute("PRAGMA table_info(league_fixtures)") as cur:
             fix_columns = [row[1] for row in await cur.fetchall()]
         if "status" not in fix_columns:
@@ -252,11 +251,23 @@ async def init_db():
             )
         """)
 
-        # ۱۲. ایندکس‌های بهینه‌ساز سرعت کوئری‌ها
+        # ۱۲. جدول تاکتیک هوشمند اختصاصی تیم‌ها
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS user_tactics (
+                user_id INTEGER PRIMARY KEY,
+                style TEXT DEFAULT 'TIKI_TAKA',
+                depth TEXT DEFAULT 'BALANCED',
+                buildup TEXT DEFAULT 'SHORT',
+                risk TEXT DEFAULT 'BALANCED',
+                updated_at TEXT
+            )
+        """)
+
+        # ۱۳. ایندکس‌های بهینه‌ساز سرعت اجرای کوئری‌ها
         await db.execute("CREATE INDEX IF NOT EXISTS idx_users_points ON users(points DESC);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_predictions_match ON predictions(match_id, settled);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_user_cards_uid ON user_cards(user_id, is_in_lineup);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_league_fixtures_season ON league_fixtures(season_id, status);")
 
         await db.commit()
-        logger.info("Database initialized with WAL mode, migrations, and indexes verified successfully.")
+        logger.info("Database initialized with WAL mode, migrations, tables, and indexes successfully.")
