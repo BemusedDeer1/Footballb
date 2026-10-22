@@ -155,6 +155,46 @@ TRACKED_LIVE_MATCHES = {}
 USER_JACKPOT_DRAFTS = {}
 ACTIVE_ASYNCIO_TIMERS = {}
 
+# --- قوانین و پلن‌های تخصصی سیستم اوولوشن (EVOLUTION PLANS) ---
+EVO_PLANS = {
+    "academy": {
+        "title": "🧬 جهش آکادمی (Future Prodigy)",
+        "desc": "ارتقای پدیده‌های جوان و بازیکنان معمولی به سطح گلد ریر",
+        "boost": 5, "max_input_ovr": 80, "rarities": ["COMMON"],
+        "cost": 1200, "sac_rarity": "COMMON", "sac_count": 3
+    },
+    "rare_boost": {
+        "title": "💎 کیمیاگری کهکشانی (Galactico Blueprint)",
+        "desc": "ارتقای ستاره‌های گلد ریر به رده بازیکنان نخبه الیت",
+        "boost": 3, "min_input_ovr": 81, "max_input_ovr": 85, "rarities": ["RARE"],
+        "cost": 2500, "sac_rarity": "RARE", "sac_count": 2
+    },
+    "elite_push": {
+        "title": "⚡️ تولد اسطوره (Legendary Metamorphosis)",
+        "desc": "تبدیل سوپراستارهای الیت به تالار افتخارات آیکان",
+        "boost": 3, "min_input_ovr": 86, "max_input_ovr": 89, "rarities": ["ELITE"],
+        "cost": 5000, "sac_rarity": "ELITE", "sac_count": 2
+    },
+    "icon_titan": {
+        "title": "👑 تایتان نامیرا (Immortal Titan)",
+        "desc": "تقویت سنگین اسطوره‌ها و آیکان‌های تاریخ (تا سقف ۹۶)",
+        "boost": 2, "min_input_ovr": 90, "max_input_ovr": 94, "rarities": ["ICON"],
+        "cost": 8500, "sac_rarity": "ICON", "sac_count": 1
+    },
+    "messi_99": {
+        "title": "🐐🇦🇷 لا پولگا جاودانه (La Pulga Immortal)",
+        "desc": "آزاد کردن پتانسیل ماورایی لیونل مسی و جهش به ۹۹ OVR",
+        "target_name": "لیونل مسی", "fixed_ovr": 99,
+        "cost": 18000, "sac_icon": 2, "sac_elite": 3
+    },
+    "cr7_99": {
+        "title": "🐐🇵🇹 فرمانده ماورایی (El Comandante Prime)",
+        "desc": "آزاد کردن نسخه اوج و بی‌مرگ کریستیانو رونالدو و جهش به ۹۹ OVR",
+        "target_name": "کریستیانو رونالدو", "fixed_ovr": 99,
+        "cost": 18000, "sac_icon": 2, "sac_elite": 3
+    }
+}
+
 def schedule_timer(context, callback_coro, delay_seconds, data, name=None):
     if getattr(context, 'job_queue', None):
         if name:
@@ -843,7 +883,6 @@ async def generate_pool_message_text(match, participants):
     text += f"▫️ برد {away_name} ({len(away_pickers)} نفر): <i>{a_str}</i>\n"
     text += "\n👇 <b>پیش‌بینی خود را انتخاب کنید:</b>"
     return text
-
 # --- MONITORING LIVE MATCHES & REWARDING REGULAR PREDICTIONS ---
 
 async def settle_regular_predictions_for_match(m_id: str, final_h: int, final_a: int) -> list[str]:
@@ -1687,8 +1726,7 @@ async def predictions_hub_handler(query):
 
     text = "🎯 <b>تالار پیش‌بینی مسابقات فوتبال</b>\n────────────────────\nمسابقه مورد نظر خود را جهت ثبت پیش‌بینی انتخاب کنید:\n💰 پاداش ثبت: <b>+10 امتیاز</b> | جایزه حدس درست: <b>+40 امتیاز</b>\n────────────────────"
     await safe_edit_message(query, text, reply_markup=kb.get_upcoming_matches_keyboard(upcoming_list))
-
-# --- FC CARDS, LINEUP & TACTICAL AI ENGINE ---
+# --- FC CARDS, LINEUP, TACTICAL AI & EVOLUTION ENGINE ---
 
 def calculate_team_chemistry(cards):
     if len(cards) < 5: return 0
@@ -1794,7 +1832,7 @@ def calculate_tactical_clash(tac1: dict, tac2: dict):
 
 async def tactics_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    await ensure_user(user)
+    await ensure_user(user)[span_5](start_span)[span_5](end_span)
     tac = await get_user_tactics(user.id)
 
     text = (
@@ -1814,65 +1852,107 @@ async def tactics_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("2️⃣ عمق خط دفاعی (Depth)", callback_data="set_tac_step2")],
         [InlineKeyboardButton("3️⃣ نحوه بازیسازی (Build-Up)", callback_data="set_tac_step3")],
         [InlineKeyboardButton("4️⃣ ریسک تیمی (Risk)", callback_data="set_tac_step4")],
-        [InlineKeyboardButton("🛡 مشاهده ترکیب تیم", callback_data="view_lineup"),
-         InlineKeyboardButton("‹ بازگشت", callback_data="home")]
+        [InlineKeyboardButton("🛡 مشاهده ترکیب تیم", callback_data="view_lineup"),[span_6](start_span)[span_6](end_span)
+         InlineKeyboardButton("‹ بازگشت", callback_data="home")][span_7](start_span)[span_7](end_span)
     ])
 
     if update.callback_query:
-        await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
+        await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)[span_8](start_span)[span_8](end_span)
+    else:
+        await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
+
+async def evolution_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await ensure_user(user)[span_9](start_span)[span_9](end_span)
+
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_10](start_span)[span_10](end_span)
+        async with db.execute("SELECT points FROM users WHERE user_id = ?", (user.id,)) as cur:[span_11](start_span)[span_11](end_span)
+            pts = (await cur.fetchone())[0][span_12](start_span)[span_12](end_span)
+
+    text = (
+        f"⚡️🧪 <b>مرکز اوولوشن تخصصی FC (Evolution Hub)</b>\n"
+        "────────────────────\n"
+        f"💰 موجودی شما: <b>{pts:,} PTS</b>\n"
+        "────────────────────\n"
+        "یک مسیر ارتقا را برای تیم خود انتخاب کنید:\n\n"
+        "1️⃣ <b>جهش آکادمی (+5 OVR):</b> مخصوص کارت‌های معمولی\n"
+        "2️⃣ <b>کیمیاگری کهکشانی (+3 OVR):</b> مخصوص کارت‌های گلد ریر\n"
+        "3️⃣ <b>تولد اسطوره (+3 OVR):</b> تبدیل الیت به آیکان\n"
+        "4️⃣ <b>تایتان نامیرا (+2 OVR):</b> تقویت آیکان‌ها تا سقف ۹۶\n\n"
+        "👑 <b>پروژه‌های ماورایی G.O.A.T (فوق‌العاده گران):</b>\n"
+        "▫️ <b>مسی ۹۹ OVR:</b> نیازمند ۱۸ هزار امتیاز + ۲ آیکان + ۳ الیت\n"
+        "▫️ <b>رونالدو ۹۹ OVR:</b> نیازمند ۱۸ هزار امتیاز + ۲ آیکان + ۳ الیت\n"
+    )
+
+    buttons = [
+        [InlineKeyboardButton("1️⃣ جهش آکادمی (1,200 PTS)", callback_data="evo_cat_academy")],
+        [InlineKeyboardButton("2️⃣ کیمیاگری کهکشانی (2,500 PTS)", callback_data="evo_cat_rare_boost")],
+        [InlineKeyboardButton("3️⃣ تولد اسطوره (5,000 PTS)", callback_data="evo_cat_elite_push")],
+        [InlineKeyboardButton("4️⃣ تایتان نامیرا (8,500 PTS)", callback_data="evo_cat_icon_titan")],
+        [
+            InlineKeyboardButton("🐐 مسی ۹۹ OVR", callback_data="evo_cat_messi_99"),
+            InlineKeyboardButton("🐐 رونالدو ۹۹ OVR", callback_data="evo_cat_cr7_99")
+        ],
+        [InlineKeyboardButton("🛡 مشاهده ترکیب تیم", callback_data="view_lineup"),[span_13](start_span)[span_13](end_span)
+         InlineKeyboardButton("‹ منوی اصلی", callback_data="home")][span_14](start_span)[span_14](end_span)
+    ]
+
+    kb_markup = InlineKeyboardMarkup(buttons)
+    if update.callback_query:
+        await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)[span_15](start_span)[span_15](end_span)
     else:
         await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
 
 async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    await ensure_user(user)
-    today_str = get_iran_now().strftime("%Y-%m-%d")
+    await ensure_user(user)[span_16](start_span)[span_16](end_span)
+    today_str = get_iran_now().strftime("%Y-%m-%d")[span_17](start_span)[span_17](end_span)
 
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT offers_json FROM daily_market WHERE user_id = ? AND date_str = ?", (user.id, today_str)) as cur:
-            row = await cur.fetchone()
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_18](start_span)[span_18](end_span)
+        async with db.execute("SELECT offers_json FROM daily_market WHERE user_id = ? AND date_str = ?", (user.id, today_str)) as cur:[span_19](start_span)[span_19](end_span)
+            row = await cur.fetchone()[span_20](start_span)[span_20](end_span)
 
-        if row: offers = json.loads(row[0])
+        if row: offers = json.loads(row[0])[span_21](start_span)[span_21](end_span)
         else:
-            mult = await get_wealth_multiplier()
-            commons = random.sample([c for c in FC_CATALOG if c["rarity"] == "COMMON"], 2)
-            rares = random.sample([c for c in FC_CATALOG if c["rarity"] == "RARE"], 3)
-            elites = random.sample([c for c in FC_CATALOG if c["rarity"] == "ELITE"], 2)
-            icons = random.sample([c for c in FC_CATALOG if c["rarity"] == "ICON"], 1)
-            selected = commons + rares + elites + icons
-            random.shuffle(selected)
+            mult = await get_wealth_multiplier()[span_22](start_span)[span_22](end_span)
+            commons = random.sample([c for c in FC_CATALOG if c["rarity"] == "COMMON"], 2)[span_23](start_span)[span_23](end_span)
+            rares = random.sample([c for c in FC_CATALOG if c["rarity"] == "RARE"], 3)[span_24](start_span)[span_24](end_span)
+            elites = random.sample([c for c in FC_CATALOG if c["rarity"] == "ELITE"], 2)[span_25](start_span)[span_25](end_span)
+            icons = random.sample([c for c in FC_CATALOG if c["rarity"] == "ICON"], 1)[span_26](start_span)[span_26](end_span)
+            selected = commons + rares + elites + icons[span_27](start_span)[span_27](end_span)
+            random.shuffle(selected)[span_28](start_span)[span_28](end_span)
 
-            offers = []
-            for i, c in enumerate(selected):
-                if c["rarity"] == "COMMON": base_price = random.randint(120, 180)
-                elif c["rarity"] == "RARE": base_price = random.randint(400, 580)
-                elif c["rarity"] == "ELITE": base_price = random.randint(1250, 1650)
-                else: base_price = random.randint(3400, 4500)
+            offers = [][span_29](start_span)[span_29](end_span)
+            for i, c in enumerate(selected):[span_30](start_span)[span_30](end_span)
+                if c["rarity"] == "COMMON": base_price = random.randint(120, 180)[span_31](start_span)[span_31](end_span)
+                elif c["rarity"] == "RARE": base_price = random.randint(400, 580)[span_32](start_span)[span_32](end_span)
+                elif c["rarity"] == "ELITE": base_price = random.randint(1250, 1650)[span_33](start_span)[span_33](end_span)
+                else: base_price = random.randint(3400, 4500)[span_34](start_span)[span_34](end_span)
 
-                dyn_price = int(base_price * mult)
-                offers.append({"idx": i, "card": c, "price": dyn_price, "bought": False})
+                dyn_price = int(base_price * mult)[span_35](start_span)[span_35](end_span)
+                offers.append({"idx": i, "card": c, "price": dyn_price, "bought": False})[span_36](start_span)[span_36](end_span)
 
-            await db.execute("INSERT OR REPLACE INTO daily_market (user_id, date_str, offers_json) VALUES (?, ?, ?)",
-                             (user.id, today_str, json.dumps(offers, ensure_ascii=False)))
-            await db.commit()
+            await db.execute("INSERT OR REPLACE INTO daily_market (user_id, date_str, offers_json) VALUES (?, ?, ?)",[span_37](start_span)[span_37](end_span)
+                             (user.id, today_str, json.dumps(offers, ensure_ascii=False)))[span_38](start_span)[span_38](end_span)
+            await db.commit()[span_39](start_span)[span_39](end_span)
 
-        async with db.execute("SELECT points, last_free_pack_date FROM users WHERE user_id = ?", (user.id,)) as cur:
-            u_row = await cur.fetchone()
-            u_pts = u_row[0] if u_row else 0
-            free_pack_date = u_row[1] if u_row and len(u_row) > 1 else ""
+        async with db.execute("SELECT points, last_free_pack_date FROM users WHERE user_id = ?", (user.id,)) as cur:[span_40](start_span)[span_40](end_span)
+            u_row = await cur.fetchone()[span_41](start_span)[span_41](end_span)
+            u_pts = u_row[0] if u_row else 0[span_42](start_span)[span_42](end_span)
+            free_pack_date = u_row[1] if u_row and len(u_row) > 1 else "[span_43](start_span)"[span_43](end_span)
 
-    text = f"🛒 <b>مارکت نقل‌وانتقالات FC (قیمت‌های متعادل بازار)</b>\n────────────────────\n💰 موجودی شما: <b>{u_pts:,} PTS</b>\n────────────────────\n\n"
-    buttons = []
-    for o in offers:
-        c = o["card"]
-        tag = RARITY_COLORS.get(c["rarity"], c["rarity"])
-        status = "✅ خریداری شده" if o["bought"] else f"{o['price']:,} PTS"
-        text += f"▫️ <b>{c['name']}</b> ({c['pos']}) ➔ <b>{c['ovr']} OVR</b>\n    └ {c.get('nation','')} | {c.get('club','')} | {tag} | <b>{status}</b>\n\n"
-        if not o["bought"]:
-            buttons.append([InlineKeyboardButton(f"خرید {c['name']} ({c['ovr']}) - {o['price']:,} PTS", callback_data=f"buy_m_{o['idx']}")])
+    text = f"🛒 <b>مارکت نقل‌وانتقالات FC (قیمت‌های متعادل بازار)</b>\n────────────────────\n💰 موجودی شما: <b>{u_pts:,} PTS</b>\n────────────────────\n\n[span_44](start_span)"[span_44](end_span)
+    buttons = [][span_45](start_span)[span_45](end_span)
+    for o in offers:[span_46](start_span)[span_46](end_span)
+        c = o["card"][span_47](start_span)[span_47](end_span)
+        tag = RARITY_COLORS.get(c["rarity"], c["rarity"])[span_48](start_span)[span_48](end_span)
+        status = "✅ خریداری شده" if o["bought"] else f"{o['price']:,} PTS[span_49](start_span)"[span_49](end_span)
+        text += f"▫️ <b>{c['name']}</b> ({c['pos']}) ➔ <b>{c['ovr']} OVR</b>\n    └ {c.get('nation','')} | {c.get('club','')} | {tag} | <b>{status}</b>\n\n[span_50](start_span)"[span_50](end_span)
+        if not o["bought"]:[span_51](start_span)[span_51](end_span)
+            buttons.append([InlineKeyboardButton(f"خرید {c['name']} ({c['ovr']}) - {o['price']:,} PTS", callback_data=f"buy_m_{o['idx']}")])[span_52](start_span)[span_52](end_span)
 
-    if free_pack_date != today_str:
-        buttons.append([InlineKeyboardButton("🎁 باز کردن پک روزانه رایگان (۳ بازیکن)", callback_data="claim_daily_pack")])
+    if free_pack_date != today_str:[span_53](start_span)[span_53](end_span)
+        buttons.append([InlineKeyboardButton("🎁 باز کردن پک روزانه رایگان (۳ بازیکن)", callback_data="claim_daily_pack")])[span_54](start_span)[span_54](end_span)
 
     buttons.append([
         InlineKeyboardButton("📦 گلد پک (500 PTS)", callback_data="buy_pack_gold"),
@@ -1881,113 +1961,117 @@ async def market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons.append([
         InlineKeyboardButton("👑 سوپر پک ویژه (4,000 PTS)", callback_data="buy_pack_super")
     ])
-    buttons.append([InlineKeyboardButton("💰 فروش کارت‌های مازاد به ربات", callback_data="open_sell_menu")])
-    buttons.append([InlineKeyboardButton("‹ بازگشت", callback_data="home")])
+    buttons.append([
+        InlineKeyboardButton("⚡️🧪 آزمایشگاه اوولوشن (Evolution)", callback_data="open_evolution"),
+        InlineKeyboardButton("💰 فروش کارت‌ها", callback_data="open_sell_menu")[span_55](start_span)[span_55](end_span)
+    ])
+    buttons.append([InlineKeyboardButton("‹ بازگشت", callback_data="home")])[span_56](start_span)[span_56](end_span)
 
-    kb_markup = InlineKeyboardMarkup(buttons)
-    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
-    else: await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
+    kb_markup = InlineKeyboardMarkup(buttons)[span_57](start_span)[span_57](end_span)
+    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)[span_58](start_span)[span_58](end_span)
+    else: await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")[span_59](start_span)[span_59](end_span)
 
 async def sell_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    await ensure_user(user)
+    await ensure_user(user)[span_60](start_span)[span_60](end_span)
 
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT id, player_name, rating, position, rarity, is_in_lineup FROM user_cards WHERE user_id = ? ORDER BY rating DESC", (user.id,)) as cur:
-            cards = await cur.fetchall()
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_61](start_span)[span_61](end_span)
+        async with db.execute("SELECT id, player_name, rating, position, rarity, is_in_lineup FROM user_cards WHERE user_id = ? ORDER BY rating DESC", (user.id,)) as cur:[span_62](start_span)[span_62](end_span)
+            cards = await cur.fetchall()[span_63](start_span)[span_63](end_span)
 
-    if not cards:
-        text = "🎴 <b>کارت فعالی برای فروش ندارید!</b>"
-        if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())
-        else: await update.message.reply_text(text, parse_mode="HTML")
-        return
+    if not cards:[span_64](start_span)[span_64](end_span)
+        text = "🎴 <b>کارت فعالی برای فروش ندارید!</b>[span_65](start_span)"[span_65](end_span)
+        if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())[span_66](start_span)[span_66](end_span)
+        else: await update.message.reply_text(text, parse_mode="HTML")[span_67](start_span)[span_67](end_span)
+        return[span_68](start_span)[span_68](end_span)
 
-    text = "💰 <b>فروشگاه بازخرید کارت‌ها (Quick Sell)</b>\n────────────────────\nوجه فروش فوراً به حسابتان اضافه می‌شود:\n────────────────────\n\n"
-    buttons = []
-    for cid, name, ovr, pos, rar, in_lineup in cards:
-        price = SELL_PRICES.get(rar, 50)
-        badge = "🟢 " if in_lineup else ""
-        buttons.append([InlineKeyboardButton(f"فروش {badge}{name} ({ovr}) ➔ +{price} PTS", callback_data=f"sell_c_{cid}")])
+    text = "💰 <b>فروشگاه بازخرید کارت‌ها (Quick Sell)</b>\n────────────────────\nوجه فروش فوراً به حسابتان اضافه می‌شود:\n────────────────────\n\n[span_69](start_span)"[span_69](end_span)
+    buttons = [][span_70](start_span)[span_70](end_span)
+    for cid, name, ovr, pos, rar, in_lineup in cards:[span_71](start_span)[span_71](end_span)
+        price = SELL_PRICES.get(rar, 50)[span_72](start_span)[span_72](end_span)
+        badge = "🟢 " if in_lineup else "[span_73](start_span)"[span_73](end_span)
+        buttons.append([InlineKeyboardButton(f"فروش {badge}{name} ({ovr}) ➔ +{price} PTS", callback_data=f"sell_c_{cid}")])[span_74](start_span)[span_74](end_span)
 
-    buttons.append([InlineKeyboardButton("‹ بازگشت به مارکت", callback_data="view_market")])
-    buttons.append([InlineKeyboardButton("‹ منوی اصلی", callback_data="home")])
+    buttons.append([InlineKeyboardButton("‹ بازگشت به مارکت", callback_data="view_market")])[span_75](start_span)[span_75](end_span)
+    buttons.append([InlineKeyboardButton("‹ منوی اصلی", callback_data="home")])[span_76](start_span)[span_76](end_span)
 
-    kb_markup = InlineKeyboardMarkup(buttons)
-    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
-    else: await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
+    kb_markup = InlineKeyboardMarkup(buttons)[span_77](start_span)[span_77](end_span)
+    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)[span_78](start_span)[span_78](end_span)
+    else: await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")[span_79](start_span)[span_79](end_span)
 
 async def my_cards_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    await ensure_user(user)
+    await ensure_user(user)[span_80](start_span)[span_80](end_span)
 
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT id, player_name, rating, position, rarity, is_in_lineup FROM user_cards WHERE user_id = ? ORDER BY rating DESC", (user.id,)) as cur:
-            cards = await cur.fetchall()
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_81](start_span)[span_81](end_span)
+        async with db.execute("SELECT id, player_name, rating, position, rarity, is_in_lineup FROM user_cards WHERE user_id = ? ORDER BY rating DESC", (user.id,)) as cur:[span_82](start_span)[span_82](end_span)
+            cards = await cur.fetchall()[span_83](start_span)[span_83](end_span)
 
-    if not cards:
-        text = "🎴 <b>کلکسیون کارت‌های شما خالی است!</b>\nاز مارکت یا پک روزانه کارت تهیه کنید."
-        if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())
-        else: await update.message.reply_text(text, parse_mode="HTML")
-        return
+    if not cards:[span_84](start_span)[span_84](end_span)
+        text = "🎴 <b>کلکسیون کارت‌های شما خالی است!</b>\nاز مارکت یا پک روزانه کارت تهیه کنید.[span_85](start_span)"[span_85](end_span)
+        if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())[span_86](start_span)[span_86](end_span)
+        else: await update.message.reply_text(text, parse_mode="HTML")[span_87](start_span)[span_87](end_span)
+        return[span_88](start_span)[span_88](end_span)
 
-    text = f"🎴 <b>کلکسیون کارت‌های {html.escape(user.first_name)}:</b>\n────────────────────\n\n"
-    for cid, name, ovr, pos, rar, in_lineup in cards:
-        star = "🟢 [در ترکیب]" if in_lineup else "⚪️"
-        c_info = FC_CATALOG_DICT.get(name, {})
-        text += f"{star} <b>{name}</b> ({pos}) ➔ <b>{ovr} OVR</b> {c_info.get('nation','')}\n"
+    text = f"🎴 <b>کلکسیون کارت‌های {html.escape(user.first_name)}:</b>\n────────────────────\n\n[span_89](start_span)"[span_89](end_span)
+    for cid, name, ovr, pos, rar, in_lineup in cards:[span_90](start_span)[span_90](end_span)
+        star = "🟢 [در ترکیب]" if in_lineup else "⚪️[span_91](start_span)"[span_91](end_span)
+        c_info = FC_CATALOG_DICT.get(name, {})[span_92](start_span)[span_92](end_span)
+        text += f"{star} <b>{name}</b> ({pos}) ➔ <b>{ovr} OVR</b> {c_info.get('nation','')}\n[span_93](start_span)"[span_93](end_span)
 
     buttons = [
-        [InlineKeyboardButton("⚡️ چیدن خودکار قوی‌ترین ترکیب", callback_data="auto_lineup")],
-        [InlineKeyboardButton("💰 فروش کارت‌ها به ربات", callback_data="open_sell_menu")],
-        [InlineKeyboardButton("‹ بازگشت", callback_data="home")]
+        [InlineKeyboardButton("⚡️ چیدن خودکار قوی‌ترین ترکیب", callback_data="auto_lineup")],[span_94](start_span)[span_94](end_span)
+        [InlineKeyboardButton("⚡️🧪 آزمایشگاه اوولوشن (Evolution)", callback_data="open_evolution")],
+        [InlineKeyboardButton("💰 فروش کارت‌ها به ربات", callback_data="open_sell_menu")],[span_95](start_span)[span_95](end_span)
+        [InlineKeyboardButton("‹ بازگشت", callback_data="home")][span_96](start_span)[span_96](end_span)
     ]
-    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=InlineKeyboardMarkup(buttons))
-    else: await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
+    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=InlineKeyboardMarkup(buttons))[span_97](start_span)[span_97](end_span)
+    else: await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")[span_98](start_span)[span_98](end_span)
 
 async def lineup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    await ensure_user(user)
+    await ensure_user(user)[span_99](start_span)[span_99](end_span)
     tac = await get_user_tactics(user.id)
 
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user.id,)) as cur:
-            lineup = await cur.fetchall()
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_100](start_span)[span_100](end_span)
+        async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user.id,)) as cur:[span_101](start_span)[span_101](end_span)
+            lineup = await cur.fetchall()[span_102](start_span)[span_102](end_span)
 
-    enriched_cards, positions, mids = [], {"GK": None, "DEF": None, "MID1": None, "MID2": None, "FWD": None}, []
-    for name, ovr, pos in lineup:
-        c_info = FC_CATALOG_DICT.get(name, {"nation": "", "club": "", "rarity": "COMMON", "playstyles": []})
-        card_obj = {"name": name, "ovr": ovr, "pos": pos, "nation": c_info.get("nation"), "club": c_info.get("club"), "rarity": c_info.get("rarity"), "playstyles": c_info.get("playstyles", [])}
-        enriched_cards.append(card_obj)
-        if pos == "GK" and not positions["GK"]: positions["GK"] = card_obj
-        elif pos == "DEF" and not positions["DEF"]: positions["DEF"] = card_obj
-        elif pos == "FWD" and not positions["FWD"]: positions["FWD"] = card_obj
-        elif pos == "MID": mids.append(card_obj)
+    enriched_cards, positions, mids = [], {"GK": None, "DEF": None, "MID1": None, "MID2": None, "FWD": None}, [][span_103](start_span)[span_103](end_span)
+    for name, ovr, pos in lineup:[span_104](start_span)[span_104](end_span)
+        c_info = FC_CATALOG_DICT.get(name, {"nation": "", "club": "", "rarity": "COMMON", "playstyles": []})[span_105](start_span)[span_105](end_span)
+        card_obj = {"name": name, "ovr": ovr, "pos": pos, "nation": c_info.get("nation"), "club": c_info.get("club"), "rarity": c_info.get("rarity"), "playstyles": c_info.get("playstyles", [])}[span_106](start_span)[span_106](end_span)
+        enriched_cards.append(card_obj)[span_107](start_span)[span_107](end_span)
+        if pos == "GK" and not positions["GK"]: positions["GK"] = card_obj[span_108](start_span)[span_108](end_span)
+        elif pos == "DEF" and not positions["DEF"]: positions["DEF"] = card_obj[span_109](start_span)[span_109](end_span)
+        elif pos == "FWD" and not positions["FWD"]: positions["FWD"] = card_obj[span_110](start_span)[span_110](end_span)
+        elif pos == "MID": mids.append(card_obj)[span_111](start_span)[span_111](end_span)
 
-    if len(mids) >= 1: positions["MID1"] = mids[0]
-    if len(mids) >= 2: positions["MID2"] = mids[1]
+    if len(mids) >= 1: positions["MID1"] = mids[0][span_112](start_span)[span_112](end_span)
+    if len(mids) >= 2: positions["MID2"] = mids[1][span_113](start_span)[span_113](end_span)
 
-    total_ovr = sum(p["ovr"] for p in positions.values() if p)
-    count = sum(1 for p in positions.values() if p)
-    avg_ovr = round(total_ovr / count, 1) if count > 0 else 0
-    chem = calculate_team_chemistry(enriched_cards) if count == 5 else 0
-    chem_boost = round((chem / 100.0) * 6.0, 1)
-    effective_ovr = round(avg_ovr + chem_boost, 1)
+    total_ovr = sum(p["ovr"] for p in positions.values() if p)[span_114](start_span)[span_114](end_span)
+    count = sum(1 for p in positions.values() if p)[span_115](start_span)[span_115](end_span)
+    avg_ovr = round(total_ovr / count, 1) if count > 0 else 0[span_116](start_span)[span_116](end_span)
+    chem = calculate_team_chemistry(enriched_cards) if count == 5 else 0[span_117](start_span)[span_117](end_span)
+    chem_boost = round((chem / 100.0) * 6.0, 1)[span_118](start_span)[span_118](end_span)
+    effective_ovr = round(avg_ovr + chem_boost, 1)[span_119](start_span)[span_119](end_span)
 
     def p_line(p):
-        if not p: return "<i>[جای خالی - بازیکن آماتور ۴۰]</i>"
-        return f"<b>{p['name']}</b> ({p['ovr']}) {p.get('nation', '')}"
+        if not p: return "<i>[جای خالی - بازیکن آماتور ۴۰]</i>[span_120](start_span)"[span_120](end_span)
+        return f"<b>{p['name']}</b> ({p['ovr']}) {p.get('nation', '')}[span_121](start_span)"[span_121](end_span)
 
     text = (
-        f"🛡 <b>ترکیب ۵ نفره تیم: {html.escape(user.first_name)}</b>\n────────────────────\n"
-        f"⭐️ <b>قدرت پایه تیمی:</b> <code>{avg_ovr} OVR</code>\n"
-        f"⚗️ <b>کمیستری تیم:</b> <code>{chem}%</code> (بوست: <b>+{chem_boost}</b>)\n"
-        f"⚡️ <b>قدرت نهایی تیم:</b> <code>{effective_ovr} OVR</code> 🔥\n"
+        f"🛡 <b>ترکیب ۵ نفره تیم: {html.escape(user.first_name)}</b>\n────────────────────\n[span_122](start_span)"[span_122](end_span)
+        f"⭐️ <b>قدرت پایه تیمی:</b> <code>{avg_ovr} OVR</code>\n[span_123](start_span)"[span_123](end_span)
+        f"⚗️ <b>کمیستری تیم:</b> <code>{chem}%</code> (بوست: <b>+{chem_boost}</b>)\n[span_124](start_span)"[span_124](end_span)
+        f"⚡️ <b>قدرت نهایی تیم:</b> <code>{effective_ovr} OVR</code> 🔥\n[span_125](start_span)"[span_125](end_span)
         f"📋 <b>تاکتیک تیمی:</b> <code>{TACTIC_NAMES.get(tac['style'], tac['style'])}</code>\n\n"
-        f"🧤 دروازه‌بان (GK): {p_line(positions['GK'])}\n"
-        f"🛡 مدافع (DEF): {p_line(positions['DEF'])}\n"
-        f"⚡️ هافبک ۱ (MID): {p_line(positions['MID1'])}\n"
-        f"⚡️ هافبک ۲ (MID): {p_line(positions['MID2'])}\n"
-        f"🎯 مهاجم (FWD): {p_line(positions['FWD'])}\n────────────────────"
+        f"🧤 دروازه‌بان (GK): {p_line(positions['GK'])}\n[span_126](start_span)"[span_126](end_span)
+        f"🛡 مدافع (DEF): {p_line(positions['DEF'])}\n[span_127](start_span)"[span_127](end_span)
+        f"⚡️ هافبک ۱ (MID): {p_line(positions['MID1'])}\n[span_128](start_span)"[span_128](end_span)
+        f"⚡️ هافبک ۲ (MID): {p_line(positions['MID2'])}\n[span_129](start_span)"[span_129](end_span)
+        f"🎯 مهاجم (FWD): {p_line(positions['FWD'])}\n────────────────────[span_130](start_span)"[span_130](end_span)
     )
 
     buttons = [
@@ -2000,72 +2084,72 @@ async def lineup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton("🎯 تغییر FWD", callback_data="manual_pos_FWD")
         ],
         [InlineKeyboardButton("📋 تنظیم تاکتیک هوشمند تیم", callback_data="open_tactics")],
-        [InlineKeyboardButton("⚡️ چیدن خودکار بهترین ترکیب", callback_data="auto_lineup")],
+        [InlineKeyboardButton("⚡️ چیدن خودکار بهترین ترکیب", callback_data="auto_lineup")],[span_131](start_span)[span_131](end_span)
         [
-            InlineKeyboardButton("🎴 کل کارت‌ها", callback_data="view_my_cards"),
-            InlineKeyboardButton("💰 فروش کارت‌ها", callback_data="open_sell_menu")
+            InlineKeyboardButton("🎴 کل کارت‌ها", callback_data="view_my_cards"),[span_132](start_span)[span_132](end_span)
+            InlineKeyboardButton("💰 فروش کارت‌ها", callback_data="open_sell_menu")[span_133](start_span)[span_133](end_span)
         ],
-        [InlineKeyboardButton("‹ بازگشت", callback_data="home")]
+        [InlineKeyboardButton("‹ بازگشت", callback_data="home")][span_134](start_span)[span_134](end_span)
     ]
-    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=InlineKeyboardMarkup(buttons))
-    else: await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
+    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=InlineKeyboardMarkup(buttons))[span_135](start_span)[span_135](end_span)
+    else: await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")[span_136](start_span)[span_136](end_span)
 
 async def auto_lineup_logic(user_id: int):
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE user_id = ?", (user_id,))
-        for pos, count in [("GK", 1), ("DEF", 1), ("MID", 2), ("FWD", 1)]:
-            async with db.execute("SELECT id FROM user_cards WHERE user_id = ? AND position = ? ORDER BY rating DESC LIMIT ?", (user_id, pos, count)) as cur:
-                ids = [r[0] for r in await cur.fetchall()]
-                for cid in ids: await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))
-        await db.commit()
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_137](start_span)[span_137](end_span)
+        await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE user_id = ?", (user_id,))[span_138](start_span)[span_138](end_span)
+        for pos, count in [("GK", 1), ("DEF", 1), ("MID", 2), ("FWD", 1)]:[span_139](start_span)[span_139](end_span)
+            async with db.execute("SELECT id FROM user_cards WHERE user_id = ? AND position = ? ORDER BY rating DESC LIMIT ?", (user_id, pos, count)) as cur:[span_140](start_span)[span_140](end_span)
+                ids = [r[0] for r in await cur.fetchall()][span_141](start_span)[span_141](end_span)
+                for cid in ids: await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))[span_142](start_span)[span_142](end_span)
+        await db.commit()[span_143](start_span)[span_143](end_span)
 
 async def get_user_team_info(user_id: int):
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:
-            cards = await cur.fetchall()
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_144](start_span)[span_144](end_span)
+        async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:[span_145](start_span)[span_145](end_span)
+            cards = await cur.fetchall()[span_146](start_span)[span_146](end_span)
 
-    if len(cards) < 5:
-        await auto_lineup_logic(user_id)
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:
-                cards = await cur.fetchall()
+    if len(cards) < 5:[span_147](start_span)[span_147](end_span)
+        await auto_lineup_logic(user_id)[span_148](start_span)[span_148](end_span)
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_149](start_span)[span_149](end_span)
+            async with db.execute("SELECT player_name, rating, position FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (user_id,)) as cur:[span_150](start_span)[span_150](end_span)
+                cards = await cur.fetchall()[span_151](start_span)[span_151](end_span)
 
-    enriched = []
-    positions = {"GK": None, "DEF": None, "MID": [], "FWD": None}
+    enriched = [][span_152](start_span)[span_152](end_span)
+    positions = {"GK": None, "DEF": None, "MID": [], "FWD": None}[span_153](start_span)[span_153](end_span)
 
-    for c in cards:
-        c_info = FC_CATALOG_DICT.get(c[0], {"nation": "", "club": "", "rarity": "COMMON", "playstyles": []})
-        card_obj = {"name": c[0], "ovr": c[1], "pos": c[2], "nation": c_info.get("nation"), "club": c_info.get("club"), "rarity": c_info.get("rarity"), "playstyles": c_info.get("playstyles", [])}
-        enriched.append(card_obj)
-        if c[2] == "GK" and not positions["GK"]: positions["GK"] = card_obj
-        elif c[2] == "DEF" and not positions["DEF"]: positions["DEF"] = card_obj
-        elif c[2] == "FWD" and not positions["FWD"]: positions["FWD"] = card_obj
-        elif c[2] == "MID" and len(positions["MID"]) < 2: positions["MID"].append(card_obj)
+    for c in cards:[span_154](start_span)[span_154](end_span)
+        c_info = FC_CATALOG_DICT.get(c[0], {"nation": "", "club": "", "rarity": "COMMON", "playstyles": []})[span_155](start_span)[span_155](end_span)
+        card_obj = {"name": c[0], "ovr": c[1], "pos": c[2], "nation": c_info.get("nation"), "club": c_info.get("club"), "rarity": c_info.get("rarity"), "playstyles": c_info.get("playstyles", [])}[span_156](start_span)[span_156](end_span)
+        enriched.append(card_obj)[span_157](start_span)[span_157](end_span)
+        if c[2] == "GK" and not positions["GK"]: positions["GK"] = card_obj[span_158](start_span)[span_158](end_span)
+        elif c[2] == "DEF" and not positions["DEF"]: positions["DEF"] = card_obj[span_159](start_span)[span_159](end_span)
+        elif c[2] == "FWD" and not positions["FWD"]: positions["FWD"] = card_obj[span_160](start_span)[span_160](end_span)
+        elif c[2] == "MID" and len(positions["MID"]) < 2: positions["MID"].append(card_obj)[span_161](start_span)[span_161](end_span)
 
-    if not positions["GK"]:
-        positions["GK"] = {"name": "دروازه‌بان آماتور", "ovr": 40, "pos": "GK", "nation": "", "club": "", "rarity": "COMMON", "playstyles": []}
-        enriched.append(positions["GK"])
-    if not positions["DEF"]:
-        positions["DEF"] = {"name": "مدافع آماتور", "ovr": 40, "pos": "DEF", "nation": "", "club": "", "rarity": "COMMON", "playstyles": []}
-        enriched.append(positions["DEF"])
-    if not positions["FWD"]:
-        positions["FWD"] = {"name": "مهاجم آماتور", "ovr": 40, "pos": "FWD", "nation": "", "club": "", "rarity": "COMMON", "playstyles": []}
-        enriched.append(positions["FWD"])
-    while len(positions["MID"]) < 2:
-        m_dummy = {"name": f"هافبک آماتور {len(positions['MID'])+1}", "ovr": 40, "pos": "MID", "nation": "", "club": "", "rarity": "COMMON", "playstyles": []}
-        positions["MID"].append(m_dummy)
-        enriched.append(m_dummy)
+    if not positions["GK"]:[span_162](start_span)[span_162](end_span)
+        positions["GK"] = {"name": "دروازه‌بان آماتور", "ovr": 40, "pos": "GK", "nation": "", "club": "", "rarity": "COMMON", "playstyles": []}[span_163](start_span)[span_163](end_span)
+        enriched.append(positions["GK"])[span_164](start_span)[span_164](end_span)
+    if not positions["DEF"]:[span_165](start_span)[span_165](end_span)
+        positions["DEF"] = {"name": "مدافع آماتور", "ovr": 40, "pos": "DEF", "nation": "", "club": "", "rarity": "COMMON", "playstyles": []}[span_166](start_span)[span_166](end_span)
+        enriched.append(positions["DEF"])[span_167](start_span)[span_167](end_span)
+    if not positions["FWD"]:[span_168](start_span)[span_168](end_span)
+        positions["FWD"] = {"name": "مهاجم آماتور", "ovr": 40, "pos": "FWD", "nation": "", "club": "", "rarity": "COMMON", "playstyles": []}[span_169](start_span)[span_169](end_span)
+        enriched.append(positions["FWD"])[span_170](start_span)[span_170](end_span)
+    while len(positions["MID"]) < 2:[span_171](start_span)[span_171](end_span)
+        m_dummy = {"name": f"هافبک آماتور {len(positions['MID'])+1}", "ovr": 40, "pos": "MID", "nation": "", "club": "", "rarity": "COMMON", "playstyles": []}[span_172](start_span)[span_172](end_span)
+        positions["MID"].append(m_dummy)[span_173](start_span)[span_173](end_span)
+        enriched.append(m_dummy)[span_174](start_span)[span_174](end_span)
 
-    base_ovr = round(sum(c["ovr"] for c in enriched[:5]) / 5.0, 1)
-    chem = calculate_team_chemistry(enriched[:5])
-    chem_boost = round((chem / 100.0) * 6.0, 1)
-    effective_ovr = round(base_ovr + chem_boost, 1)
+    base_ovr = round(sum(c["ovr"] for c in enriched[:5]) / 5.0, 1)[span_175](start_span)[span_175](end_span)
+    chem = calculate_team_chemistry(enriched[:5])[span_176](start_span)[span_176](end_span)
+    chem_boost = round((chem / 100.0) * 6.0, 1)[span_177](start_span)[span_177](end_span)
+    effective_ovr = round(base_ovr + chem_boost, 1)[span_178](start_span)[span_178](end_span)
 
-    fwd_c = positions["FWD"]
-    gk_c = positions["GK"]
-    def_c = positions["DEF"]
-    mids_c = positions["MID"]
-    mid_ovr = round(sum(m["ovr"] for m in mids_c) / len(mids_c), 1)
+    fwd_c = positions["FWD"][span_179](start_span)[span_179](end_span)
+    gk_c = positions["GK"][span_180](start_span)[span_180](end_span)
+    def_c = positions["DEF"][span_181](start_span)[span_181](end_span)
+    mids_c = positions["MID"][span_182](start_span)[span_182](end_span)
+    mid_ovr = round(sum(m["ovr"] for m in mids_c) / len(mids_c), 1)[span_183](start_span)[span_183](end_span)
 
     return {
         "base_ovr": base_ovr, "chem": chem, "eff_ovr": effective_ovr,
@@ -2079,123 +2163,123 @@ async def get_user_team_info(user_id: int):
 # --- DEEP FC 26 DYNAMIC CHANCES MATCH ENGINE ---
 
 def simulate_chained_fc26_attack(att_dict, def_dict, minute_label="", momentum_boost=0.0):
-    t_att = att_dict.get("team") if isinstance(att_dict.get("team"), dict) else (att_dict or {})
-    t_def = def_dict.get("team") if isinstance(def_dict.get("team"), dict) else (def_dict or {})
-    att_name = att_dict.get("name", "تیم ۱")
-    def_name = def_dict.get("name", "تیم ۲")
+    t_att = att_dict.get("team") if isinstance(att_dict.get("team"), dict) else (att_dict or {})[span_184](start_span)[span_184](end_span)
+    t_def = def_dict.get("team") if isinstance(def_dict.get("team"), dict) else (def_dict or {})[span_185](start_span)[span_185](end_span)
+    att_name = att_dict.get("name", "تیم ۱")[span_186](start_span)[span_186](end_span)
+    def_name = def_dict.get("name", "تیم ۲")[span_187](start_span)[span_187](end_span)
 
-    mid_att = t_att.get("mid_ovr", 78) + (t_att.get("chem", 35) / 25.0) + (momentum_boost * 4.0)
-    mid_def = t_def.get("mid_ovr", 78) + (t_def.get("chem", 35) / 25.0)
+    mid_att = t_att.get("mid_ovr", 78) + (t_att.get("chem", 35) / 25.0) + (momentum_boost * 4.0)[span_188](start_span)[span_188](end_span)
+    mid_def = t_def.get("mid_ovr", 78) + (t_def.get("chem", 35) / 25.0)[span_189](start_span)[span_189](end_span)
 
-    creation_rate = 0.65 + ((mid_att - mid_def) * 0.02)
-    creation_rate = max(0.30, min(0.92, creation_rate))
+    creation_rate = 0.65 + ((mid_att - mid_def) * 0.02)[span_190](start_span)[span_190](end_span)
+    creation_rate = max(0.30, min(0.92, creation_rate))[span_191](start_span)[span_191](end_span)
 
-    min_lbl = f" (دقیقه {minute_label})" if minute_label else ""
+    min_lbl = f" (دقیقه {minute_label})" if minute_label else "[span_192](start_span)"[span_192](end_span)
 
-    def_mids = t_def.get("mids") or ["هافبک حریف"]
-    att_mids = t_att.get("mids") or [t_att.get("fwd") or "مهاجم"]
+    def_mids = t_def.get("mids") or ["هافبک حریف"][span_193](start_span)[span_193](end_span)
+    att_mids = t_att.get("mids") or [t_att.get("fwd") or "مهاجم"][span_194](start_span)[span_194](end_span)
 
-    if random.random() > creation_rate:
-        def_mid_player = random.choice(def_mids)
-        return False, None, None, f"⏱ <b>میانه میدان{min_lbl}:</b> نبرد تن‌به‌تن؛ <b>{def_mid_player}</b> توپ‌گیری کرد و مانع ضدحمله شد.", False, False
+    if random.random() > creation_rate:[span_195](start_span)[span_195](end_span)
+        def_mid_player = random.choice(def_mids)[span_196](start_span)[span_196](end_span)
+        return False, None, None, f"⏱ <b>میانه میدان{min_lbl}:</b> نبرد تن‌به‌تن؛ <b>{def_mid_player}</b> توپ‌گیری کرد و مانع ضدحمله شد.", False, False[span_197](start_span)[span_197](end_span)
 
-    assist_maker = random.choice(att_mids)
-    fwd_player = t_att.get("fwd") or "مهاجم"
-    def_card = t_def.get("def") or "مدافع"
+    assist_maker = random.choice(att_mids)[span_198](start_span)[span_198](end_span)
+    fwd_player = t_att.get("fwd") or "مهاجم[span_199](start_span)"[span_199](end_span)
+    def_card = t_def.get("def") or "مدافع[span_200](start_span)"[span_200](end_span)
 
-    if random.random() < 0.04:
-        is_red = random.random() < 0.35
-        card_text = "کارت قرمز مستقیم و اخراج مدافع! 🟥" if is_red else "کارت زرد داور! 🟨"
-        pen_scorer = fwd_player
-        return True, pen_scorer, None, f"🚨 <b>خطای پنالتی در محوطه جریمه{min_lbl}!</b>\nتکل خشن <b>{def_card}</b> پنالتی اعلام شد ({card_text}). <b>{pen_scorer}</b> با خونسردی توپ را به تور دوخت! ⚽️🎯", True, is_red
+    if random.random() < 0.04:[span_201](start_span)[span_201](end_span)
+        is_red = random.random() < 0.35[span_202](start_span)[span_202](end_span)
+        card_text = "کارت قرمز مستقیم و اخراج مدافع! 🟥" if is_red else "کارت زرد داور! 🟨[span_203](start_span)"[span_203](end_span)
+        pen_scorer = fwd_player[span_204](start_span)[span_204](end_span)
+        return True, pen_scorer, None, f"🚨 <b>خطای پنالتی در محوطه جریمه{min_lbl}!</b>\nتکل خشن <b>{def_card}</b> پنالتی اعلام شد ({card_text}). <b>{pen_scorer}</b> با خونسردی توپ را به تور دوخت! ⚽️🎯", True, is_red[span_205](start_span)[span_205](end_span)
 
-    def_style_bonus = len(t_def.get("def_styles", [])) * 0.02
-    fwd_style_bonus = len(t_att.get("fwd_styles", [])) * 0.025
-    gk_style_bonus = len(t_def.get("gk_styles", [])) * 0.02
+    def_style_bonus = len(t_def.get("def_styles", [])) * 0.02[span_206](start_span)[span_206](end_span)
+    fwd_style_bonus = len(t_att.get("fwd_styles", [])) * 0.025[span_207](start_span)[span_207](end_span)
+    gk_style_bonus = len(t_def.get("gk_styles", [])) * 0.02[span_208](start_span)[span_208](end_span)
 
-    def_tackle_chance = 0.28 + ((t_def.get("def_ovr", 78) - t_att.get("fwd_ovr", 78)) * 0.015) + def_style_bonus - (momentum_boost * 0.05)
-    def_tackle_chance = max(0.08, min(0.50, def_tackle_chance))
+    def_tackle_chance = 0.28 + ((t_def.get("def_ovr", 78) - t_att.get("fwd_ovr", 78)) * 0.015) + def_style_bonus - (momentum_boost * 0.05)[span_209](start_span)[span_209](end_span)
+    def_tackle_chance = max(0.08, min(0.50, def_tackle_chance))[span_210](start_span)[span_210](end_span)
 
-    if random.random() < def_tackle_chance:
-        return False, None, None, f"🛡 <b>دفاع مطمئن{min_lbl}:</b> تکل تمیز و به‌موقع <b>{def_card}</b> مانع از شوت‌زنی {fwd_player} شد.", False, False
+    if random.random() < def_tackle_chance:[span_211](start_span)[span_211](end_span)
+        return False, None, None, f"🛡 <b>دفاع مطمئن{min_lbl}:</b> تکل تمیز و به‌موقع <b>{def_card}</b> مانع از شوت‌زنی {fwd_player} شد.", False, False[span_212](start_span)[span_212](end_span)
 
-    gk_player = t_def.get("gk") or "دروازه‌بان"
-    shot_power = t_att.get("fwd_ovr", 78) + (t_att.get("chem", 35) / 30.0) + (momentum_boost * 5.0)
-    gk_power = t_def.get("gk_ovr", 78) + (t_def.get("chem", 35) / 30.0)
+    gk_player = t_def.get("gk") or "دروازه‌بان[span_213](start_span)"[span_213](end_span)
+    shot_power = t_att.get("fwd_ovr", 78) + (t_att.get("chem", 35) / 30.0) + (momentum_boost * 5.0)[span_214](start_span)[span_214](end_span)
+    gk_power = t_def.get("gk_ovr", 78) + (t_def.get("chem", 35) / 30.0)[span_215](start_span)[span_215](end_span)
 
-    goal_chance = 0.55 + ((shot_power - gk_power) * 0.025) + fwd_style_bonus - gk_style_bonus
-    goal_chance = max(0.20, min(0.85, goal_chance))
+    goal_chance = 0.55 + ((shot_power - gk_power) * 0.025) + fwd_style_bonus - gk_style_bonus[span_216](start_span)[span_216](end_span)
+    goal_chance = max(0.20, min(0.85, goal_chance))[span_217](start_span)[span_217](end_span)
 
-    roll = random.random()
-    if roll < goal_chance:
-        scorer = fwd_player if random.random() < 0.72 else assist_maker
+    roll = random.random()[span_218](start_span)[span_218](end_span)
+    if roll < goal_chance:[span_219](start_span)[span_219](end_span)
+        scorer = fwd_player if random.random() < 0.72 else assist_maker[span_220](start_span)[span_220](end_span)
         scenarios = [
-            f"روی پاس در عمق مهندسی‌شده <b>{assist_maker}</b>، <b>{scorer}</b> توپ را کنج دروازه کاشت! 🚀",
-            f"شوت سرکش و غیرقابل مهار <b>{scorer}</b> طاق دروازه {def_name} را فرو ریخت! 💥",
-            f"ارسال مواج <b>{assist_maker}</b> و ضربه سر چکشی دیدنی <b>{scorer}</b> به تور چسبید! ⚽️",
-            f"مهارت تمام‌کنندگی ناب! <b>{scorer}</b> در تک‌به‌تک گلر را فریب داد و گلزنی کرد! 🎯"
+            f"روی پاس در عمق مهندسی‌شده <b>{assist_maker}</b>، <b>{scorer}</b> توپ را کنج دروازه کاشت! 🚀",[span_221](start_span)[span_221](end_span)
+            f"شوت سرکش و غیرقابل مهار <b>{scorer}</b> طاق دروازه {def_name} را فرو ریخت! 💥",[span_222](start_span)[span_222](end_span)
+            f"ارسال مواج <b>{assist_maker}</b> و ضربه سر چکشی دیدنی <b>{scorer}</b> به تور چسبید! ⚽️",[span_223](start_span)[span_223](end_span)
+            f"مهارت تمام‌کنندگی ناب! <b>{scorer}</b> در تک‌به‌تک گلر را فریب داد و گلزنی کرد! 🎯[span_224](start_span)"[span_224](end_span)
         ]
-        return True, scorer, assist_maker, f"⚽️🔥 <b>گـُــل برای {att_name}{min_lbl}!</b>\n{random.choice(scenarios)}", True, False
-    elif roll < goal_chance + 0.12:
-        return False, None, None, f"💥 <b>تیرک دروازه{min_lbl}:</b> شلیک مرگبار <b>{fwd_player}</b> به تیرک افقی دروازه {def_name} برخورد کرد و برگشت!", True, False
+        return True, scorer, assist_maker, f"⚽️🔥 <b>گـُــل برای {att_name}{min_lbl}!</b>\n{random.choice(scenarios)}", True, False[span_225](start_span)[span_225](end_span)
+    elif roll < goal_chance + 0.12:[span_226](start_span)[span_226](end_span)
+        return False, None, None, f"💥 <b>تیرک دروازه{min_lbl}:</b> شلیک مرگبار <b>{fwd_player}</b> به تیرک افقی دروازه {def_name} برخورد کرد و برگشت!", True, False[span_227](start_span)[span_227](end_span)
     else:
         saves = [
-            f"شیرجه تماشایی <b>{gk_player}</b> مانع از گلزنی قطعی {fwd_player} شد!",
-            f"واکنش خیره‌کننده با پا توسط <b>{gk_player}</b> دروازه را در ثانیه آخر نجات داد!",
-            f"مهار دوضرب و مطمئن توسط <b>{gk_player}</b> در محوطه شش قدم."
+            f"شیرجه تماشایی <b>{gk_player}</b> مانع از گلزنی قطعی {fwd_player} شد!",[span_228](start_span)[span_228](end_span)
+            f"واکنش خیره‌کننده با پا توسط <b>{gk_player}</b> دروازه را در ثانیه آخر نجات داد!",[span_229](start_span)[span_229](end_span)
+            f"مهار دوضرب و مطمئن توسط <b>{gk_player}</b> در محوطه شش قدم.[span_230](start_span)"[span_230](end_span)
         ]
-        return False, None, None, f"🧤 <b>سیو دروازه‌بان{min_lbl}:</b> {random.choice(saves)}", True, False
+        return False, None, None, f"🧤 <b>سیو دروازه‌بان{min_lbl}:</b> {random.choice(saves)}", True, False[span_231](start_span)[span_231](end_span)
 
 async def trigger_card_match(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_action_allowed_in_chat(update): return
-    if not update.message.reply_to_message:
-        await update.message.reply_text("⚽️ برای مسابقه کارت‌ها، روی پیام حریف ریپلای کن و بنویس:\n<code>مسابقه کارت</code> یا <code>/cardmatch</code>", parse_mode="HTML")
-        return
+    if not await is_action_allowed_in_chat(update): return[span_232](start_span)[span_232](end_span)
+    if not update.message.reply_to_message:[span_233](start_span)[span_233](end_span)
+        await update.message.reply_text("⚽️ برای مسابقه کارت‌ها، روی پیام حریف ریپلای کن و بنویس:\n<code>مسابقه کارت</code> یا <code>/cardmatch</code>", parse_mode="HTML")[span_234](start_span)[span_234](end_span)
+        return[span_235](start_span)[span_235](end_span)
 
-    p1, p2 = update.effective_user, update.message.reply_to_message.from_user
-    if p2.is_bot or p1.id == p2.id: return
+    p1, p2 = update.effective_user, update.message.reply_to_message.from_user[span_236](start_span)[span_236](end_span)
+    if p2.is_bot or p1.id == p2.id: return[span_237](start_span)[span_237](end_span)
 
-    await ensure_user(p1)
-    await ensure_user(p2)
+    await ensure_user(p1)[span_238](start_span)[span_238](end_span)
+    await ensure_user(p2)[span_239](start_span)[span_239](end_span)
 
-    t1, t2 = await get_user_team_info(p1.id), await get_user_team_info(p2.id)
+    t1, t2 = await get_user_team_info(p1.id), await get_user_team_info(p2.id)[span_240](start_span)[span_240](end_span)
 
-    stake = 100
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (p1.id, p2.id)) as cur:
-            balances = {r[0]: r[1] for r in await cur.fetchall()}
+    stake = 100[span_241](start_span)[span_241](end_span)
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_242](start_span)[span_242](end_span)
+        async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (p1.id, p2.id)) as cur:[span_243](start_span)[span_243](end_span)
+            balances = {r[0]: r[1] for r in await cur.fetchall()}[span_244](start_span)[span_244](end_span)
 
-    if balances.get(p1.id, 0) < stake or balances.get(p2.id, 0) < stake:
-        await update.message.reply_text(f"⛔️ هر دو بازیکن باید حداقل <b>{stake} PTS</b> داشته باشند.", parse_mode="HTML")
-        return
+    if balances.get(p1.id, 0) < stake or balances.get(p2.id, 0) < stake:[span_245](start_span)[span_245](end_span)
+        await update.message.reply_text(f"⛔️ هر دو بازیکن باید حداقل <b>{stake} PTS</b> داشته باشند.", parse_mode="HTML")[span_246](start_span)[span_246](end_span)
+        return[span_247](start_span)[span_247](end_span)
 
-    m_id = f"cm_{random.randint(10000, 99999)}"
+    m_id = f"cm_{random.randint(10000, 99999)}[span_248](start_span)"[span_248](end_span)
     ACTIVE_CARD_MATCHES[m_id] = {
         "p1": {"id": p1.id, "name": p1.first_name, "team": t1, "score": 0},
         "p2": {"id": p2.id, "name": p2.first_name, "team": t2, "score": 0},
         "stake": stake, "accepted": False,
         "chat_id": update.effective_chat.id, "msg_id": None
-    }
+    }[span_249](start_span)[span_249](end_span)
 
     kb_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton("⚔️ قبول مسابقه کارت‌ها", callback_data=f"ac_cm_{m_id}"),
          InlineKeyboardButton("❌ لغو", callback_data=f"rj_cm_{m_id}")]
-    ])
+    ])[span_250](start_span)[span_250](end_span)
     text = (
-        f"🏟 <b>مسابقه بزرگ شبیه‌سازی کارت‌های FC 26!</b> 🔥\n────────────────────\n"
-        f"🔵 تیم ۱: <b>{html.escape(p1.first_name)}</b> (⭐️ {t1['eff_ovr']} | ⚗️ {t1['chem']}%)\n"
-        f"🔴 تیم ۲: <b>{html.escape(p2.first_name)}</b> (⭐️ {t2['eff_ovr']} | ⚗️ {t2['chem']}%)\n"
-        f"💰 مبلغ شرط: <b>{stake} PTS</b> | مدت بازی: <b>۶۰ ثانیه تاکتیکی</b>\n────────────────────\n"
-        f"آیا <b>{html.escape(p2.first_name)}</b> این چالش را می‌پذیرد؟"
+        f"🏟 <b>مسابقه بزرگ شبیه‌سازی کارت‌های FC 26!</b> 🔥\n────────────────────\n[span_251](start_span)"[span_251](end_span)
+        f"🔵 تیم ۱: <b>{html.escape(p1.first_name)}</b> (⭐️ {t1['eff_ovr']} | ⚗️ {t1['chem']}%)\n[span_252](start_span)"[span_252](end_span)
+        f"🔴 تیم ۲: <b>{html.escape(p2.first_name)}</b> (⭐️ {t2['eff_ovr']} | ⚗️ {t2['chem']}%)\n[span_253](start_span)"[span_253](end_span)
+        f"💰 مبلغ شرط: <b>{stake} PTS</b> | مدت بازی: <b>۶۰ ثانیه تاکتیکی</b>\n────────────────────\n[span_254](start_span)"[span_254](end_span)
+        f"آیا <b>{html.escape(p2.first_name)}</b> این چالش را می‌پذیرد؟[span_255](start_span)"[span_255](end_span)
     )
-    sent = await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
-    ACTIVE_CARD_MATCHES[m_id]["msg_id"] = sent.message_id
+    sent = await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")[span_256](start_span)[span_256](end_span)
+    ACTIVE_CARD_MATCHES[m_id]["msg_id"] = sent.message_id[span_257](start_span)[span_257](end_span)
 
 async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_id: str):
-    m = ACTIVE_CARD_MATCHES.get(m_id)
-    if not m: return
-    chat_id, msg_id = m["chat_id"], m["msg_id"]
-    p1, p2 = m["p1"], m["p2"]
+    m = ACTIVE_CARD_MATCHES.get(m_id)[span_258](start_span)[span_258](end_span)
+    if not m: return[span_259](start_span)[span_259](end_span)
+    chat_id, msg_id = m["chat_id"], m["msg_id"][span_260](start_span)[span_260](end_span)
+    p1, p2 = m["p1"], m["p2"][span_261](start_span)[span_261](end_span)
 
     tac1 = await get_user_tactics(p1["id"])
     tac2 = await get_user_tactics(p2["id"])
@@ -2205,8 +2289,8 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
     p2_power = (p2["team"]["eff_ovr"] ** 1.3) * (1 + p2["team"]["chem"] / 100.0) * (1.0 + boost2)
     p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
 
-    p1_pos = int(max(35, min(65, p1_chance_prob * 100)))
-    p2_pos = 100 - p1_pos
+    p1_pos = int(max(35, min(65, p1_chance_prob * 100)))[span_262](start_span)[span_262](end_span)
+    p2_pos = 100 - p1_pos[span_263](start_span)[span_263](end_span)
 
     stats = {
         "p1_shots": 0, "p2_shots": 0,
@@ -2214,152 +2298,152 @@ async def run_live_card_match_simulation(context: ContextTypes.DEFAULT_TYPE, m_i
         "scorers": [],
         "motm_points": Counter(),
         "red_cards": []
-    }
-    momentum = {"p1": 0.0, "p2": 0.0}
+    }[span_264](start_span)[span_264](end_span)
+    momentum = {"p1": 0.0, "p2": 0.0}[span_265](start_span)[span_265](end_span)
 
     def execute_chance(minute_label, extra_boost=0.0):
-        attacker, defender = (p1, p2) if random.random() < p1_chance_prob else (p2, p1)
-        att_key = "p1" if attacker == p1 else "p2"
-        boost = momentum[att_key] + extra_boost
+        attacker, defender = (p1, p2) if random.random() < p1_chance_prob else (p2, p1)[span_266](start_span)[span_266](end_span)
+        att_key = "p1" if attacker == p1 else "p2[span_267](start_span)"[span_267](end_span)
+        boost = momentum[att_key] + extra_boost[span_268](start_span)[span_268](end_span)
 
-        g, s, a, txt, on_target, red = simulate_chained_fc26_attack(attacker, defender, minute_label, boost)
+        g, s, a, txt, on_target, red = simulate_chained_fc26_attack(attacker, defender, minute_label, boost)[span_269](start_span)[span_269](end_span)
 
-        if on_target:
-            if attacker == p1: stats["p1_shots"] += 1
-            else: stats["p2_shots"] += 1
-        if g:
-            attacker["score"] += 1
-            stats["scorers"].append(f"⚽️ {s} ({attacker['name']})")
-            stats["motm_points"][s] += 3
-            if a: stats["motm_points"][a] += 2
-            opp_key = "p2" if att_key == "p1" else "p1"
-            momentum[opp_key] += 0.08
-            momentum[att_key] = 0.0
+        if on_target:[span_270](start_span)[span_270](end_span)
+            if attacker == p1: stats["p1_shots"] += 1[span_271](start_span)[span_271](end_span)
+            else: stats["p2_shots"] += 1[span_272](start_span)[span_272](end_span)
+        if g:[span_273](start_span)[span_273](end_span)
+            attacker["score"] += 1[span_274](start_span)[span_274](end_span)
+            stats["scorers"].append(f"⚽️ {s} ({attacker['name']})")[span_275](start_span)[span_275](end_span)
+            stats["motm_points"][s] += 3[span_276](start_span)[span_276](end_span)
+            if a: stats["motm_points"][a] += 2[span_277](start_span)[span_277](end_span)
+            opp_key = "p2" if att_key == "p1" else "p1[span_278](start_span)"[span_278](end_span)
+            momentum[opp_key] += 0.08[span_279](start_span)[span_279](end_span)
+            momentum[att_key] = 0.0[span_280](start_span)[span_280](end_span)
         else:
-            if on_target:
-                if attacker == p1: stats["p2_saves"] += 1
-                else: stats["p1_saves"] += 1
-        if red:
-            stats["red_cards"].append(f"🟥 اخراج مدافع {defender['name']}")
-            defender["team"]["def_ovr"] = max(40, defender["team"].get("def_ovr", 75) - 15)
-        return txt
+            if on_target:[span_281](start_span)[span_281](end_span)
+                if attacker == p1: stats["p2_saves"] += 1[span_282](start_span)[span_282](end_span)
+                else: stats["p1_saves"] += 1[span_283](start_span)[span_283](end_span)
+        if red:[span_284](start_span)[span_284](end_span)
+            stats["red_cards"].append(f"🟥 اخراج مدافع {defender['name']}")[span_285](start_span)[span_285](end_span)
+            defender["team"]["def_ovr"] = max(40, defender["team"].get("def_ovr", 75) - 15)[span_286](start_span)[span_286](end_span)
+        return txt[span_287](start_span)[span_287](end_span)
 
     try:
         analysis_line = f"\n📋 <b>آنالیز تاکتیکی هوش مصنوعی:</b>\n{tactical_notes[0]}\n" if tactical_notes else ""
 
-        await asyncio.sleep(15)
-        txt_1a = execute_chance("۱۶")
-        txt_1b = execute_chance("۲۴")
+        await asyncio.sleep(15)[span_288](start_span)[span_288](end_span)
+        txt_1a = execute_chance("۱۶")[span_289](start_span)[span_289](end_span)
+        txt_1b = execute_chance("۲۴")[span_290](start_span)[span_290](end_span)
         t1 = (
-            f"⏱ <b>دقیقه ۲۵ مسابقه:</b>\n"
-            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
+            f"⏱ <b>دقیقه ۲۵ مسابقه:</b>\n[span_291](start_span)"[span_291](end_span)
+            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n[span_292](start_span)"[span_292](end_span)
             f"{analysis_line}"
-            "────────────────────\n"
-            f"{txt_1a}\n\n{txt_1b}"
+            "────────────────────\n[span_293](start_span)"[span_293](end_span)
+            f"{txt_1a}\n\n{txt_1b}[span_294](start_span)"[span_294](end_span)
         )
-        await safe_edit_message(context.bot, t1, chat_id=chat_id, message_id=msg_id)
+        await safe_edit_message(context.bot, t1, chat_id=chat_id, message_id=msg_id)[span_295](start_span)[span_295](end_span)
 
-        await asyncio.sleep(15)
-        txt_2a = execute_chance("۳۵")
-        txt_2b = execute_chance("۴۴")
+        await asyncio.sleep(15)[span_296](start_span)[span_296](end_span)
+        txt_2a = execute_chance("۳۵")[span_297](start_span)[span_297](end_span)
+        txt_2b = execute_chance("۴۴")[span_298](start_span)[span_298](end_span)
         t2 = (
-            f"⏱ <b>پایان نیمه اول (دقیقه ۴۵):</b>\n"
-            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
-            "────────────────────\n"
-            f"{txt_2a}\n\n{txt_2b}"
+            f"⏱ <b>پایان نیمه اول (دقیقه ۴۵):</b>\n[span_299](start_span)"[span_299](end_span)
+            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n[span_300](start_span)"[span_300](end_span)
+            "────────────────────\n[span_301](start_span)"[span_301](end_span)
+            f"{txt_2a}\n\n{txt_2b}[span_302](start_span)"[span_302](end_span)
         )
-        await safe_edit_message(context.bot, t2, chat_id=chat_id, message_id=msg_id)
+        await safe_edit_message(context.bot, t2, chat_id=chat_id, message_id=msg_id)[span_303](start_span)[span_303](end_span)
 
-        await asyncio.sleep(15)
-        txt_3a = execute_chance("۶۲")
-        txt_3b = execute_chance("۷۱")
+        await asyncio.sleep(15)[span_304](start_span)[span_304](end_span)
+        txt_3a = execute_chance("۶۲")[span_305](start_span)[span_305](end_span)
+        txt_3b = execute_chance("۷۱")[span_306](start_span)[span_306](end_span)
         t3 = (
-            f"⏱ <b>دقیقه ۷۰ مسابقه:</b>\n"
-            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n"
-            "────────────────────\n"
-            f"{txt_3a}\n\n{txt_3b}"
+            f"⏱ <b>دقیقه ۷۰ مسابقه:</b>\n[span_307](start_span)"[span_307](end_span)
+            f"▫️ <b>{p1['name']} [{p1['score']}] - [{p2['score']}] {p2['name']}</b>\n[span_308](start_span)"[span_308](end_span)
+            "────────────────────\n[span_309](start_span)"[span_309](end_span)
+            f"{txt_3a}\n\n{txt_3b}[span_310](start_span)"[span_310](end_span)
         )
-        await safe_edit_message(context.bot, t3, chat_id=chat_id, message_id=msg_id)
+        await safe_edit_message(context.bot, t3, chat_id=chat_id, message_id=msg_id)[span_311](start_span)[span_311](end_span)
 
-        await asyncio.sleep(15)
-        clutch_boost = 0.12 if abs(p1["score"] - p2["score"]) <= 1 else 0.0
-        txt_4a = execute_chance("۸۶", clutch_boost)
-        txt_4b = execute_chance("۹۰+۲", clutch_boost)
+        await asyncio.sleep(15)[span_312](start_span)[span_312](end_span)
+        clutch_boost = 0.12 if abs(p1["score"] - p2["score"]) <= 1 else 0.0[span_313](start_span)[span_313](end_span)
+        txt_4a = execute_chance("۸۶", clutch_boost)[span_314](start_span)[span_314](end_span)
+        txt_4b = execute_chance("۹۰+۲", clutch_boost)[span_315](start_span)[span_315](end_span)
 
-        motm_player = "نامشخص"
-        motm_rating = "8.2"
-        if stats["motm_points"]:
-            motm_player, best_pts = stats["motm_points"].most_common(1)[0]
-            motm_rating = f"{min(9.9, round(7.5 + (best_pts * 0.4), 1))}"
+        motm_player = "نامشخص[span_316](start_span)"[span_316](end_span)
+        motm_rating = "8.2[span_317](start_span)"[span_317](end_span)
+        if stats["motm_points"]:[span_318](start_span)[span_318](end_span)
+            motm_player, best_pts = stats["motm_points"].most_common(1)[0][span_319](start_span)[span_319](end_span)
+            motm_rating = f"{min(9.9, round(7.5 + (best_pts * 0.4), 1))}[span_320](start_span)"[span_320](end_span)
         else:
-            motm_player = random.choice(p1["team"]["cards"] + p2["team"]["cards"])["name"]
-            motm_rating = "8.0"
+            motm_player = random.choice(p1["team"]["cards"] + p2["team"]["cards"])["name"][span_321](start_span)[span_321](end_span)
+            motm_rating = "8.0[span_322](start_span)"[span_322](end_span)
 
-        s1, s2, stake = p1["score"], p2["score"], m["stake"]
-        res_footer = ""
-        winner_id = None
+        s1, s2, stake = p1["score"], p2["score"], m["stake"][span_323](start_span)[span_323](end_span)
+        res_footer = "[span_324](start_span)"[span_324](end_span)
+        winner_id = None[span_325](start_span)[span_325](end_span)
 
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            if s1 > s2:
-                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake * 2, p1["id"]))
-                winner_id = p1["id"]
-                res_footer = f"🏆 <b>پیروز مسابقه: {html.escape(p1['name'])}</b> (+{stake} امتیاز خالص و +100 XP)"
-            elif s2 > s1:
-                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake * 2, p2["id"]))
-                winner_id = p2["id"]
-                res_footer = f"🏆 <b>پیروز مسابقه: {html.escape(p2['name'])}</b> (+{stake} امتیاز خالص و +100 XP)"
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_326](start_span)[span_326](end_span)
+            if s1 > s2:[span_327](start_span)[span_327](end_span)
+                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake * 2, p1["id"]))[span_328](start_span)[span_328](end_span)
+                winner_id = p1["id"][span_329](start_span)[span_329](end_span)
+                res_footer = f"🏆 <b>پیروز مسابقه: {html.escape(p1['name'])}</b> (+{stake} امتیاز خالص و +100 XP)[span_330](start_span)"[span_330](end_span)
+            elif s2 > s1:[span_331](start_span)[span_331](end_span)
+                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake * 2, p2["id"]))[span_332](start_span)[span_332](end_span)
+                winner_id = p2["id"][span_333](start_span)[span_333](end_span)
+                res_footer = f"🏆 <b>پیروز مسابقه: {html.escape(p2['name'])}</b> (+{stake} امتیاز خالص و +100 XP)[span_334](start_span)"[span_334](end_span)
             else:
-                await db.execute("UPDATE users SET points = points + ? WHERE user_id IN (?, ?)", (stake, p1["id"], p2["id"]))
-                res_footer = "🤝 مسابقه با تساوی به پایان رسید! مبلغ شرط به هر دو بازیکن بازگردانده شد."
-            await db.commit()
+                await db.execute("UPDATE users SET points = points + ? WHERE user_id IN (?, ?)", (stake, p1["id"], p2["id"]))[span_335](start_span)[span_335](end_span)
+                res_footer = "🤝 مسابقه با تساوی به پایان رسید! مبلغ شرط به هر دو بازیکن بازگردانده شد.[span_336](start_span)"[span_336](end_span)
+            await db.commit()[span_337](start_span)[span_337](end_span)
 
-        if winner_id:
-            await profile_add_xp(winner_id, 100)
+        if winner_id:[span_338](start_span)[span_338](end_span)
+            await profile_add_xp(winner_id, 100)[span_339](start_span)[span_339](end_span)
 
-        await record_quest_action(p1["id"], "card_matches")
-        await record_quest_action(p2["id"], "card_matches")
+        await record_quest_action(p1["id"], "card_matches")[span_340](start_span)[span_340](end_span)
+        await record_quest_action(p2["id"], "card_matches")[span_341](start_span)[span_341](end_span)
 
-        scorers_str = "\n".join(stats["scorers"]) if stats["scorers"] else "بدون گل"
-        red_str = f"\n⚠️ رویداد انضباطی: {', '.join(stats['red_cards'])}" if stats["red_cards"] else ""
+        scorers_str = "\n".join(stats["scorers"]) if stats["scorers"] else "بدون گل[span_342](start_span)"[span_342](end_span)
+        red_str = f"\n⚠️ رویداد انضباطی: {', '.join(stats['red_cards'])}" if stats["red_cards"] else "[span_343](start_span)"[span_343](end_span)
 
         t_final = (
-            f"🏁 <b>سوت پایان مسابقه کارت‌های FC 26 (Full Time)</b>\n"
-            "────────────────────\n"
-            f"▫️ نتیجه قطعی: <b>{p1['name']} [{s1}] - [{s2}] {p2['name']}</b>\n\n"
-            f"{txt_4a}\n\n{txt_4b}{red_str}\n\n"
-            f"⚽️ <b>گلزنان مسابقه:</b>\n{scorers_str}\n\n"
-            "📊 <b>آمار رسمی بازی (Match Stats):</b>\n"
-            f"▫️ مالکیت توپ: <code>{p1_pos}%</code> ✕ <code>{p2_pos}%</code>\n"
-            f"▫️ شوت در چارچوب: <code>{stats['p1_shots']}</code> ✕ <code>{stats['p2_shots']}</code>\n"
-            f"▫️ سیو دروازه‌بان: <code>{stats['p1_saves']}</code> ✕ <code>{stats['p2_saves']}</code>\n\n"
-            f"🌟 <b>بهترین بازیکن زمین (MOTM):</b>\n"
-            f"👤 <b>{motm_player}</b> (⭐️ نمره <code>{motm_rating}/10</code>)\n"
-            "────────────────────\n"
-            f"{res_footer}"
+            f"🏁 <b>سوت پایان مسابقه کارت‌های FC 26 (Full Time)</b>\n[span_344](start_span)"[span_344](end_span)
+            "────────────────────\n[span_345](start_span)"[span_345](end_span)
+            f"▫️ نتیجه قطعی: <b>{p1['name']} [{s1}] - [{s2}] {p2['name']}</b>\n\n[span_346](start_span)"[span_346](end_span)
+            f"{txt_4a}\n\n{txt_4b}{red_str}\n\n[span_347](start_span)"[span_347](end_span)
+            f"⚽️ <b>گلزنان مسابقه:</b>\n{scorers_str}\n\n[span_348](start_span)"[span_348](end_span)
+            "📊 <b>آمار رسمی بازی (Match Stats):</b>\n[span_349](start_span)"[span_349](end_span)
+            f"▫️ مالکیت توپ: <code>{p1_pos}%</code> ✕ <code>{p2_pos}%</code>\n[span_350](start_span)"[span_350](end_span)
+            f"▫️ شوت در چارچوب: <code>{stats['p1_shots']}</code> ✕ <code>{stats['p2_shots']}</code>\n[span_351](start_span)"[span_351](end_span)
+            f"▫️ سیو دروازه‌بان: <code>{stats['p1_saves']}</code> ✕ <code>{stats['p2_saves']}</code>\n\n[span_352](start_span)"[span_352](end_span)
+            f"🌟 <b>بهترین بازیکن زمین (MOTM):</b>\n[span_353](start_span)"[span_353](end_span)
+            f"👤 <b>{motm_player}</b> (⭐️ نمره <code>{motm_rating}/10</code>)\n[span_354](start_span)"[span_354](end_span)
+            "────────────────────\n[span_355](start_span)"[span_355](end_span)
+            f"{res_footer}[span_356](start_span)"[span_356](end_span)
         )
-        await safe_edit_message(context.bot, t_final, chat_id=chat_id, message_id=msg_id)
+        await safe_edit_message(context.bot, t_final, chat_id=chat_id, message_id=msg_id)[span_357](start_span)[span_357](end_span)
 
-    except Exception as e:
-        logger.error(f"Error in deep card match simulation: {e}")
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            await db.execute("UPDATE users SET points = points + ? WHERE user_id IN (?, ?)", (m["stake"], p1["id"], p2["id"]))
-            await db.commit()
-        await safe_edit_message(context.bot, "❌ خطایی در جریان شبیه‌سازی مسابقه کارت رخ داد (مبلغ شرط بازگردانده شد).", chat_id=chat_id, message_id=msg_id)
+    except Exception as e:[span_358](start_span)[span_358](end_span)
+        logger.error(f"Error in deep card match simulation: {e}")[span_359](start_span)[span_359](end_span)
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_360](start_span)[span_360](end_span)
+            await db.execute("UPDATE users SET points = points + ? WHERE user_id IN (?, ?)", (m["stake"], p1["id"], p2["id"]))[span_361](start_span)[span_361](end_span)
+            await db.commit()[span_362](start_span)[span_362](end_span)
+        await safe_edit_message(context.bot, "❌ خطایی در جریان شبیه‌سازی مسابقه کارت رخ داد (مبلغ شرط بازگردانده شد).", chat_id=chat_id, message_id=msg_id)[span_363](start_span)[span_363](end_span)
     finally:
-        ACTIVE_CARD_MATCHES.pop(m_id, None)
+        ACTIVE_CARD_MATCHES.pop(m_id, None)[span_364](start_span)[span_364](end_span)
 
 # --- FC CARDS LEAGUE ENGINE ---
 
 async def league_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' ORDER BY created_at DESC LIMIT 1") as cur:
-            row = await cur.fetchone()
-            if not row:
-                msg = "⏳ <b>در حال حاضر هیچ لیگ فعالی برگزار نمی‌شود.</b>"
-                if update.callback_query: await safe_edit_message(update.callback_query, msg, reply_markup=kb.get_back_button())
-                else: await update.message.reply_text(msg, parse_mode="HTML")
-                return
-            s_id = row[0]
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_365](start_span)[span_365](end_span)
+        async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' ORDER BY created_at DESC LIMIT 1") as cur:[span_366](start_span)[span_366](end_span)
+            row = await cur.fetchone()[span_367](start_span)[span_367](end_span)
+            if not row:[span_368](start_span)[span_368](end_span)
+                msg = "⏳ <b>در حال حاضر هیچ لیگ فعالی برگزار نمی‌شود.</b>[span_369](start_span)"[span_369](end_span)
+                if update.callback_query: await safe_edit_message(update.callback_query, msg, reply_markup=kb.get_back_button())[span_370](start_span)[span_370](end_span)
+                else: await update.message.reply_text(msg, parse_mode="HTML")[span_371](start_span)[span_371](end_span)
+                return[span_372](start_span)[span_372](end_span)
+            s_id = row[0][span_373](start_span)[span_373](end_span)
 
         async with db.execute("""
             SELECT u.first_name, s.played, s.won, s.drawn, s.lost, s.gf, s.ga, s.gd, s.points
@@ -2367,191 +2451,191 @@ async def league_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             JOIN users u ON s.user_id = u.user_id
             WHERE s.season_id = ?
             ORDER BY s.points DESC, s.gd DESC, s.gf DESC
-        """, (s_id,)) as cur:
-            table_rows = await cur.fetchall()
+        """, (s_id,)) as cur:[span_374](start_span)[span_374](end_span)
+            table_rows = await cur.fetchall()[span_375](start_span)[span_375](end_span)
 
-    text = f"🏆 <b>جدول رده‌بندی لیگ کارت‌های FC 26</b>\n────────────────────\n<pre>"
-    text += "#  | Team          | P  | W  | D  | L  | GD | Pts\n---+---------------+----+----+----+----+----+----\n"
-    for idx, (name, p, w, d, l, gf, ga, gd, pts) in enumerate(table_rows, 1):
-        t_name = name[:13].ljust(13)
-        text += f"{idx:<2} | {t_name} | {str(p):<2} | {str(w):<2} | {str(d):<2} | {str(l):<2} | {str(gd):<2} | {str(pts):<3}\n"
-    text += "</pre>\n💰 <b>پاداش هر بازی:</b> برد <code>+50 PTS</code> | مساوی <code>+20 PTS</code> | هر گل <code>+5 PTS</code>\n<i>(شبیه‌سازی روزانه ۲ مسابقه یا اتمام یکجای سیزن با <code>/l_end</code>)</i>"
+    text = f"🏆 <b>جدول رده‌بندی لیگ کارت‌های FC 26</b>\n────────────────────\n<pre>[span_376](start_span)"[span_376](end_span)
+    text += "#  | Team          | P  | W  | D  | L  | GD | Pts\n---+---------------+----+----+----+----+----+----\n[span_377](start_span)"[span_377](end_span)
+    for idx, (name, p, w, d, l, gf, ga, gd, pts) in enumerate(table_rows, 1):[span_378](start_span)[span_378](end_span)
+        t_name = name[:13].ljust(13)[span_379](start_span)[span_379](end_span)
+        text += f"{idx:<2} | {t_name} | {str(p):<2} | {str(w):<2} | {str(d):<2} | {str(l):<2} | {str(gd):<2} | {str(pts):<3}\n[span_380](start_span)"[span_380](end_span)
+    text += "</pre>\n💰 <b>پاداش هر بازی:</b> برد <code>+50 PTS</code> | مساوی <code>+20 PTS</code> | هر گل <code>+5 PTS</code>\n<i>(شبیه‌سازی روزانه ۲ مسابقه یا اتمام یکجای سیزن با <code>/l_end</code>)</i>[span_381](start_span)"[span_381](end_span)
 
-    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())
-    else: await update.message.reply_text(text, parse_mode="HTML")
+    if update.callback_query: await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())[span_382](start_span)[span_382](end_span)
+    else: await update.message.reply_text(text, parse_mode="HTML")[span_383](start_span)[span_383](end_span)
 
 async def league_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if str(user.id) != str(ADMIN_ID): return
+    user = update.effective_user[span_384](start_span)[span_384](end_span)
+    if str(user.id) != str(ADMIN_ID): return[span_385](start_span)[span_385](end_span)
 
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE'") as cur:
-            if await cur.fetchone():
-                await update.message.reply_text("⚠️ یک لیگ هم‌اکنون فعال است! ابتدا با /l_off یا /l_end آن را به پایان برسانید.")
-                return
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_386](start_span)[span_386](end_span)
+        async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE'") as cur:[span_387](start_span)[span_387](end_span)
+            if await cur.fetchone():[span_388](start_span)[span_388](end_span)
+                await update.message.reply_text("⚠️ یک لیگ هم‌اکنون فعال است! ابتدا با /l_off یا /l_end آن را به پایان برسانید.")[span_389](start_span)[span_389](end_span)
+                return[span_390](start_span)[span_390](end_span)
 
         async with db.execute("""
             SELECT user_id FROM user_cards WHERE is_in_lineup = 1 GROUP BY user_id HAVING COUNT(*) >= 1
-        """) as cur:
-            eligible = [r[0] for r in await cur.fetchall()]
+        """) as cur:[span_391](start_span)[span_391](end_span)
+            eligible = [r[0] for r in await cur.fetchall()][span_392](start_span)[span_392](end_span)
 
-    if len(eligible) < 3:
-        await update.message.reply_text(f"⛔️ تعداد تیم‌های آماده ({len(eligible)}) کمتر از حد نصاب است! حداقل به ۳ تیم نیاز است.")
-        return
+    if len(eligible) < 3:[span_393](start_span)[span_393](end_span)
+        await update.message.reply_text(f"⛔️ تعداد تیم‌های آماده ({len(eligible)}) کمتر از حد نصاب است! حداقل به ۳ تیم نیاز است.")[span_394](start_span)[span_394](end_span)
+        return[span_395](start_span)[span_395](end_span)
 
-    season_id = f"L_{get_iran_now().strftime('%Y%m%d_%H%M')}"
-    today_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
+    season_id = f"L_{get_iran_now().strftime('%Y%m%d_%H%M')}[span_396](start_span)"[span_396](end_span)
+    today_str = get_iran_now().strftime("%Y-%m-%d %H:%M")[span_397](start_span)[span_397](end_span)
 
-    fixtures = []
-    for h in eligible:
-        for a in eligible:
-            if h != a: fixtures.append((season_id, h, a))
+    fixtures = [][span_398](start_span)[span_398](end_span)
+    for h in eligible:[span_399](start_span)[span_399](end_span)
+        for a in eligible:[span_400](start_span)[span_400](end_span)
+            if h != a: fixtures.append((season_id, h, a))[span_401](start_span)[span_401](end_span)
 
-    random.shuffle(fixtures)
+    random.shuffle(fixtures)[span_402](start_span)[span_402](end_span)
 
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        await db.execute("INSERT INTO league_seasons (season_id, status, created_at) VALUES (?, 'ACTIVE', ?)", (season_id, today_str))
-        for s_id, h_id, a_id in fixtures:
-            await db.execute("INSERT INTO league_fixtures (season_id, home_id, away_id, status) VALUES (?, ?, ?, 'PENDING')", (s_id, h_id, a_id))
-        for uid in eligible:
-            await db.execute("INSERT INTO league_standings (season_id, user_id) VALUES (?, ?)", (season_id, uid))
-        await db.commit()
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_403](start_span)[span_403](end_span)
+        await db.execute("INSERT INTO league_seasons (season_id, status, created_at) VALUES (?, 'ACTIVE', ?)", (season_id, today_str))[span_404](start_span)[span_404](end_span)
+        for s_id, h_id, a_id in fixtures:[span_405](start_span)[span_405](end_span)
+            await db.execute("INSERT INTO league_fixtures (season_id, home_id, away_id, status) VALUES (?, ?, ?, 'PENDING')", (s_id, h_id, a_id))[span_406](start_span)[span_406](end_span)
+        for uid in eligible:[span_407](start_span)[span_407](end_span)
+            await db.execute("INSERT INTO league_standings (season_id, user_id) VALUES (?, ?)", (season_id, uid))[span_408](start_span)[span_408](end_span)
+        await db.commit()[span_409](start_span)[span_409](end_span)
 
-    total_m = len(fixtures)
+    total_m = len(fixtures)[span_410](start_span)[span_410](end_span)
     msg = (
-        f"🏆🔥 <b>سوت آغاز فصل جدید لیگ کارت‌های FC 26 زده شد!</b>\n────────────────────\n"
-        f"👥 تعداد تیم‌های حاضر: <b>{len(eligible)} تیم</b>\n"
-        f"🏟 مجموع مسابقات رفت و برگشت: <b>{total_m} مسابقه</b>\n"
-        f"⏰ برنامه: <b>روزی ۲ مسابقه برای هر تیم بعد از ساعت ۱۲ شب</b>\n"
-        f"💰 پاداش هر بازی: <b>برد +50 | مساوی +20 | هر گل +5 PTS</b>\n\n"
-        f"🥇 قهرمان: ۲,۵۰۰ PTS | 🥈 نایب‌قهرمان: ۱,۲۰۰ PTS | 🥉 سوم: ۶۰۰ PTS"
+        f"🏆🔥 <b>سوت آغاز فصل جدید لیگ کارت‌های FC 26 زده شد!</b>\n────────────────────\n[span_411](start_span)"[span_411](end_span)
+        f"👥 تعداد تیم‌های حاضر: <b>{len(eligible)} تیم</b>\n[span_412](start_span)"[span_412](end_span)
+        f"🏟 مجموع مسابقات رفت و برگشت: <b>{total_m} مسابقه</b>\n[span_413](start_span)"[span_413](end_span)
+        f"⏰ برنامه: <b>روزی ۲ مسابقه برای هر تیم بعد از ساعت ۱۲ شب</b>\n[span_414](start_span)"[span_414](end_span)
+        f"💰 پاداش هر بازی: <b>برد +50 | مساوی +20 | هر گل +5 PTS</b>\n\n[span_415](start_span)"[span_415](end_span)
+        f"🥇 قهرمان: ۲,۵۰۰ PTS | 🥈 نایب‌قهرمان: ۱,۲۰۰ PTS | 🥉 سوم: ۶۰۰ PTS[span_416](start_span)"[span_416](end_span)
     )
-    target_chat_id = await get_live_chat_id()
-    if target_chat_id: await context.bot.send_message(chat_id=target_chat_id, text=msg, parse_mode="HTML")
-    await update.message.reply_text("✅ لیگ با موفقیت استارت خورد!", parse_mode="HTML")
+    target_chat_id = await get_live_chat_id()[span_417](start_span)[span_417](end_span)
+    if target_chat_id: await context.bot.send_message(chat_id=target_chat_id, text=msg, parse_mode="HTML")[span_418](start_span)[span_418](end_span)
+    await update.message.reply_text("✅ لیگ با موفقیت استارت خورد!", parse_mode="HTML")[span_419](start_span)[span_419](end_span)
 
 async def league_off_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if str(user.id) != str(ADMIN_ID): return
+    user = update.effective_user[span_420](start_span)[span_420](end_span)
+    if str(user.id) != str(ADMIN_ID): return[span_421](start_span)[span_421](end_span)
 
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        await db.execute("UPDATE league_seasons SET status = 'CANCELLED' WHERE status = 'ACTIVE'")
-        await db.commit()
-    await update.message.reply_text("🔴 لیگ فعال فعلی لغو و متوقف شد.")
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_422](start_span)[span_422](end_span)
+        await db.execute("UPDATE league_seasons SET status = 'CANCELLED' WHERE status = 'ACTIVE'")[span_423](start_span)[span_423](end_span)
+        await db.commit()[span_424](start_span)[span_424](end_span)
+    await update.message.reply_text("🔴 لیگ فعال فعلی لغو و متوقف شد.")[span_425](start_span)[span_425](end_span)
 
 async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str):
     async with db.execute("""
         SELECT s.user_id, u.first_name, s.points, s.gd
         FROM league_standings s JOIN users u ON s.user_id = u.user_id
         WHERE s.season_id = ? ORDER BY s.points DESC, s.gd DESC
-    """, (s_id,)) as cur:
-        final_ranks = await cur.fetchall()
+    """, (s_id,)) as cur:[span_426](start_span)[span_426](end_span)
+        final_ranks = await cur.fetchall()[span_427](start_span)[span_427](end_span)
 
-    if final_ranks:
-        prizes = {0: (2500, 600), 1: (1200, 350), 2: (600, 200)}
-        summary = "🏁 <b>پایان رسمی فصل لیگ کارت‌های FC 26!</b>\n────────────────────\n"
-        xp_awards = []
-        for idx, (uid, name, pts, gd) in enumerate(final_ranks):
-            p_pts, p_xp = prizes.get(idx, (150, 50))
-            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (p_pts, uid))
-            xp_awards.append((uid, p_xp))
-            medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
-            summary += f"{medal} <b>{html.escape(name)}</b>: {pts} امتیاز جدول (+{p_pts:,} PTS جایزه)\n"
+    if final_ranks:[span_428](start_span)[span_428](end_span)
+        prizes = {0: (2500, 600), 1: (1200, 350), 2: (600, 200)}[span_429](start_span)[span_429](end_span)
+        summary = "🏁 <b>پایان رسمی فصل لیگ کارت‌های FC 26!</b>\n────────────────────\n[span_430](start_span)"[span_430](end_span)
+        xp_awards = [][span_431](start_span)[span_431](end_span)
+        for idx, (uid, name, pts, gd) in enumerate(final_ranks):[span_432](start_span)[span_432](end_span)
+            p_pts, p_xp = prizes.get(idx, (150, 50))[span_433](start_span)[span_433](end_span)
+            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (p_pts, uid))[span_434](start_span)[span_434](end_span)
+            xp_awards.append((uid, p_xp))[span_435](start_span)[span_435](end_span)
+            medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))[span_436](start_span)[span_436](end_span)
+            summary += f"{medal} <b>{html.escape(name)}</b>: {pts} امتیاز جدول (+{p_pts:,} PTS جایزه)\n[span_437](start_span)"[span_437](end_span)
 
-        await db.execute("UPDATE league_seasons SET status = 'FINISHED' WHERE season_id = ?", (s_id,))
-        await db.commit()
+        await db.execute("UPDATE league_seasons SET status = 'FINISHED' WHERE season_id = ?", (s_id,))[span_438](start_span)[span_438](end_span)
+        await db.commit()[span_439](start_span)[span_439](end_span)
 
-        for uid, p_xp in xp_awards:
-            await profile_add_xp(uid, p_xp)
+        for uid, p_xp in xp_awards:[span_440](start_span)[span_440](end_span)
+            await profile_add_xp(uid, p_xp)[span_441](start_span)[span_441](end_span)
 
-        target_chat_id = await get_live_chat_id()
-        if target_chat_id:
-            try:
-                await context.bot.send_message(chat_id=target_chat_id, text=summary, parse_mode="HTML")
-            except Exception: pass
+        target_chat_id = await get_live_chat_id()[span_442](start_span)[span_442](end_span)
+        if target_chat_id:[span_443](start_span)[span_443](end_span)
+            try:[span_444](start_span)[span_444](end_span)
+                await context.bot.send_message(chat_id=target_chat_id, text=summary, parse_mode="HTML")[span_445](start_span)[span_445](end_span)
+            except Exception: pass[span_446](start_span)[span_446](end_span)
 
 async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_chat_id: int = None):
-    iran_now = get_iran_now()
-    today_str = iran_now.strftime("%Y-%m-%d")
+    iran_now = get_iran_now()[span_447](start_span)[span_447](end_span)
+    today_str = iran_now.strftime("%Y-%m-%d")[span_448](start_span)[span_448](end_span)
 
-    try:
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            await db.execute("PRAGMA journal_mode=WAL;")
-            async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
-                row = await cur.fetchone()
-                if not row:
-                    if reply_chat_id:
-                        await context.bot.send_message(chat_id=reply_chat_id, text="⚠️ هیچ لیگی در وضعیت فعال (ACTIVE) پیدا نشد.")
-                    return
-                s_id = row[0]
+    try:[span_449](start_span)[span_449](end_span)
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_450](start_span)[span_450](end_span)
+            await db.execute("PRAGMA journal_mode=WAL;")[span_451](start_span)[span_451](end_span)
+            async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:[span_452](start_span)[span_452](end_span)
+                row = await cur.fetchone()[span_453](start_span)[span_453](end_span)
+                if not row:[span_454](start_span)[span_454](end_span)
+                    if reply_chat_id:[span_455](start_span)[span_455](end_span)
+                        await context.bot.send_message(chat_id=reply_chat_id, text="⚠️ هیچ لیگی در وضعیت فعال (ACTIVE) پیدا نشد.")[span_456](start_span)[span_456](end_span)
+                    return[span_457](start_span)[span_457](end_span)
+                s_id = row[0][span_458](start_span)[span_458](end_span)
 
-            setting_key = f"last_league_run_{s_id}"
-            async with db.execute("SELECT value FROM bot_settings WHERE key = ?", (setting_key,)) as cur:
-                last_run_row = await cur.fetchone()
-                last_run_date = last_run_row[0] if last_run_row else None
+            setting_key = f"last_league_run_{s_id}[span_459](start_span)"[span_459](end_span)
+            async with db.execute("SELECT value FROM bot_settings WHERE key = ?", (setting_key,)) as cur:[span_460](start_span)[span_460](end_span)
+                last_run_row = await cur.fetchone()[span_461](start_span)[span_461](end_span)
+                last_run_date = last_run_row[0] if last_run_row else None[span_462](start_span)[span_462](end_span)
 
-            if last_run_date == today_str and not reply_chat_id:
-                return
+            if last_run_date == today_str and not reply_chat_id:[span_463](start_span)[span_463](end_span)
+                return[span_464](start_span)[span_464](end_span)
 
             async with db.execute("""
                 SELECT id, home_id, away_id 
                 FROM league_fixtures 
                 WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')
                 ORDER BY id ASC
-            """, (s_id,)) as cur:
-                pending_matches = await cur.fetchall()
+            """, (s_id,)) as cur:[span_465](start_span)[span_465](end_span)
+                pending_matches = await cur.fetchall()[span_466](start_span)[span_466](end_span)
 
-        if not pending_matches:
-            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-                await settle_league_season(context, db, s_id)
-            if reply_chat_id:
-                await context.bot.send_message(chat_id=reply_chat_id, text="🏁 تمام بازی‌های این فصل قبلاً انجام شده و لیگ پایان یافته است.")
-            return
+        if not pending_matches:[span_467](start_span)[span_467](end_span)
+            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_468](start_span)[span_468](end_span)
+                await settle_league_season(context, db, s_id)[span_469](start_span)[span_469](end_span)
+            if reply_chat_id:[span_470](start_span)[span_470](end_span)
+                await context.bot.send_message(chat_id=reply_chat_id, text="🏁 تمام بازی‌های این فصل قبلاً انجام شده و لیگ پایان یافته است.")[span_471](start_span)[span_471](end_span)
+            return[span_472](start_span)[span_472](end_span)
 
-        team_games = Counter()
-        selected_matches = []
-        remaining = list(pending_matches)
+        team_games = Counter()[span_473](start_span)[span_473](end_span)
+        selected_matches = [][span_474](start_span)[span_474](end_span)
+        remaining = list(pending_matches)[span_475](start_span)[span_475](end_span)
 
-        while True:
-            candidates = [f for f in remaining if team_games[f[1]] < 2 and team_games[f[2]] < 2]
-            if not candidates: break
-            candidates.sort(key=lambda f: (team_games[f[1]] + team_games[f[2]]))
-            best = candidates[0]
-            selected_matches.append(best)
-            team_games[best[1]] += 1
-            team_games[best[2]] += 1
-            remaining.remove(best)
+        while True:[span_476](start_span)[span_476](end_span)
+            candidates = [f for f in remaining if team_games[f[1]] < 2 and team_games[f[2]] < 2][span_477](start_span)[span_477](end_span)
+            if not candidates: break[span_478](start_span)[span_478](end_span)
+            candidates.sort(key=lambda f: (team_games[f[1]] + team_games[f[2]]))[span_479](start_span)[span_479](end_span)
+            best = candidates[0][span_480](start_span)[span_480](end_span)
+            selected_matches.append(best)[span_481](start_span)[span_481](end_span)
+            team_games[best[1]] += 1[span_482](start_span)[span_482](end_span)
+            team_games[best[2]] += 1[span_483](start_span)[span_483](end_span)
+            remaining.remove(best)[span_484](start_span)[span_484](end_span)
 
-        if not selected_matches:
-            if reply_chat_id:
-                await context.bot.send_message(chat_id=reply_chat_id, text="⚠️ مسابقه‌ای با شرایط برگزاری روزانه پیدا نشد.")
-            return
+        if not selected_matches:[span_485](start_span)[span_485](end_span)
+            if reply_chat_id:[span_486](start_span)[span_486](end_span)
+                await context.bot.send_message(chat_id=reply_chat_id, text="⚠️ مسابقه‌ای با شرایط برگزاری روزانه پیدا نشد.")[span_487](start_span)[span_487](end_span)
+            return[span_488](start_span)[span_488](end_span)
 
-        all_uids = set()
-        for _, h_id, a_id in selected_matches:
-            all_uids.add(h_id)
-            all_uids.add(a_id)
+        all_uids = set()[span_489](start_span)[span_489](end_span)
+        for _, h_id, a_id in selected_matches:[span_490](start_span)[span_490](end_span)
+            all_uids.add(h_id)[span_491](start_span)[span_491](end_span)
+            all_uids.add(a_id)[span_492](start_span)[span_492](end_span)
 
-        teams_data = {}
+        teams_data = {}[span_493](start_span)[span_493](end_span)
         tactics_data = {}
-        for uid in all_uids:
-            teams_data[uid] = await get_user_team_info(uid)
+        for uid in all_uids:[span_494](start_span)[span_494](end_span)
+            teams_data[uid] = await get_user_team_info(uid)[span_495](start_span)[span_495](end_span)
             tactics_data[uid] = await get_user_tactics(uid)
 
-        user_names = {}
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            for uid in all_uids:
-                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (uid,)) as cur:
-                    r = await cur.fetchone()
-                    user_names[uid] = r[0] if r and r[0] else f"تیم {uid}"
+        user_names = {}[span_496](start_span)[span_496](end_span)
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_497](start_span)[span_497](end_span)
+            for uid in all_uids:[span_498](start_span)[span_498](end_span)
+                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (uid,)) as cur:[span_499](start_span)[span_499](end_span)
+                    r = await cur.fetchone()[span_500](start_span)[span_500](end_span)
+                    user_names[uid] = r[0] if r and r[0] else f"تیم {uid}[span_501](start_span)"[span_501](end_span)
 
-        now_time = iran_now.strftime("%Y-%m-%d %H:%M")
-        match_results = []
-        match_updates = []
+        now_time = iran_now.strftime("%Y-%m-%d %H:%M")[span_502](start_span)[span_502](end_span)
+        match_results = [][span_503](start_span)[span_503](end_span)
+        match_updates = [][span_504](start_span)[span_504](end_span)
 
-        for f_id, h_id, a_id in selected_matches:
-            t1 = teams_data[h_id]
-            t2 = teams_data[a_id]
+        for f_id, h_id, a_id in selected_matches:[span_505](start_span)[span_505](end_span)
+            t1 = teams_data[h_id][span_506](start_span)[span_506](end_span)
+            t2 = teams_data[a_id][span_507](start_span)[span_507](end_span)
             tac1 = tactics_data[h_id]
             tac2 = tactics_data[a_id]
 
@@ -2561,93 +2645,92 @@ async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_c
             p2_power = (t2["eff_ovr"] ** 1.3) * (1 + t2["chem"] / 100.0) * (1.0 + b2)
             p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
 
-            s1, s2 = 0, 0
-            for _ in range(random.randint(6, 8)):
-                if random.random() < p1_chance_prob:
-                    if simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]:
-                        s1 += 1
-            else:
-                if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:
-                    s2 += 1
+            s1, s2 = 0, 0[span_508](start_span)[span_508](end_span)
+            for _ in range(random.randint(6, 8)):[span_509](start_span)[span_509](end_span)
+                if random.random() < p1_chance_prob:[span_510](start_span)[span_510](end_span)
+                    if simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]:[span_511](start_span)[span_511](end_span)
+                        s1 += 1[span_512](start_span)[span_512](end_span)
+                else:
+                    if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:[span_513](start_span)[span_513](end_span)
+                        s2 += 1[span_514](start_span)[span_514](end_span)
 
-            reward_h = (50 if s1 > s2 else (20 if s1 == s2 else 0)) + (s1 * 5)
-            reward_a = (50 if s2 > s1 else (20 if s1 == s2 else 0)) + (s2 * 5)
+            reward_h = (50 if s1 > s2 else (20 if s1 == s2 else 0)) + (s1 * 5)[span_515](start_span)[span_515](end_span)
+            reward_a = (50 if s2 > s1 else (20 if s1 == s2 else 0)) + (s2 * 5)[span_516](start_span)[span_516](end_span)
 
-            match_results.append((user_names[h_id], s1, s2, user_names[a_id], reward_h, reward_a))
-            match_updates.append((f_id, h_id, a_id, s1, s2, reward_h, reward_a))
+            match_results.append((user_names[h_id], s1, s2, user_names[a_id], reward_h, reward_a))[span_517](start_span)[span_517](end_span)
+            match_updates.append((f_id, h_id, a_id, s1, s2, reward_h, reward_a))[span_518](start_span)[span_518](end_span)
 
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            await db.execute("PRAGMA journal_mode=WAL;")
-            for f_id, h_id, a_id, s1, s2, reward_h, reward_a in match_updates:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:[span_519](start_span)[span_519](end_span)
+            await db.execute("PRAGMA journal_mode=WAL;")[span_520](start_span)[span_520](end_span)
+            for f_id, h_id, a_id, s1, s2, reward_h, reward_a in match_updates:[span_521](start_span)[span_521](end_span)
                 await db.execute("""
                     UPDATE league_fixtures 
                     SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? 
                     WHERE id = ?
-                """, (s1, s2, now_time, f_id))
+                """, (s1, s2, now_time, f_id))[span_522](start_span)[span_522](end_span)
 
-                w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
-                w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
-
-                await db.execute("""
-                    UPDATE league_standings 
-                    SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
-                        gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
-                    WHERE season_id = ? AND user_id = ?
-                """, (w1, d1, l1, s1, s2, s1 - s2, pts1, s_id, h_id))
+                w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))[span_523](start_span)[span_523](end_span)
+                w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))[span_524](start_span)[span_524](end_span)
 
                 await db.execute("""
                     UPDATE league_standings 
                     SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
                         gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
                     WHERE season_id = ? AND user_id = ?
-                """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
+                """, (w1, d1, l1, s1, s2, s1 - s2, pts1, s_id, h_id))[span_525](start_span)[span_525](end_span)
 
-                if reward_h > 0:
-                    await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_h, h_id))
-                if reward_a > 0:
-                    await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_a, a_id))
+                await db.execute("""
+                    UPDATE league_standings 
+                    SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
+                        gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
+                    WHERE season_id = ? AND user_id = ?
+                """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))[span_526](start_span)[span_526](end_span)
 
-            await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)", (setting_key, today_str))
-            await db.commit()
+                if reward_h > 0:[span_527](start_span)[span_527](end_span)
+                    await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_h, h_id))[span_528](start_span)[span_528](end_span)
+                if reward_a > 0:[span_529](start_span)[span_529](end_span)
+                    await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_a, a_id))[span_530](start_span)[span_530](end_span)
+
+            await db.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)", (setting_key, today_str))[span_531](start_span)[span_531](end_span)
+            await db.commit()[span_532](start_span)[span_532](end_span)
 
             async with db.execute("""
                 SELECT COUNT(*) FROM league_fixtures 
                 WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')
-            """, (s_id,)) as cur:
-                rem_cnt = (await cur.fetchone())[0]
-            if rem_cnt == 0:
-                await settle_league_season(context, db, s_id)
+            """, (s_id,)) as cur:[span_533](start_span)[span_533](end_span)
+                rem_cnt = (await cur.fetchone())[0][span_534](start_span)[span_534](end_span)
+            if rem_cnt == 0:[span_535](start_span)[span_535](end_span)
+                await settle_league_season(context, db, s_id)[span_536](start_span)[span_536](end_span)
 
         report_lines = [
-            "🏆⚽️ <b>نتایج مسابقات لیگ کارت‌های FC 26 (۲ مسابقه برای هر تیم):</b>",
-            "────────────────────"
+            "🏆⚽️ <b>نتایج مسابقات لیگ کارت‌های FC 26 (۲ مسابقه برای هر تیم):</b>",[span_537](start_span)[span_537](end_span)
+            "────────────────────[span_538](start_span)"[span_538](end_span)
         ]
-        for h_name, s1, s2, a_name, r_h, r_a in match_results:
+        for h_name, s1, s2, a_name, r_h, r_a in match_results:[span_539](start_span)[span_539](end_span)
             report_lines.append(
-                f"▫️ <b>{html.escape(h_name)}</b> (<code>+{r_h}</code>) <b>[{s1}] - [{s2}]</b> (<code>+{r_a}</code>) <b>{html.escape(a_name)}</b>"
+                f"▫️ <b>{html.escape(h_name)}</b> (<code>+{r_h}</code>) <b>[{s1}] - [{s2}]</b> (<code>+{r_a}</code>) <b>{html.escape(a_name)}</b>[span_540](start_span)"[span_540](end_span)
             )
-        report_lines.append("────────────────────")
-        report_lines.append("💰 <i>پاداش‌ها (برد +50، مساوی +20، هر گل +5) واریز شد | جدول: <code>/league</code></i>")
-        report_msg = "\n".join(report_lines)
+        report_lines.append("────────────────────")[span_541](start_span)[span_541](end_span)
+        report_lines.append("💰 <i>پاداش‌ها (برد +50، مساوی +20، هر گل +5) واریز شد | جدول: <code>/league</code></i>")[span_542](start_span)[span_542](end_span)
+        report_msg = "\n".join(report_lines)[span_543](start_span)[span_543](end_span)
 
-        target_chat_id = await get_live_chat_id()
-        if target_chat_id:
-            try:
-                await context.bot.send_message(chat_id=target_chat_id, text=report_msg, parse_mode="HTML")
-            except Exception as e:
-                logger.error(f"Error sending league results to group: {e}")
+        target_chat_id = await get_live_chat_id()[span_544](start_span)[span_544](end_span)
+        if target_chat_id:[span_545](start_span)[span_545](end_span)
+            try:[span_546](start_span)[span_546](end_span)
+                await context.bot.send_message(chat_id=target_chat_id, text=report_msg, parse_mode="HTML")[span_547](start_span)[span_547](end_span)
+            except Exception as e:[span_548](start_span)[span_548](end_span)
+                logger.error(f"Error sending league results to group: {e}")[span_549](start_span)[span_549](end_span)
 
-        if reply_chat_id and reply_chat_id != target_chat_id:
-            try:
-                await context.bot.send_message(chat_id=reply_chat_id, text=report_msg, parse_mode="HTML")
-            except Exception:
-                pass
+        if reply_chat_id and reply_chat_id != target_chat_id:[span_550](start_span)[span_550](end_span)
+            try:[span_551](start_span)[span_551](end_span)
+                await context.bot.send_message(chat_id=reply_chat_id, text=report_msg, parse_mode="HTML")[span_552](start_span)[span_552](end_span)
+            except Exception:[span_553](start_span)[span_553](end_span)
+                pass[span_554](start_span)[span_554](end_span)
 
-    except Exception as e:
-        logger.error(f"Fatal error in simulate_daily_league_task: {e}", exc_info=True)
-        if reply_chat_id:
-            await context.bot.send_message(chat_id=reply_chat_id, text=f"❌ خطا در پردازش لیگ:\n<code>{html.escape(str(e))}</code>", parse_mode="HTML")
-
+    except Exception as e:[span_555](start_span)[span_555](end_span)
+        logger.error(f"Fatal error in simulate_daily_league_task: {e}", exc_info=True)[span_556](start_span)[span_556](end_span)
+        if reply_chat_id:[span_557](start_span)[span_557](end_span)
+            await context.bot.send_message(chat_id=reply_chat_id, text=f"❌ خطا در پردازش لیگ:\n<code>{html.escape(str(e))}</code>", parse_mode="HTML")[span_558](start_span)[span_558](end_span)
 # --- TRIVIA DUELS ---
 
 async def trigger_duel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2919,669 +3002,7 @@ async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         CHEAT_MODE_USERS.discard(user.id)
         await update.effective_message.reply_text("🔴 <b>Ch Mode غیرفعال شد.</b>", parse_mode="HTML")
 
-# --- CALLBACK ROUTER ---
-
-async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    data = query.data
-    uid = query.from_user.id
-
-    if data == "home":
-        await query.answer()
-        await start(update, context)
-
-    elif data == "spin_wheel":
-        await query.answer()
-        await spin_wheel_cmd(update, context)
-
-    elif data == "claim_daily_pack":
-        await daily_pack_cmd(update, context)
-
-    elif data == "claim_quests":
-        today_str = get_iran_now().strftime("%Y-%m-%d")
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT penalties_played, card_matches_played, predictions_made, is_claimed FROM daily_quests WHERE user_id = ? AND date_str = ?", (uid, today_str)) as cur:
-                row = await cur.fetchone()
-            if row and row[0] >= 2 and row[1] >= 1 and row[2] >= 1 and not row[3]:
-                await db.execute("UPDATE users SET points = points + 120 WHERE user_id = ?", (uid,))
-                await db.execute("UPDATE daily_quests SET is_claimed = 1 WHERE user_id = ? AND date_str = ?", (uid, today_str))
-                await db.commit()
-                await profile_add_xp(uid, 50)
-                await query.answer("🎁 جایزه ۱۲۰ امتیازی و ۵۰ XP با موفقیت دریافت شد!", show_alert=True)
-                await quests_cmd(update, context)
-            else:
-                await query.answer("ماموریت‌ها هنوز تکمیل نشده یا قبلاً دریافت شده است!", show_alert=True)
-
-    elif data.startswith("ans_dbl_"):
-        parts = data.split("_")
-        g_id, opt_idx = f"{parts[2]}_{parts[3]}", int(parts[4])
-        game = ACTIVE_DOUBLE_GAMES.get(g_id)
-        if not game or not game.get("is_active"):
-            await query.answer("این چالش به پایان رسیده است.", show_alert=True)
-            return
-
-        if uid != game["user_id"]:
-            await query.answer("شما شرکت‌کننده این چالش نیستید!", show_alert=True)
-            return
-
-        await query.answer()
-        game["is_active"] = False
-        cancel_timer(context, f"timer_dbl_{g_id}")
-
-        chosen_opt = game["options"][opt_idx]
-        is_correct = (chosen_opt == game["correct"])
-        stake = game["stake"]
-
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            if is_correct:
-                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake * 2, uid))
-                await db.commit()
-                await profile_add_xp(uid, 50)
-                result_text = (
-                    f"🎉🔥 <b>پاسخ شگفت‌انگیز و کاملاً درست!</b>\n"
-                    f"▫️ پاسخ صحیح: <b>{game['correct']}</b>\n"
-                    f"💰 تبریک! شما مبلغ <b>+{stake:,} PTS</b> خالص برنده شدید و شرطتان دوبرابر شد! (+50 XP)"
-                )
-            else:
-                result_text = (
-                    f"💀 <b>پاسخ اشتباه بود!</b>\n"
-                    f"▫️ پاسخ صحیح: <b>{game['correct']}</b> بود.\n"
-                    f"💸 متاسفانه کل شرط شما سوخت و مبلغ <b>-{stake:,} PTS</b> از حسابتان کسر گردید."
-                )
-
-        await safe_edit_message(context.bot, result_text, reply_markup=None, chat_id=game["chat_id"], message_id=game["msg_id"])
-        ACTIVE_DOUBLE_GAMES.pop(g_id, None)
-
-    elif data == "view_market":
-        await query.answer()
-        await market_cmd(update, context)
-    elif data == "open_sell_menu":
-        await query.answer()
-        await sell_menu_cmd(update, context)
-    elif data == "view_my_cards":
-        await query.answer()
-        await my_cards_cmd(update, context)
-    elif data == "view_lineup":
-        await query.answer()
-        await lineup_cmd(update, context)
-
-    elif data == "auto_lineup":
-        await auto_lineup_logic(uid)
-        await query.answer("⚡️ قوی‌ترین ترکیب چیده شد!", show_alert=True)
-        await lineup_cmd(update, context)
-
-    # --- MANUAL LINEUP CONTROLS ---
-    elif data.startswith("manual_pos_"):
-        pos = data.replace("manual_pos_", "")
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("""
-                SELECT id, player_name, rating, is_in_lineup 
-                FROM user_cards 
-                WHERE user_id = ? AND position = ? 
-                ORDER BY is_in_lineup DESC, rating DESC
-            """, (uid, pos)) as cur:
-                cards = await cur.fetchall()
-
-        if not cards:
-            await query.answer(f"⚠️ شما هیچ کارتی در پست {pos} ندارید!", show_alert=True)
-            return
-
-        await query.answer()
-        limit = 2 if pos == "MID" else 1
-        text = f"⚙️ <b>انتخاب بازیکن برای پست {pos} (حداکثر {limit} بازیکن):</b>\nکلیک کنید تا بازیکن وارد یا خارج شود:"
-
-        buttons = []
-        seen = set()
-        for cid, name, ovr, in_lineup in cards:
-            if not in_lineup and name in seen:
-                continue
-            seen.add(name)
-            c_info = FC_CATALOG_DICT.get(name, {})
-            status = "🟢 [در ترکیب]" if in_lineup else "⚪️"
-            buttons.append([InlineKeyboardButton(f"{status} {name} ({ovr}) {c_info.get('nation','')}", callback_data=f"setcard_{pos}_{cid}")])
-
-        buttons.append([InlineKeyboardButton("‹ بازگشت به ترکیب", callback_data="view_lineup")])
-        await safe_edit_message(query, text, reply_markup=InlineKeyboardMarkup(buttons))
-
-    elif data.startswith("setcard_"):
-        _, pos, cid_str = data.split("_")
-        cid = int(cid_str)
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT player_name, is_in_lineup FROM user_cards WHERE id = ? AND user_id = ?", (cid, uid)) as cur:
-                row = await cur.fetchone()
-            if not row:
-                await query.answer("کارت یافت نشد!", show_alert=True)
-                return
-            p_name, in_lineup = row
-
-            if pos != "MID":
-                await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE user_id = ? AND position = ?", (uid, pos))
-                await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))
-                await db.commit()
-                await query.answer(f"✅ {p_name} فیکس شد!")
-                await lineup_cmd(update, context)
-            else:
-                if in_lineup:
-                    await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE id = ?", (cid,))
-                    await db.commit()
-                    await query.answer(f"🔻 {p_name} از ترکیب خارج شد.")
-                else:
-                    async with db.execute("SELECT id, player_name FROM user_cards WHERE user_id = ? AND position = 'MID' AND is_in_lineup = 1", (uid,)) as cur:
-                        active_mids = await cur.fetchall()
-                    if any(m[1] == p_name for m in active_mids):
-                        await query.answer("⚠️ این بازیکن قبلاً در خط هافبک قرار گرفته است!", show_alert=True)
-                        return
-                    if len(active_mids) >= 2:
-                        await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE id = ?", (active_mids[0][0],))
-                    await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))
-                    await db.commit()
-                    await query.answer(f"✅ {p_name} به هافبک اضافه شد!")
-                query.data = "manual_pos_MID"
-                await callback_router(update, context)
-
-    # --- TACTICAL AI CONFIGURATION CONTROLS ---
-    elif data == "open_tactics":
-        await query.answer()
-        await tactics_menu_cmd(update, context)
-
-    elif data == "set_tac_step1":
-        await query.answer()
-        kb_s = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🪄 تیکی‌تاکا و مالکیت توپ", callback_data="save_tac_style_TIKI_TAKA")],
-            [InlineKeyboardButton("⚡️ گگن‌پرسینگ (پرس در زمین حریف)", callback_data="save_tac_style_GEGENPRESS")],
-            [InlineKeyboardButton("🚀 ضدحملات برق‌آسا و سریع", callback_data="save_tac_style_FAST_COUNTER")],
-            [InlineKeyboardButton("🧱 دفاع اتوبوسی متمرکز", callback_data="save_tac_style_PARK_BUS")],
-            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
-        ])
-        await safe_edit_message(query, "🎯 <b>سبک کلی بازی تیم خود را مشخص کنید:</b>", reply_markup=kb_s)
-
-    elif data == "set_tac_step2":
-        await query.answer()
-        kb_d = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔴 دفاع بالا (تله آفساید - هجومی)", callback_data="save_tac_depth_HIGH_LINE")],
-            [InlineKeyboardButton("🟡 خط دفاعی متعادل", callback_data="save_tac_depth_BALANCED")],
-            [InlineKeyboardButton("🔵 دفاع عقب‌کشیده و عمیق (بستن فضا)", callback_data="save_tac_depth_DEEP")],
-            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
-        ])
-        await safe_edit_message(query, "🛡 <b>ارتفاع و عمق استقرار مدافعان در زمین:</b>", reply_markup=kb_d)
-
-    elif data == "set_tac_step3":
-        await query.answer()
-        kb_b = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🎯 پاس‌های تک‌ضرب و کوتاه", callback_data="save_tac_buildup_SHORT")],
-            [InlineKeyboardButton("✈️ پاس‌های بلند و ارسال قطری", callback_data="save_tac_buildup_LONG")],
-            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
-        ])
-        await safe_edit_message(query, "📐 <b>نحوه انتقال توپ از دفاع به خط حمله:</b>", reply_markup=kb_b)
-
-    elif data == "set_tac_step4":
-        await query.answer()
-        kb_r = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔥 انتحاری و هجوم همه‌جانبه", callback_data="save_tac_risk_ALL_OUT")],
-            [InlineKeyboardButton("⚖️ منظم و ریسک کنترل‌شده", callback_data="save_tac_risk_BALANCED")],
-            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
-        ])
-        await safe_edit_message(query, "⚖️ <b>سطح ریسک بازیکنان در دقایق مختلف مسابقه:</b>", reply_markup=kb_r)
-
-    elif data.startswith("save_tac_"):
-        parts = data.split("_")
-        field, val = parts[2], parts[3]
-        now_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
-
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            await db.execute("""
-                INSERT INTO user_tactics (user_id, style, depth, buildup, risk, updated_at)
-                VALUES (?, 'TIKI_TAKA', 'BALANCED', 'SHORT', 'BALANCED', ?)
-                ON CONFLICT(user_id) DO NOTHING
-            """, (uid, now_str))
-            await db.execute(f"UPDATE user_tactics SET {field} = ?, updated_at = ? WHERE user_id = ?", (val, now_str, uid))
-            await db.commit()
-
-        await query.answer("✅ استراتژی ذخیره شد!")
-        await tactics_menu_cmd(update, context)
-
-    elif data.startswith("buy_m_"):
-        idx = int(data.split("_")[2])
-        today_str = get_iran_now().strftime("%Y-%m-%d")
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT offers_json FROM daily_market WHERE user_id = ? AND date_str = ?", (uid, today_str)) as cur:
-                row = await cur.fetchone()
-            if not row:
-                await query.answer()
-                return
-            offers = json.loads(row[0])
-            target = next((o for o in offers if o["idx"] == idx), None)
-            if not target or target["bought"]:
-                await query.answer("این کارت قبلاً خریداری شده است.", show_alert=True)
-                return
-
-            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
-                pts = (await cur.fetchone())[0]
-            if pts < target["price"]:
-                await query.answer(f"امتیاز ناکافی! به {target['price']:,} PTS نیاز دارید.", show_alert=True)
-                return
-
-            await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (target["price"], uid))
-            c = target["card"]
-            await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)",
-                             (uid, c["name"], c["ovr"], c["pos"], c["rarity"], today_str))
-            target["bought"] = True
-            await db.execute("UPDATE daily_market SET offers_json = ? WHERE user_id = ? AND date_str = ?", (json.dumps(offers, ensure_ascii=False), uid, today_str))
-            await db.commit()
-
-        await profile_add_xp(uid, 50)
-        await query.answer(f"🎉 کارت {c['name']} خریداری شد!", show_alert=True)
-        await market_cmd(update, context)
-
-    elif data.startswith("sell_c_"):
-        card_id = int(data.split("_")[2])
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT player_name, rarity, is_in_lineup FROM user_cards WHERE id = ? AND user_id = ?", (card_id, uid)) as cur:
-                row = await cur.fetchone()
-            if not row:
-                await query.answer("این کارت یافت نشد!", show_alert=True)
-                return
-            p_name, rar, in_lineup = row
-            sell_price = SELL_PRICES.get(rar, 50)
-            await db.execute("DELETE FROM user_cards WHERE id = ?", (card_id,))
-            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (sell_price, uid))
-            await db.commit()
-
-        if in_lineup: await auto_lineup_logic(uid)
-        await query.answer(f"💰 کارت {p_name} با قیمت {sell_price} PTS فروخته شد!", show_alert=True)
-        await sell_menu_cmd(update, context)
-
-    # ۱. گلد پک (500 PTS)
-    elif data == "buy_pack_gold":
-        pack_price = 500
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
-                pts = (await cur.fetchone())[0]
-            if pts < pack_price:
-                await query.answer(f"امتیاز ناکافی! به {pack_price} PTS نیاز دارید.", show_alert=True)
-                return
-            await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (pack_price, uid))
-            c = generate_random_card_by_rarity({"COMMON": 60, "RARE": 32, "ELITE": 7, "ICON": 1})
-            today_str = get_iran_now().strftime("%Y-%m-%d")
-            await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)",
-                             (uid, c["name"], c["ovr"], c["pos"], c["rarity"], today_str))
-            await db.commit()
-
-        await query.answer()
-        await profile_add_xp(uid, 40)
-        pop_msg = f"📦 <b>گلد پک باز شد!</b>\n⭐️ <b>{c['name']}</b> ({c['pos']}) ➔ <b>{c['ovr']} OVR</b> {c.get('nation','')} | {RARITY_COLORS.get(c['rarity'])}"
-        await query.message.reply_text(pop_msg, parse_mode="HTML")
-        await market_cmd(update, context)
-
-    # ۲. اولتیمیت پک (1,500 PTS)
-    elif data == "buy_pack_ultimate":
-        pack_price = 1500
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
-                pts = (await cur.fetchone())[0]
-            if pts < pack_price:
-                await query.answer(f"امتیاز ناکافی! به {pack_price:,} PTS نیاز دارید.", show_alert=True)
-                return
-            await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (pack_price, uid))
-            c = generate_random_card_by_rarity({"COMMON": 22, "RARE": 52, "ELITE": 20, "ICON": 6})
-            today_str = get_iran_now().strftime("%Y-%m-%d")
-            await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)",
-                             (uid, c["name"], c["ovr"], c["pos"], c["rarity"], today_str))
-            await db.commit()
-
-        await query.answer()
-        await profile_add_xp(uid, 90)
-        pop_msg = (
-            f"🔥✨ <b>اولتیمیت پک باز شد!</b>\n"
-            f"⭐️ بازیکن: <b>{c['name']}</b> ({c['pos']}) ➔ <b>{c['ovr']} OVR</b>\n"
-            f"🌍 {c.get('nation','')} | 🏟 {c.get('club','')}\n"
-            f"🎖 رده: {RARITY_COLORS.get(c['rarity'])}"
-        )
-        await query.message.reply_text(pop_msg, parse_mode="HTML")
-        await market_cmd(update, context)
-
-    # ۳. سوپر پک ویژه (4,000 PTS)
-    elif data == "buy_pack_super":
-        pack_price = 4000
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
-                pts = (await cur.fetchone())[0]
-            if pts < pack_price:
-                await query.answer(f"امتیاز ناکافی! قیمت سوپر پک {pack_price:,} PTS است.", show_alert=True)
-                return
-            await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (pack_price, uid))
-            c = generate_random_card_by_rarity({"COMMON": 0, "RARE": 0, "ELITE": 72, "ICON": 28})
-            today_str = get_iran_now().strftime("%Y-%m-%d")
-            await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)",
-                             (uid, c["name"], c["ovr"], c["pos"], c["rarity"], today_str))
-            await db.commit()
-
-        await query.answer()
-        await profile_add_xp(uid, 220)
-        crown = "👑💎 <b>شکار باورنکردنی آیکان افسانه‌ای!</b>" if c["rarity"] == "ICON" else "⚡️🔥 <b>واک‌اوت سوپراستار جهان!</b>"
-        pop_msg = (
-            f"👑 {crown}\n────────────────────\n"
-            f"👤 ستاره جذب‌شده: <b>{c['name']}</b> ({c['pos']})\n"
-            f"📊 ریتینگ خارق‌العاده: <b>{c['ovr']} OVR</b>\n"
-            f"🌍 {c.get('nation','')} | 🏟 {c.get('club','')}\n"
-            f"✨ رده کارت: {RARITY_COLORS.get(c['rarity'])}\n"
-            "────────────────────"
-        )
-        await query.message.reply_text(pop_msg, parse_mode="HTML")
-        await market_cmd(update, context)
-
-    elif data == "select_matches_today":
-        await query.answer()
-        await safe_edit_message(query, "🔥 <b>لیگ مورد نظر برای مسابقات امروز:</b>", reply_markup=kb.get_matches_leagues_keyboard("today"))
-    elif data == "select_matches_tomorrow":
-        await query.answer()
-        await safe_edit_message(query, "📅 <b>لیگ مورد نظر برای مسابقات فردا:</b>", reply_markup=kb.get_matches_leagues_keyboard("tmrw"))
-    elif data == "select_standings_league":
-        await query.answer()
-        await safe_edit_message(query, "🏆 <b>جدول رده‌بندی لیگ مورد نظر:</b>", reply_markup=kb.get_standings_leagues_keyboard())
-
-    elif data.startswith("today_") or data.startswith("tmrw_"):
-        await query.answer()
-        is_today = data.startswith("today_")
-        league_code = data.split("_")[1]
-        target_date = get_iran_now() if is_today else (get_iran_now() + timedelta(days=1))
-        matches = await provider.get_matches(target_date.strftime("%Y%m%d"), league_code=league_code)
-        title = LEAGUE_TITLES.get(league_code, "مسابقات فوتبال")
-        day_label = "امروز" if is_today else "فردا"
-
-        if not matches:
-            await safe_edit_message(query, f"⏳ مسابقه‌ای برای <b>{title}</b> در {day_label} یافت نشد.", reply_markup=kb.get_back_button())
-            return
-
-        text = f"⚽️ <b>برنامه مسابقات {title} ({day_label}):</b>\n────────────────────\n\n"
-        for m in matches[:10]:
-            MATCH_CACHE[str(m["id"])] = m
-            time_str = format_iran_time(m.get("date"))
-            status = m.get("status", "UPCOMING")
-            badge = f"🔴 [{m['home_score']} - {m['away_score']}]" if status in ["LIVE", "IN_PLAY", "HT"] else (f"🏁 [{m['home_score']} - {m['away_score']}]" if status in ["FINISHED", "FT"] else f"⏰ <code>{time_str}</code>")
-            text += f"▫️ <b>{m['home_team']}</b> 🆚 <b>{m['away_team']}</b>\n    └ {badge}  •  {m.get('venue', 'ورزشگاه')}\n\n"
-        await safe_edit_message(query, text + "────────────────────", reply_markup=kb.get_back_button())
-
-    elif data.startswith("table_"):
-        await query.answer()
-        league_code = data.replace("table_", "")
-        standings = await provider.get_standings(league_code)
-        title = LEAGUE_TITLES.get(league_code, "جدول رده‌بندی")
-        if not standings:
-            await safe_edit_message(query, f"جدول {title} در دسترس نیست.", reply_markup=kb.get_back_button())
-            return
-        text = f"🏆 <b>جدول رده‌بندی {title}</b>\n<pre>#  | Team          | P  | Pts\n---+---------------+----+----\n"
-        for idx, s in enumerate(standings[:10], 1):
-            text += f"{idx:<2} | {s['team'][:13].ljust(13)} | {str(s['p'])[:2].rjust(2)} | {str(s['pts'])[:3].rjust(3)}\n"
-        text += "</pre>"
-        await safe_edit_message(query, text, reply_markup=kb.get_back_button())
-
-    elif data == "predictions_hub":
-        await query.answer()
-        await predictions_hub_handler(query)
-
-    elif data.startswith("select_pred_"):
-        match_id = data.replace("select_pred_", "")
-        m = MATCH_CACHE.get(match_id)
-        if not m or not is_match_still_open_for_prediction(m):
-            await query.answer("⛔️ مهلت پیش‌بینی این مسابقه به پایان رسیده است!", show_alert=True)
-            return
-        await query.answer()
-        time_str = format_iran_time(m.get("date"))
-        text = f"🎯 <b>فرم ثبت پیش‌بینی:</b>\n────────────────────\n⚽️ <b>{m['home_team']}</b> 🆚 <b>{m['away_team']}</b>\n⏰ <code>{time_str}</code>\n────────────────────"
-        await safe_edit_message(query, text, reply_markup=kb.get_prediction_keyboard(m['id']))
-
-    elif data.startswith("pred_out_"):
-        parts = data.split("_")
-        match_id, choice = parts[2], parts[3]
-        m = MATCH_CACHE.get(match_id)
-        if not is_match_still_open_for_prediction(m):
-            await query.answer("⛔️ مسابقه آغاز شده و امکان ثبت پیش‌بینی وجود ندارد!", show_alert=True)
-            return
-
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            try:
-                await db.execute("INSERT INTO predictions (user_id, match_id, outcome_choice, settled) VALUES (?, ?, ?, 0)", (uid, match_id, choice))
-                await db.execute("UPDATE users SET points = points + 10, total_predictions = total_predictions + 1 WHERE user_id = ?", (uid,))
-                await db.commit()
-                await query.answer()
-                await profile_add_xp(uid, 20)
-                await record_quest_action(uid, "predictions")
-                await safe_edit_message(query, "✅ <b>پیش‌بینی ثبت شد! (+10 امتیاز ثبت)</b>\nدر صورت درست بودن نتیجه، <b>+40 امتیاز</b> پاداش اضافه می‌گیرید.", reply_markup=kb.get_back_button())
-            except Exception:
-                await query.answer("⚠️ شما قبلاً این بازی را پیش‌بینی کرده‌اید.", show_alert=True)
-                await safe_edit_message(query, "⚠️ شما قبلاً این بازی را پیش‌بینی کرده‌اید.", reply_markup=kb.get_back_button())
-
-    elif data.startswith("pool_"):
-        parts = data.split("_")
-        match_id, choice = parts[1], parts[2]
-        m = MATCH_CACHE.get(match_id)
-        if not is_match_still_open_for_prediction(m):
-            await query.answer("⛔️ سوت آغاز بازی زده شده و استخر پیش‌بینی بسته شده است!", show_alert=True)
-            return
-
-        await ensure_user(query.from_user)
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            await db.execute("""
-                INSERT INTO special_pool_predictions (match_id, user_id, user_name, choice) VALUES (?, ?, ?, ?)
-                ON CONFLICT(match_id, user_id) DO UPDATE SET choice = excluded.choice
-            """, (match_id, uid, query.from_user.first_name, choice))
-            await db.commit()
-            async with db.execute("SELECT user_name, choice FROM special_pool_predictions WHERE match_id = ?", (match_id,)) as cur:
-                participants = await cur.fetchall()
-
-        await query.answer("✅ پیش‌بینی شما در استخر ویژه ثبت شد!")
-        await safe_edit_message(query, await generate_pool_message_text(m, participants), reply_markup=query.message.reply_markup)
-
-    elif data == "jackpot_hub":
-        await query.answer()
-        await jackpot_cmd(update, context)
-
-    elif data.startswith("jk_start_"):
-        await query.answer()
-        rid = data.replace("jk_start_", "")
-        USER_JACKPOT_DRAFTS[uid] = {"round_id": rid, "picks": {}}
-        r_data = await get_or_create_jackpot_round()
-        m = r_data["matches"][0]
-        text = f"1️⃣ بازی اول:\n<b>{m['home']} ✕ {m['away']}</b>"
-        kb_step = InlineKeyboardMarkup([
-            [InlineKeyboardButton("برد ۱", callback_data=f"jkp:{rid}:0:HOME"),
-             InlineKeyboardButton("تساوی", callback_data=f"jkp:{rid}:0:DRAW"),
-             InlineKeyboardButton("برد ۲", callback_data=f"jkp:{rid}:0:AWAY")]
-        ])
-        await safe_edit_message(query, text, reply_markup=kb_step)
-
-    elif data.startswith("jkp:"):
-        await query.answer()
-        parts = data.split(":")
-        rid, idx, choice = parts[1], int(parts[2]), parts[3]
-        if uid not in USER_JACKPOT_DRAFTS: return
-        USER_JACKPOT_DRAFTS[uid]["picks"][str(idx)] = choice
-        r_data = await get_or_create_jackpot_round()
-        matches = r_data["matches"] if r_data else []
-
-        if idx < 4 and idx + 1 < len(matches):
-            m = matches[idx + 1]
-            text = f"{idx + 2}️⃣ بازی بعدی:\n<b>{m['home']} ✕ {m['away']}</b>"
-            kb_step = InlineKeyboardMarkup([
-                [InlineKeyboardButton("برد ۱", callback_data=f"jkp:{rid}:{idx+1}:HOME"),
-                 InlineKeyboardButton("تساوی X", callback_data=f"jkp:{rid}:{idx+1}:DRAW"),
-                 InlineKeyboardButton("برد ۲", callback_data=f"jkp:{rid}:{idx+1}:AWAY")]
-            ])
-            await safe_edit_message(query, text, reply_markup=kb_step)
-        else:
-            draft = USER_JACKPOT_DRAFTS.pop(uid, None)
-            if draft:
-                async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-                    await db.execute("""
-                        INSERT OR REPLACE INTO jackpot_combos (user_id, user_name, round_id, predictions_json, status, created_at)
-                        VALUES (?, ?, ?, ?, 'PENDING', ?)
-                    """, (uid, query.from_user.first_name, rid, json.dumps(draft["picks"]), get_iran_now().strftime("%Y-%m-%d %H:%M")))
-                    await db.commit()
-                await profile_add_xp(uid, 30)
-                await query.message.reply_text("✅ <b>فرم جک‌پات ۵ تایی شما با موفقیت ثبت شد!</b>", parse_mode="HTML")
-
-    elif data.startswith("acp_"):
-        p_id = data.replace("acp_", "")
-        s = ACTIVE_SHOOTOUTS.get(p_id)
-        if not s or s.get("accepted"):
-            await query.answer()
-            return
-        if uid != s["p2"]["id"]:
-            await query.answer("فقط حریف دعوت‌شده می‌تواند پنالتی را بپذیرد!", show_alert=True)
-            return
-
-        stake = s["stake"]
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (s["p1"]["id"], s["p2"]["id"])) as cur:
-                balances = {r[0]: r[1] for r in await cur.fetchall()}
-            if balances.get(s["p1"]["id"], 0) < stake or balances.get(s["p2"]["id"], 0) < stake:
-                await query.answer("موجودی یکی از طرفین دیگر برای شروع کافی نیست!", show_alert=True)
-                ACTIVE_SHOOTOUTS.pop(p_id, None)
-                return
-            await db.execute("UPDATE users SET points = points - ? WHERE user_id IN (?, ?)", (stake, s["p1"]["id"], s["p2"]["id"]))
-            await db.commit()
-
-        s["accepted"] = True
-        await query.answer()
-        await increment_penalty_count_db(s["p1"]["id"])
-        await increment_penalty_count_db(s["p2"]["id"])
-        text = f"🥅 <b>ماراتن پنالتی مرگ ناگهانی آغاز شد!</b> ⚽️\n────────────────────\n👤 نوبت شوت‌زن اول: <b>{html.escape(s['p1']['name'])}</b> (راند ۱)\nروی دکمه زیر بزنید:"
-        k = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ شلیک ضربه پنالتی", callback_data=f"pkick_{p_id}")]])
-        await safe_edit_message(query, text, reply_markup=k)
-
-    elif data.startswith("rjp_"):
-        p_id = data.replace("rjp_", "")
-        s = ACTIVE_SHOOTOUTS.get(p_id)
-        if s and not s.get("accepted") and uid in [s["p1"]["id"], s["p2"]["id"]]:
-            del ACTIVE_SHOOTOUTS[p_id]
-            await query.answer()
-            await safe_edit_message(query, "❌ چالش پنالتی لغو شد.")
-        else:
-            await query.answer("امکان لغو وجود ندارد!", show_alert=True)
-
-    elif data.startswith("pkick_"):
-        p_id = data.replace("pkick_", "")
-        s = ACTIVE_SHOOTOUTS.get(p_id)
-        if not s or not s.get("accepted"):
-            await query.answer()
-            return
-
-        if uid != s["current_turn"]:
-            await query.answer("اکنون نوبت شوت شما نیست!", show_alert=True)
-            return
-
-        await query.answer()
-        chat_id = s["chat_id"]
-        dice_msg = await context.bot.send_dice(chat_id=chat_id, emoji="⚽")
-        await asyncio.sleep(2.5)
-
-        is_goal = dice_msg.dice.value in [3, 4, 5]
-
-        if s["p1"]["shot"] is None:
-            s["p1"]["shot"] = is_goal
-            s["current_turn"] = s["p2"]["id"]
-            goal_status = "⚽️ گل شد!" if is_goal else "🧤 مهار شد!"
-            next_text = f"👤 شوت <b>{html.escape(s['p1']['name'])}</b>: {goal_status}\n────────────────────\n👤 نوبت <b>{html.escape(s['p2']['name'])}</b> است! روی دکمه زیر بزنید:"
-            k = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ شلیک ضربه پنالتی", callback_data=f"pkick_{p_id}")]])
-            await safe_edit_message(context.bot, next_text, reply_markup=k, chat_id=chat_id, message_id=s["message_id"])
-        else:
-            s["p2"]["shot"] = is_goal
-            p1_goal, p2_goal = s["p1"]["shot"], s["p2"]["shot"]
-
-            if p1_goal == p2_goal:
-                s["round"] += 1
-                s["p1"]["shot"] = None
-                s["p2"]["shot"] = None
-                s["current_turn"] = s["p1"]["id"]
-                both_status = "🔥 هر دو گل زدند!" if p1_goal else "❌ هر دو خراب کردند!"
-                round_msg = f"🏁 پایان راند {s['round']-1}: {both_status}\n⚠️ <b>مرگ ناگهانی! ماراتن به راند {s['round']} کشیده شد.</b>\n────────────────────\n👤 نوبت: <b>{html.escape(s['p1']['name'])}</b>"
-                k = InlineKeyboardMarkup([[InlineKeyboardButton("⚽️ شلیک ضربه پنالتی", callback_data=f"pkick_{p_id}")]])
-                await safe_edit_message(context.bot, round_msg, reply_markup=k, chat_id=chat_id, message_id=s["message_id"])
-            else:
-                winner = s["p1"] if p1_goal else s["p2"]
-                stake = s["stake"]
-
-                async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-                    await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (stake * 2, winner["id"]))
-                    await db.commit()
-
-                await profile_record_penalty_win(winner["id"])
-                res = f"🏁 <b>پایان پنالتی (راند {s['round']})</b>\n────────────────────\n👤 {html.escape(s['p1']['name'])}: {'⚽️' if p1_goal else '❌'}\n👤 {html.escape(s['p2']['name'])}: {'⚽️' if p2_goal else '❌'}\n\n🏆 برنده: <b>{html.escape(winner['name'])}</b> (+{stake} امتیاز خالص)"
-                await safe_edit_message(context.bot, res, reply_markup=None, chat_id=chat_id, message_id=s["message_id"])
-                ACTIVE_SHOOTOUTS.pop(p_id, None)
-
-    elif data.startswith("ac_cm_"):
-        m_id = data.replace("ac_cm_", "")
-        m = ACTIVE_CARD_MATCHES.get(m_id)
-        if not m or m.get("accepted"):
-            await query.answer()
-            return
-        if uid != m["p2"]["id"]:
-            await query.answer("فقط حریف دعوت‌شده می‌تواند مسابقه را بپذیرد!", show_alert=True)
-            return
-
-        stake = m["stake"]
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (m["p1"]["id"], m["p2"]["id"])) as cur:
-                balances = {r[0]: r[1] for r in await cur.fetchall()}
-            if balances.get(m["p1"]["id"], 0) < stake or balances.get(m["p2"]["id"], 0) < stake:
-                await query.answer("موجودی یکی از طرفین دیگر برای شروع کافی نیست!", show_alert=True)
-                ACTIVE_CARD_MATCHES.pop(m_id, None)
-                return
-            await db.execute("UPDATE users SET points = points - ? WHERE user_id IN (?, ?)", (stake, m["p1"]["id"], m["p2"]["id"]))
-            await db.commit()
-
-        m["accepted"] = True
-        await query.answer()
-        await safe_edit_message(query, "⚽️ <b>مسابقه FC 26 آغاز شد! موتور شبیه‌سازی عمیق در حال پردازش بازی...</b>")
-        asyncio.create_task(run_live_card_match_simulation(context, m_id))
-
-    elif data.startswith("rj_cm_"):
-        m_id = data.replace("rj_cm_", "")
-        m = ACTIVE_CARD_MATCHES.get(m_id)
-        if m and not m.get("accepted") and uid in [m["p1"]["id"], m["p2"]["id"]]:
-            del ACTIVE_CARD_MATCHES[m_id]
-            await query.answer()
-            await safe_edit_message(query, "❌ مسابقه کارت‌ها لغو شد.")
-        else:
-            await query.answer("امکان لغو وجود ندارد!", show_alert=True)
-
-    elif data.startswith("acd_"):
-        duel_id = data.replace("acd_", "")
-        duel = ACTIVE_DUELS.get(duel_id)
-        if not duel or duel.get("accepted"):
-            await query.answer()
-            return
-        if uid != duel["opponent"]["id"]:
-            await query.answer("فقط حریف دعوت‌شده می‌تواند دوئل را بپذیرد!", show_alert=True)
-            return
-
-        stake = duel["stake"]
-        c_id, o_id = duel["challenger"]["id"], duel["opponent"]["id"]
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT user_id, points FROM users WHERE user_id IN (?, ?)", (c_id, o_id)) as cur:
-                balances = {r[0]: r[1] for r in await cur.fetchall()}
-            if balances.get(c_id, 0) < stake or balances.get(o_id, 0) < stake:
-                await query.answer("موجودی یکی از طرفین دیگر کافی نیست!", show_alert=True)
-                ACTIVE_DUELS.pop(duel_id, None)
-                return
-            await db.execute("UPDATE users SET points = points - ? WHERE user_id IN (?, ?)", (stake, c_id, o_id))
-            await db.commit()
-
-        duel["accepted"] = True
-        await query.answer()
-        await proceed_duel(context, duel_id)
-
-    elif data.startswith("rjd_"):
-        duel_id = data.replace("rjd_", "")
-        duel = ACTIVE_DUELS.get(duel_id)
-        if duel and not duel.get("accepted") and uid in [duel["challenger"]["id"], duel["opponent"]["id"]]:
-            del ACTIVE_DUELS[duel_id]
-            await query.answer()
-            await safe_edit_message(query, "❌ چالش دوئل لغو گردید.")
-        else:
-            await query.answer("امکان لغو وجود ندارد!", show_alert=True)
+# --- CALLBACK ROUTER CONTINUED ---
 
     elif data.startswith("ad_"):
         parts = data.split("_")
@@ -3720,6 +3141,337 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 message_id=duel["message_id"]
             )
 
+    # --- MANUAL LINEUP CONTROLS ---
+    elif data.startswith("manual_pos_"):
+        pos = data.replace("manual_pos_", "")
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            async with db.execute("""
+                SELECT id, player_name, rating, is_in_lineup 
+                FROM user_cards 
+                WHERE user_id = ? AND position = ? 
+                ORDER BY is_in_lineup DESC, rating DESC
+            """, (uid, pos)) as cur:
+                cards = await cur.fetchall()
+
+        if not cards:
+            await query.answer(f"⚠️ شما هیچ کارتی در پست {pos} ندارید!", show_alert=True)
+            return
+
+        await query.answer()
+        limit = 2 if pos == "MID" else 1
+        text = f"⚙️ <b>انتخاب بازیکن برای پست {pos} (حداکثر {limit} بازیکن):</b>\nکلیک کنید تا بازیکن وارد یا خارج شود:"
+
+        buttons = []
+        seen = set()
+        for cid, name, ovr, in_lineup in cards:
+            if not in_lineup and name in seen:
+                continue
+            seen.add(name)
+            c_info = FC_CATALOG_DICT.get(name, {})
+            status = "🟢 [در ترکیب]" if in_lineup else "⚪️"
+            buttons.append([InlineKeyboardButton(f"{status} {name} ({ovr}) {c_info.get('nation','')}", callback_data=f"setcard_{pos}_{cid}")])
+
+        buttons.append([InlineKeyboardButton("‹ بازگشت به ترکیب", callback_data="view_lineup")])
+        await safe_edit_message(query, text, reply_markup=InlineKeyboardMarkup(buttons))
+
+    elif data.startswith("setcard_"):
+        _, pos, cid_str = data.split("_")
+        cid = int(cid_str)
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            async with db.execute("SELECT player_name, is_in_lineup FROM user_cards WHERE id = ? AND user_id = ?", (cid, uid)) as cur:
+                row = await cur.fetchone()
+            if not row:
+                await query.answer("کارت یافت نشد!", show_alert=True)
+                return
+            p_name, in_lineup = row
+
+            if pos != "MID":
+                await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE user_id = ? AND position = ?", (uid, pos))
+                await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))
+                await db.commit()
+                await query.answer(f"✅ {p_name} فیکس شد!")
+                await lineup_cmd(update, context)
+            else:
+                if in_lineup:
+                    await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE id = ?", (cid,))
+                    await db.commit()
+                    await query.answer(f"🔻 {p_name} از ترکیب خارج شد.")
+                else:
+                    async with db.execute("SELECT id, player_name FROM user_cards WHERE user_id = ? AND position = 'MID' AND is_in_lineup = 1", (uid,)) as cur:
+                        active_mids = await cur.fetchall()
+                    if any(m[1] == p_name for m in active_mids):
+                        await query.answer("⚠️ این بازیکن قبلاً در خط هافبک قرار گرفته است!", show_alert=True)
+                        return
+                    if len(active_mids) >= 2:
+                        await db.execute("UPDATE user_cards SET is_in_lineup = 0 WHERE id = ?", (active_mids[0][0],))
+                    await db.execute("UPDATE user_cards SET is_in_lineup = 1 WHERE id = ?", (cid,))
+                    await db.commit()
+                    await query.answer(f"✅ {p_name} به هافبک اضافه شد!")
+                query.data = "manual_pos_MID"
+                await callback_router(update, context)
+
+    # --- TACTICAL AI CONFIGURATION CONTROLS ---
+    elif data == "open_tactics":
+        await query.answer()
+        await tactics_menu_cmd(update, context)
+
+    elif data == "set_tac_step1":
+        await query.answer()
+        kb_s = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🪄 تیکی‌تاکا و مالکیت توپ", callback_data="save_tac_style_TIKI_TAKA")],
+            [InlineKeyboardButton("⚡️ گگن‌پرسینگ (پرس در زمین حریف)", callback_data="save_tac_style_GEGENPRESS")],
+            [InlineKeyboardButton("🚀 ضدحملات برق‌آسا و سریع", callback_data="save_tac_style_FAST_COUNTER")],
+            [InlineKeyboardButton("🧱 دفاع اتوبوسی متمرکز", callback_data="save_tac_style_PARK_BUS")],
+            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
+        ])
+        await safe_edit_message(query, "🎯 <b>سبک کلی بازی تیم خود را مشخص کنید:</b>", reply_markup=kb_s)
+
+    elif data == "set_tac_step2":
+        await query.answer()
+        kb_d = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔴 دفاع بالا (تله آفساید - هجومی)", callback_data="save_tac_depth_HIGH_LINE")],
+            [InlineKeyboardButton("🟡 خط دفاعی متعادل", callback_data="save_tac_depth_BALANCED")],
+            [InlineKeyboardButton("🔵 دفاع عقب‌کشیده و عمیق (بستن فضا)", callback_data="save_tac_depth_DEEP")],
+            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
+        ])
+        await safe_edit_message(query, "🛡 <b>ارتفاع و عمق استقرار مدافعان در زمین:</b>", reply_markup=kb_d)
+
+    elif data == "set_tac_step3":
+        await query.answer()
+        kb_b = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎯 پاس‌های تک‌ضرب و کوتاه", callback_data="save_tac_buildup_SHORT")],
+            [InlineKeyboardButton("✈️ پاس‌های بلند و ارسال قطری", callback_data="save_tac_buildup_LONG")],
+            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
+        ])
+        await safe_edit_message(query, "📐 <b>نحوه انتقال توپ از دفاع به خط حمله:</b>", reply_markup=kb_b)
+
+    elif data == "set_tac_step4":
+        await query.answer()
+        kb_r = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔥 انتحاری و هجوم همه‌جانبه", callback_data="save_tac_risk_ALL_OUT")],
+            [InlineKeyboardButton("⚖️ منظم و ریسک کنترل‌شده", callback_data="save_tac_risk_BALANCED")],
+            [InlineKeyboardButton("‹ بازگشت به تاکتیک", callback_data="open_tactics")]
+        ])
+        await safe_edit_message(query, "⚖️ <b>سطح ریسک بازیکنان در دقایق مختلف مسابقه:</b>", reply_markup=kb_r)
+
+    elif data.startswith("save_tac_"):
+        parts = data.split("_")
+        field, val = parts[2], parts[3]
+        now_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
+
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            await db.execute("""
+                INSERT INTO user_tactics (user_id, style, depth, buildup, risk, updated_at)
+                VALUES (?, 'TIKI_TAKA', 'BALANCED', 'SHORT', 'BALANCED', ?)
+                ON CONFLICT(user_id) DO NOTHING
+            """, (uid, now_str))
+            await db.execute(f"UPDATE user_tactics SET {field} = ?, updated_at = ? WHERE user_id = ?", (val, now_str, uid))
+            await db.commit()
+
+        await query.answer("✅ استراتژی ذخیره شد!")
+        await tactics_menu_cmd(update, context)
+
+    # --- ADVANCED EVOLUTION CONTROLS ---
+    elif data == "open_evolution":
+        await query.answer()
+        await evolution_menu_cmd(update, context)
+
+    elif data.startswith("evo_cat_"):
+        plan_key = data.replace("evo_cat_", "")
+        plan = EVO_PLANS.get(plan_key)
+        if not plan:
+            await query.answer("پلن نامعتبر است!", show_alert=True)
+            return
+
+        await query.answer()
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            if "fixed_ovr" in plan:
+                async with db.execute("""
+                    SELECT id, player_name, rating, position, rarity, is_in_lineup 
+                    FROM user_cards 
+                    WHERE user_id = ? AND player_name = ? AND rating < 99
+                """, (uid, plan["target_name"])) as cur:
+                    eligible_cards = await cur.fetchall()
+            else:
+                min_ovr = plan.get("min_input_ovr", 0)
+                max_ovr = plan.get("max_input_ovr", 99)
+                r_placeholders = ",".join(f"'{r}'" for r in plan["rarities"])
+                query_sql = f"""
+                    SELECT id, player_name, rating, position, rarity, is_in_lineup 
+                    FROM user_cards 
+                    WHERE user_id = ? AND rating >= {min_ovr} AND rating <= {max_ovr} 
+                      AND rarity IN ({r_placeholders})
+                    ORDER BY rating DESC
+                """
+                async with db.execute(query_sql, (uid,)) as cur:
+                    eligible_cards = await cur.fetchall()
+
+        text = (
+            f"⚡️ <b>{plan['title']}</b>\n"
+            "────────────────────\n"
+            f"📝 {plan['desc']}\n"
+            f"💰 هزینه: <b>{plan['cost']:,} PTS</b>\n"
+        )
+        if "fixed_ovr" in plan:
+            text += f"🎴 قربانی‌های لازم: <b>۲ کارت ICON + ۳ کارت ELITE مازاد</b>\n"
+        else:
+            text += f"🎴 قربانی‌های لازم: <b>{plan['sac_count']} کارت {plan['sac_rarity']} مازاد</b>\n"
+
+        text += "────────────────────\n👇 بازیکن مورد نظر خود را جهت شروع ارتقا انتخاب کنید:\n"
+
+        buttons = []
+        if not eligible_cards:
+            text += "\n⚠️ <i>شما در حال حاضر کارت واجد شرایطی برای این پلن ندارید!</i>"
+        else:
+            for cid, name, ovr, pos, rar, in_lineup in eligible_cards[:12]:
+                next_ovr = plan.get("fixed_ovr", ovr + plan.get("boost", 2))
+                badge = "🟢 " if in_lineup else "⚪️ "
+                buttons.append([InlineKeyboardButton(
+                    f"{badge}{name} ({ovr} ➔ {next_ovr} OVR)",
+                    callback_data=f"evo_req_{plan_key}_{cid}"
+                )])
+
+        buttons.append([InlineKeyboardButton("‹ بازگشت به پلن‌ها", callback_data="open_evolution")])
+        await safe_edit_message(query, text, reply_markup=InlineKeyboardMarkup(buttons))
+
+    elif data.startswith("evo_req_"):
+        parts = data.split("_")
+        plan_key, cid = f"{parts[2]}_{parts[3]}" if len(parts) == 5 else parts[2], int(parts[-1])
+        plan = EVO_PLANS.get(plan_key)
+        if not plan: return
+
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            async with db.execute("SELECT player_name, rating, position, rarity FROM user_cards WHERE id = ? AND user_id = ?", (cid, uid)) as cur:
+                target_card = await cur.fetchone()
+
+            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
+                user_pts = (await cur.fetchone())[0]
+
+            if "fixed_ovr" in plan:
+                async with db.execute("SELECT COUNT(*) FROM user_cards WHERE user_id = ? AND is_in_lineup = 0 AND rarity = 'ICON' AND id != ?", (uid, cid)) as cur:
+                    free_icons = (await cur.fetchone())[0]
+                async with db.execute("SELECT COUNT(*) FROM user_cards WHERE user_id = ? AND is_in_lineup = 0 AND rarity = 'ELITE' AND id != ?", (uid, cid)) as cur:
+                    free_elites = (await cur.fetchone())[0]
+                has_fodder = (free_icons >= 2 and free_elites >= 3)
+                fodder_status = f"▫️ آیکان مازاد: <b>{free_icons}/2</b> | الیت مازاد: <b>{free_elites}/3</b>"
+            else:
+                sac_r = plan["sac_rarity"]
+                req_cnt = plan["sac_count"]
+                async with db.execute("SELECT COUNT(*) FROM user_cards WHERE user_id = ? AND is_in_lineup = 0 AND rarity = ? AND id != ?", (uid, sac_r, cid)) as cur:
+                    free_cnt = (await cur.fetchone())[0]
+                has_fodder = (free_cnt >= req_cnt)
+                fodder_status = f"▫️ کارت‌های {sac_r} مازاد: <b>{free_cnt}/{req_cnt}</b>"
+
+        if not target_card:
+            await query.answer("کارت یافت نشد!", show_alert=True)
+            return
+
+        name, ovr, pos, rar = target_card
+        next_ovr = plan.get("fixed_ovr", min(96, ovr + plan.get("boost", 2)))
+
+        text = (
+            f"📋 <b>تایید نهایی اوولوشن: {plan['title']}</b>\n"
+            "────────────────────\n"
+            f"👤 ستاره انتخابی: <b>{name}</b> ({pos})\n"
+            f"📊 ریتینگ فعلی: <b>{ovr} OVR</b> ➔ ریتینگ نهایی: <b>{next_ovr} OVR</b> 🔥\n"
+            "────────────────────\n"
+            f"💰 هزینه عملیات: <b>{plan['cost']:,} PTS</b> (موجودی شما: {user_pts:,})\n"
+            f"🎴 وضعیت کارت‌های قربانی:\n{fodder_status}\n"
+            "────────────────────\n"
+        )
+
+        buttons = []
+        if user_pts < plan["cost"]:
+            text += "❌ <b>موجودی امتیاز شما کافی نیست!</b>"
+        elif not has_fodder:
+            text += "❌ <b>کارت‌های مازاد کافی برای قربانی کردن ندارید!</b>\n<i>(توجه: کارت‌های حاضر در ترکیب اصلی نمی‌توانند قربانی شوند)</i>"
+        else:
+            text += "✅ <b>همه شرایط مهیا است. آیا عملیات اجرا شود؟</b>"
+            buttons.append([InlineKeyboardButton("🔥 تایید و اجرای ارتقا", callback_data=f"evo_run_{plan_key}_{cid}")])
+
+        buttons.append([InlineKeyboardButton("‹ بازگشت به لیست", callback_data=f"evo_cat_{plan_key}")])
+        await safe_edit_message(query, text, reply_markup=InlineKeyboardMarkup(buttons))
+
+    elif data.startswith("evo_run_"):
+        parts = data.split("_")
+        plan_key, cid = f"{parts[2]}_{parts[3]}" if len(parts) == 5 else parts[2], int(parts[-1])
+        plan = EVO_PLANS.get(plan_key)
+        if not plan: return
+
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            async with db.execute("SELECT player_name, rating, rarity FROM user_cards WHERE id = ? AND user_id = ?", (cid, uid)) as cur:
+                card_row = await cur.fetchone()
+
+            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
+                user_pts = (await cur.fetchone())[0]
+
+            if not card_row or user_pts < plan["cost"]:
+                await query.answer("موجودی یا کارت معتبر نیست!", show_alert=True)
+                return
+
+            p_name, cur_ovr, cur_rar = card_row
+            burn_ids = []
+
+            if "fixed_ovr" in plan:
+                async with db.execute("SELECT id FROM user_cards WHERE user_id = ? AND is_in_lineup = 0 AND rarity = 'ICON' AND id != ? LIMIT 2", (uid, cid)) as cur:
+                    icons = [r[0] for r in await cur.fetchall()]
+                async with db.execute("SELECT id FROM user_cards WHERE user_id = ? AND is_in_lineup = 0 AND rarity = 'ELITE' AND id != ? LIMIT 3", (uid, cid)) as cur:
+                    elites = [r[0] for r in await cur.fetchall()]
+                if len(icons) < 2 or len(elites) < 3:
+                    await query.answer("کارت‌های قربانی کافی نیست!", show_alert=True)
+                    return
+                burn_ids = icons + elites
+                new_ovr = 99
+                new_rar = "ICON"
+            else:
+                sac_r = plan["sac_rarity"]
+                req_cnt = plan["sac_count"]
+                async with db.execute("SELECT id FROM user_cards WHERE user_id = ? AND is_in_lineup = 0 AND rarity = ? AND id != ? ORDER BY rating ASC LIMIT ?", (uid, sac_r, cid, req_cnt)) as cur:
+                    burn_ids = [r[0] for r in await cur.fetchall()]
+                if len(burn_ids) < req_cnt:
+                    await query.answer("کارت‌های مازاد کافی نیست!", show_alert=True)
+                    return
+                new_ovr = min(96, cur_ovr + plan["boost"])
+                new_rar = "ICON" if plan_key == "elite_push" else cur_rar
+
+            await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (plan["cost"], uid))
+            for b_id in burn_ids:
+                await db.execute("DELETE FROM user_cards WHERE id = ?", (b_id,))
+            await db.execute("UPDATE user_cards SET rating = ?, rarity = ? WHERE id = ?", (new_ovr, new_rar, cid))
+            await db.commit()
+
+        await profile_add_xp(uid, 350 if new_ovr == 99 else 150)
+        await query.answer("✨ اوولوشن با موفقیت ثبت شد!", show_alert=True)
+
+        if new_ovr == 99:
+            succ_msg = (
+                f"👑🐐 <b>تولد کارت فوق‌افسانه‌ای ۹۹ جاودانه!</b> 🔥\n"
+                "────────────────────\n"
+                f"👤 <b>{p_name}</b> به ریتینگ فرازمینی <b>99 OVR</b> رسید!\n"
+                f"▫️ ۲ کارت آیکان و ۳ کارت الیت سوزانده شدند و {plan['cost']:,} PTS کسر گردید.\n"
+                "🏆 این کارت اکنون قوی‌ترین مهره بازی در کل لیگ است!"
+            )
+            target_chat_id = await get_live_chat_id()
+            if target_chat_id:
+                try:
+                    announce = f"🚨🔥 <b>شاهکار تاریخی در لیگ!</b>\nکاربر <b>{html.escape(query.from_user.first_name)}</b> موفق شد کارت <b>{p_name}</b> را به <b>99 OVR</b> ارتقا دهد! 👑🐐"
+                    await context.bot.send_message(chat_id=target_chat_id, text=announce, parse_mode="HTML")
+                except Exception: pass
+        else:
+            succ_msg = (
+                f"🎉⚡️ <b>اوولوشن با موفقیت اجرا شد!</b>\n"
+                "────────────────────\n"
+                f"👤 بازیکن: <b>{p_name}</b>\n"
+                f"⭐️ ریتینگ جدید: <b>{new_ovr} OVR</b>\n"
+                f"▫️ کارت‌های قربانی مصرف شدند و مبلغ {plan['cost']:,} PTS کسر گردید."
+            )
+
+        await safe_edit_message(query, succ_msg, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🧪 ارتقای دیگر", callback_data="open_evolution")],
+            [InlineKeyboardButton("🛡 مشاهده ترکیب تیم", callback_data="view_lineup")],
+            [InlineKeyboardButton("‹ منوی اصلی", callback_data="home")]
+        ]))
+
     elif data == "user_profile":
         await query.answer()
         await user_profile_handler(query)
@@ -3761,6 +3513,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
     if re.match(r"^\s*(?:دوبل|قمار|ریسک)\s+(\d+)\s*$", msg):
         await double_or_nothing_cmd(update, context)
     elif msg in ["تاکتیک", "tactic", "tactics", "استراتژی"]: await tactics_menu_cmd(update, context)
+    elif msg in ["ارتقا", "ارتقاء", "evo", "upgrade", "اوولوشن"]: await evolution_menu_cmd(update, context)
     elif msg in ["پک روزانه", "پک رایگان", "dailypack"]: await daily_pack_cmd(update, context)
     elif msg in ["دوئل", "duel", "چالش"]: await trigger_duel(update, context)
     elif msg in ["پنالتی", "پنالتی کشی", "penalty"]: await trigger_penalty_shootout(update, context)
@@ -3847,6 +3600,7 @@ def main():
     app.add_handler(CommandHandler("lineup", lineup_cmd))
     app.add_handler(CommandHandler("tactic", tactics_menu_cmd))
     app.add_handler(CommandHandler("tactics", tactics_menu_cmd))
+    app.add_handler(CommandHandler(["evo", "evolution", "upgrade"], evolution_menu_cmd))
     app.add_handler(CommandHandler("quests", quests_cmd))
     app.add_handler(CommandHandler("double", double_or_nothing_cmd))
     app.add_handler(CommandHandler("risk", double_or_nothing_cmd))
