@@ -5,7 +5,7 @@ def get_main_menu():
     keyboard = [
         [
             InlineKeyboardButton("⚡ مسابقات امروز", callback_data="select_matches_today"),
-            InlineKeyboardButton("📅 مسابقات فردا", callback_data="select_matches_tomorrow")
+            InlineKeyboardButton("📅 بازی‌های فردا", callback_data="select_matches_tomorrow")
         ],
         [
             InlineKeyboardButton("🛡️ ترکیب و تیم من", callback_data="view_lineup"),
@@ -16,37 +16,41 @@ def get_main_menu():
             InlineKeyboardButton("🏆 جدول لیگ سراسری", callback_data="select_standings_league")
         ],
         [
-            InlineKeyboardButton("🎯 پیش‌بینی مسابقات", callback_data="predictions_hub"),
-            InlineKeyboardButton("🏦 جک‌پات هفتگی", callback_data="jackpot_hub")
+            InlineKeyboardButton("🎯 تالار پیش‌بینی", callback_data="predictions_hub"),
+            InlineKeyboardButton("🎰 جک‌پات کمبو", callback_data="jackpot_hub")
         ],
         [
-            InlineKeyboardButton("🎰 گردونه شانس", callback_data="spin_wheel"),
+            InlineKeyboardButton("🎡 گردونه شانس", callback_data="spin_wheel"),
             InlineKeyboardButton("👤 پروفایل کاربری", callback_data="user_profile")
         ],
         [
-            InlineKeyboardButton("🎖️ لیدربورد برترین‌ها", callback_data="leaderboard_hub")
+            InlineKeyboardButton("🎖️ رده‌بندی سیزن (لیدربورد)", callback_data="leaderboard_hub")
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_matches_leagues_keyboard(action_prefix="today"):
-    """کیبورد انتخاب لیگ برای مشاهده بازی‌ها و پیش‌بینی"""
+    """کیبورد انتخاب لیگ سازگار با تمامی پیشوندهای today و tmrw"""
+    prefix = "today" if action_prefix == "today" else "tmrw"
     keyboard = [
         [
-            InlineKeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 لیگ برتر انگلیس", callback_data=f"{action_prefix}_eng.1"),
-            InlineKeyboardButton("🇪🇸 لالیگا اسپانیا", callback_data=f"{action_prefix}_esp.1")
+            InlineKeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 لیگ جزیره", callback_data=f"{prefix}_eng.1"),
+            InlineKeyboardButton("🇪🇸 لالیگا", callback_data=f"{prefix}_esp.1")
         ],
         [
-            InlineKeyboardButton("🇮🇹 سری آ ایتالیا", callback_data=f"{action_prefix}_ita.1"),
-            InlineKeyboardButton("🇩🇪 بوندسلیگا آلمان", callback_data=f"{action_prefix}_ger.1")
+            InlineKeyboardButton("🇮🇹 سری آ", callback_data=f"{prefix}_ita.1"),
+            InlineKeyboardButton("🇩🇪 بوندسلیگا", callback_data=f"{prefix}_ger.1")
         ],
         [
-            InlineKeyboardButton("🇫🇷 لیگ ۱ فرانسه", callback_data=f"{action_prefix}_fra.1"),
-            InlineKeyboardButton("🏆 لیگ قهرمانان اروپا", callback_data=f"{action_prefix}_uefa.champions")
+            InlineKeyboardButton("🇫🇷 لوشامپیونه", callback_data=f"{prefix}_fra.1"),
+            InlineKeyboardButton("🏆 لیگ قهرمانان", callback_data=f"{prefix}_uefa.champions")
         ],
         [
-            InlineKeyboardButton("🇮🇷 لیگ برتر ایران", callback_data=f"{action_prefix}_irn.1"),
-            InlineKeyboardButton("🌍 تورنمنت‌های ملی و بین‌المللی", callback_data=f"{action_prefix}_all")
+            InlineKeyboardButton("🇮🇷 لیگ برتر ایران", callback_data=f"{prefix}_irn.1"),
+            InlineKeyboardButton("🌍 بازی‌های ملی", callback_data=f"{prefix}_fifa.friendly")
+        ],
+        [
+            InlineKeyboardButton("🌐 گلچین مسابقات معتبر", callback_data=f"{prefix}_all")
         ],
         [
             InlineKeyboardButton("‹ بازگشت به منوی اصلی", callback_data="home")
@@ -54,10 +58,31 @@ def get_matches_leagues_keyboard(action_prefix="today"):
     ]
     return InlineKeyboardMarkup(keyboard)
 
-def get_back_button():
-    """دکمه استاندارد بازگشت به منوی اصلی"""
+def get_standings_leagues_keyboard():
+    """کیبورد انتخاب لیگ برای جدول رده‌بندی"""
+    keyboard = [
+        [
+            InlineKeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 لیگ جزیره", callback_data="table_eng.1"),
+            InlineKeyboardButton("🇪🇸 لالیگا", callback_data="table_esp.1")
+        ],
+        [
+            InlineKeyboardButton("🇮🇹 سری آ", callback_data="table_ita.1"),
+            InlineKeyboardButton("🇩🇪 بوندسلیگا", callback_data="table_ger.1")
+        ],
+        [
+            InlineKeyboardButton("🇫🇷 لوشامپیونه", callback_data="table_fra.1"),
+            InlineKeyboardButton("🇮🇷 لیگ برتر ایران", callback_data="table_irn.1")
+        ],
+        [
+            InlineKeyboardButton("‹ بازگشت به منوی اصلی", callback_data="home")
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_back_button(target="home"):
+    """دکمه استاندارد بازگشت"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("‹ بازگشت به منوی اصلی", callback_data="home")]
+        [InlineKeyboardButton("‹ بازگشت به منوی اصلی", callback_data=target)]
     ])
 
 def get_pagination_keyboard(current_page, total_pages, prefix):
