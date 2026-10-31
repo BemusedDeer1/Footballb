@@ -4,6 +4,7 @@ FC_CATALOG = [
     # =========================================================================
     # 💎 ICONS & LEGENDS (OVR 90+) [70 PLAYERS]
     # =========================================================================
+    {"name": "نمانیا ویدیچ", "pos": "DEF", "ovr": 96, "rarity": "ICON", "nation": "صربستان 🇷🇸", "club": "منچستر یونایتد", "playstyles": ["Bruiser 🛡", "Anticipate 🛑", "Block 🧱", "Aerial ✈️", "Intercept ⛓", "Relentless ⚡️"]},
     {"name": "پله", "pos": "FWD", "ovr": 95, "rarity": "ICON", "nation": "برزیل 🇧🇷", "club": "سانتوس", "playstyles": ["Power Shot 🚀", "Finesse Shot 🎯", "Acrobatic 🤸‍♂️", "Aerial ✈️"]},
     {"name": "دیگو مارادونا", "pos": "MID", "ovr": 95, "rarity": "ICON", "nation": "آرژانتین 🇦🇷", "club": "ناپولی", "playstyles": ["Finesse Shot 🎯", "Incisive Pass 🪄", "Tiki-Taka 🔀"]},
     {"name": "زین‌الدین زیدان", "pos": "MID", "ovr": 94, "rarity": "ICON", "nation": "فرانسه 🇫🇷", "club": "رئال مادرید", "playstyles": ["Incisive Pass 🪄", "Tiki-Taka 🔀", "Finesse Shot 🎯"]},
