@@ -4181,8 +4181,740 @@ def main():
 
     logger.info("Football Hub Bot running smoothly!")
     app.run_polling(drop_pending_updates=True)
-from bot_patches import *
-callback_router = wrap_callback_router(callback_router)
+# ---------------------------------------------------------------------------
+# تعاریف تاکتیک‌ها و دیکشنری‌ها
+# ---------------------------------------------------------------------------
+
+TACTIC_NAMES = {
+    "TIKI_TAKA": "🪄 تیکی‌تاکا (پاس‌کاری کوتاه و مالکیت)",
+    "GEGENPRESS": "⚡ گگن‌پرس (فشار سنگین و پرس شدید)",
+    "FAST_COUNTER": "🚀 ضدحمله سریع (انتقال برق‌آسا)",
+    "PARK_BUS": "🧱 اتوبوسی (دفاع چندلایه و بسته)",
+    "HIGH_LINE": "🔴 خط دفاعی بالا (پرس در زمین حریف)",
+    "BALANCED": "🟡 متعادل و استاندارد",
+    "DEEP": "🔵 دفاع عمقی و عقب‌نشینی",
+    "SHORT": "🎯 بازیسازی با پاس کوتاه",
+    "LONG": "🚀 بازیسازی با ارسال‌های بلند",
+    "ALL_OUT": "🔥 هجوم همه‌جانبه و پرریسک",
+}
+
+DEFAULT_TACTIC = {
+    "style": "TIKI_TAKA",
+    "depth": "BALANCED",
+    "buildup": "SHORT",
+    "risk": "BALANCED"
+}
+
+CORRECTION_MAP = {
+    "TIKI": "TIKI_TAKA",
+    "FAST": "FAST_COUNTER",
+    "PARK": "PARK_BUS",
+    "HIGH": "HIGH_LINE",
+    "ALL": "ALL_OUT"
+}
+
+LEAGUE_TITLES_MAP = {
+    "eng.1": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 لیگ جزیره انگلیس",
+    "esp.1": "🇪🇸 لالیگا اسپانیا",
+    "ita.1": "🇮🇹 سری آ ایتالیا",
+    "ger.1": "🇩🇪 بوندسلیگا آلمان",
+    "fra.1": "🇫🇷 لوشامپیونه فرانسه",
+    "uefa.champions": "🏆 لیگ قهرمانان اروپا",
+    "fifa.friendly": "🌍 بازی‌های ملی و فیفادی",
+    "uefa.nations": "🇪🇺 لیگ ملت‌های اروپا",
+    "fifa.worldq.afc": "🌏 انتخابی جام جهانی (آسیا)",
+    "fifa.worldq.uefa": "🏆 انتخابی جام جهانی (اروپا)",
+    "irn.1": "🇮🇷 لیگ برتر ایران",
+    "all": "🌐 گلچین مسابقات معتبر"
+}
+
+# ---------------------------------------------------------------------------
+# ویرایش امن پیام‌های تلگرام
+# ---------------------------------------------------------------------------
+
+async def safe_edit_message(query_or_update, text, reply_markup=None):
+    try:
+        query = None
+        if hasattr(query_or_update, "callback_query") and query_or_update.callback_query:
+            query = query_or_update.callback_query
+        elif hasattr(query_or_update, "edit_message_text"):
+            query = query_or_update
+
+        if query:
+            if hasattr(query, "message") and query.message:
+                await query.message.edit_text(text=text, reply_markup=reply_markup, parse_mode="HTML")
+            else:
+                await query.edit_message_text(text=text, reply_markup=reply_markup, parse_mode="HTML")
+            return True
+        elif hasattr(query_or_update, "effective_message") and query_or_update.effective_message:
+            await query_or_update.effective_message.reply_text(text=text, reply_markup=reply_markup, parse_mode="HTML")
+            return True
+    except BadRequest as e:
+        if "Message is not modified" not in str(e):
+            logger.warning(f"BadRequest: {e}")
+    except Exception as e:
+        logger.debug(f"safe_edit_message: {e}")
+    return False
+
+# ---------------------------------------------------------------------------
+# دریافت و بازیابی خودکار تاکتیک پیش‌فرض
+# ---------------------------------------------------------------------------
+
+async def get_user_tactics(user_id: int) -> dict:
+    try:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS user_tactics (
+                    user_id INTEGER PRIMARY KEY,
+                    style TEXT DEFAULT 'TIKI_TAKA',
+                    depth TEXT DEFAULT 'BALANCED',
+                    buildup TEXT DEFAULT 'SHORT',
+                    risk TEXT DEFAULT 'BALANCED',
+                    updated_at TEXT
+                )
+            """)
+            await db.commit()
+
+            async with db.execute(
+                "SELECT style, depth, buildup, risk FROM user_tactics WHERE user_id = ?",
+                (user_id,)
+            ) as cur:
+                row = await cur.fetchone()
+                if row and row[0]:
+                    style = CORRECTION_MAP.get(row[0], row[0])
+                    depth = CORRECTION_MAP.get(row[1], row[1])
+                    buildup = CORRECTION_MAP.get(row[2], row[2])
+                    risk = CORRECTION_MAP.get(row[3], row[3])
+                    return {
+                        "style": style or "TIKI_TAKA",
+                        "depth": depth or "BALANCED",
+                        "buildup": buildup or "SHORT",
+                        "risk": risk or "BALANCED"
+                    }
+
+            now_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
+            await db.execute("""
+                INSERT OR IGNORE INTO user_tactics (user_id, style, depth, buildup, risk, updated_at)
+                VALUES (?, 'TIKI_TAKA', 'BALANCED', 'SHORT', 'BALANCED', ?)
+            """, (user_id, now_str))
+            await db.commit()
+    except Exception as e:
+        logger.error(f"Error in get_user_tactics: {e}")
+
+    return DEFAULT_TACTIC.copy()
+
+# ---------------------------------------------------------------------------
+# کیبوردهای انتخاب مراحل تاکتیک
+# ---------------------------------------------------------------------------
+
+def get_tactic_step1_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🪄 تیکی‌تاکا (مالکیت و پاس کوتاه)", callback_data="save_tac_style_TIKI_TAKA")],
+        [InlineKeyboardButton("⚡ گگن‌پرس (فشار سنگین و پرس شدید)", callback_data="save_tac_style_GEGENPRESS")],
+        [InlineKeyboardButton("🚀 ضدحمله سریع (انتقال برق‌آسا)", callback_data="save_tac_style_FAST_COUNTER")],
+        [InlineKeyboardButton("🧱 اتوبوسی (دفاع چندلایه و بسته)", callback_data="save_tac_style_PARK_BUS")],
+        [InlineKeyboardButton("‹ بازگشت به اتاق تاکتیک", callback_data="open_tactics")]
+    ])
+
+def get_tactic_step2_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔴 خط دفاعی بالا (High Line)", callback_data="save_tac_depth_HIGH_LINE")],
+        [InlineKeyboardButton("🟡 متعادل و استاندارد (Balanced)", callback_data="save_tac_depth_BALANCED")],
+        [InlineKeyboardButton("🔵 دفاع عمقی و عقب‌نشینی (Deep)", callback_data="save_tac_depth_DEEP")],
+        [InlineKeyboardButton("‹ بازگشت به اتاق تاکتیک", callback_data="open_tactics")]
+    ])
+
+def get_tactic_step3_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎯 پاس‌های کوتاه (Short Passing)", callback_data="save_tac_buildup_SHORT")],
+        [InlineKeyboardButton("🚀 ارسال‌های بلند (Long Ball)", callback_data="save_tac_buildup_LONG")],
+        [InlineKeyboardButton("‹ بازگشت به اتاق تاکتیک", callback_data="open_tactics")]
+    ])
+
+def get_tactic_step4_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔥 هجوم همه‌جانبه و پرریسک (All-Out)", callback_data="save_tac_risk_ALL_OUT")],
+        [InlineKeyboardButton("⚖️ متعادل و منطقی (Balanced)", callback_data="save_tac_risk_BALANCED")],
+        [InlineKeyboardButton("‹ بازگشت به اتاق تاکتیک", callback_data="open_tactics")]
+    ])
+
+async def tactics_menu_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if "ensure_user" in globals():
+        try:
+            await ensure_user(user)
+        except Exception:
+            pass
+
+    tac = await get_user_tactics(user.id)
+    safe_name = html.escape(user.first_name or f"کاربر {user.id}")
+
+    text = (
+        f"📋 <b>اتاق تاکتیک و استراتژی مربیگری: {safe_name}</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"▪ <b>سبک بازی (Style):</b>\n   ↳ {TACTIC_NAMES.get(tac['style'], tac['style'])}\n\n"
+        f"▪ <b>عمق دفاع (Depth):</b>\n   ↳ {TACTIC_NAMES.get(tac['depth'], tac['depth'])}\n\n"
+        f"▪ <b>نوع بازیسازی (Build-Up):</b>\n   ↳ {TACTIC_NAMES.get(tac['buildup'], tac['buildup'])}\n\n"
+        f"▪ <b>درجه هجوم و ریسک (Risk):</b>\n   ↳ {TACTIC_NAMES.get(tac['risk'], tac['risk'])}\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        "🧠 <i>تاکتیک شما تاثیر مستقیم بر شانس گلزنی و خنثی‌سازی سبک حریف در مسابقات و لیگ دارد.</i>\n\n"
+        "👇 برای شخصی‌سازی، بخش مورد نظر را انتخاب کنید:"
+    )
+
+    kb_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("1️⃣ تغییر سبک بازی (Style)", callback_data="set_tac_step1")],
+        [InlineKeyboardButton("2️⃣ عمق خط دفاعی (Depth)", callback_data="set_tac_step2")],
+        [InlineKeyboardButton("3️⃣ نحوه بازیسازی (Build-Up)", callback_data="set_tac_step3")],
+        [InlineKeyboardButton("4️⃣ ریسک و میزان هجوم (Risk)", callback_data="set_tac_step4")],
+        [
+            InlineKeyboardButton("🛡️ مشاهده ترکیب من", callback_data="view_lineup"),
+            InlineKeyboardButton("‹ بازگشت به منوی اصلی", callback_data="home")
+        ]
+    ])
+
+    await safe_edit_message(update, text, reply_markup=kb_markup)
+
+# ---------------------------------------------------------------------------
+# تسویه حساب قطعی لیگ و ارسال جدول به چت
+# ---------------------------------------------------------------------------
+
+async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str, chat_id: int = None):
+    async with db.execute("""
+        SELECT s.user_id, u.first_name, s.points, s.gd, s.won, s.drawn, s.lost, s.gf, s.ga
+        FROM league_standings s 
+        LEFT JOIN users u ON s.user_id = u.user_id
+        WHERE s.season_id = ? 
+        ORDER BY s.points DESC, s.gd DESC, s.gf DESC
+    """, (s_id,)) as cur:
+        final_ranks = await cur.fetchall()
+
+    if not final_ranks:
+        await db.execute("UPDATE league_seasons SET status = 'FINISHED' WHERE season_id = ?", (s_id,))
+        await db.commit()
+        return
+
+    prizes = {0: (5000, 1000), 1: (3000, 600), 2: (1800, 400)}
+    summary = (
+        f"🏆 <b>پایان فصل و اعلام جدول رسمی لیگ سراسری</b>\n"
+        f"🆔 شناسه لیگ: <code>{s_id}</code>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+    )
+
+    for idx, (uid, name, pts, gd, w, d, l, gf, ga) in enumerate(final_ranks):
+        p_pts, p_xp = prizes.get(idx, (500, 150))
+        await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (p_pts, uid))
+        try:
+            await db.execute("UPDATE users SET profile_xp = profile_xp + ? WHERE user_id = ?", (p_xp, uid))
+        except Exception:
+            pass
+        
+        medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"<b>#{idx+1}</b>"))
+        safe_name = html.escape(name or f"کاربر {uid}")
+        summary += f"{medal} <b>{safe_name}</b> | <b>{pts}</b> امتیاز (تفاضل: <b>{gd:+d}</b>)\n"
+        summary += f"   🎁 جایزه: <code>+{p_pts:,}</code> سکه | <code>+{p_xp}</code> XP\n\n"
+
+    summary += "━━━━━━━━━━━━━━━━━━━━━━\n"
+    summary += "🎉 تبریک به قهرمانان این فصل لیگ!\n"
+    summary += "⚡ ادمین محترم می‌تواند با دستور <code>/l_on</code> فصل جدید را استارت بزند."
+
+    await db.execute("UPDATE league_seasons SET status = 'FINISHED' WHERE season_id = ?", (s_id,))
+    await db.commit()
+
+    if chat_id and context and context.bot:
+        try:
+            await context.bot.send_message(chat_id=chat_id, text=summary, parse_mode="HTML")
+        except Exception as e:
+            logger.error(f"Error sending final league summary: {e}")
+
+# ---------------------------------------------------------------------------
+# دستور اتمام فوری لیگ (l_end)
+# ---------------------------------------------------------------------------
+
+async def finish_league_instantly_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if str(user.id) != str(ADMIN_ID):
+        await update.message.reply_text("⛔ این دستور اختصاصی ادمین اصلی ربات است.")
+        return
+
+    cid = update.effective_chat.id
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        await db.execute("PRAGMA journal_mode=WAL;")
+        async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE'") as cur:
+            row = await cur.fetchone()
+            if not row:
+                await update.message.reply_text("❌ هیچ لیگ فعالی در حال برگزاری نیست!")
+                return
+            s_id = row[0]
+
+        async with db.execute("""
+            SELECT id, home_user_id, away_user_id 
+            FROM league_fixtures 
+            WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')
+        """, (s_id,)) as cur:
+            pending = await cur.fetchall()
+
+        await update.message.reply_text(f"⚡ در حال شبیه‌سازی سریع {len(pending)} بازی باقیمانده و تسویه حساب لیگ...")
+
+        now_time = get_iran_now().strftime("%Y-%m-%d %H:%M")
+        for f_id, h_id, a_id in pending:
+            async with db.execute("SELECT rating FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (h_id,)) as ccur:
+                h_rows = await ccur.fetchall()
+            async with db.execute("SELECT rating FROM user_cards WHERE user_id = ? AND is_in_lineup = 1", (a_id,)) as ccur:
+                a_rows = await ccur.fetchall()
+
+            h_rat = sum([r[0] for r in h_rows]) if h_rows else 375
+            a_rat = sum([r[0] for r in a_rows]) if a_rows else 375
+
+            prob_h = 0.45 + ((h_rat - a_rat) / 2000.0)
+            prob_h = max(0.15, min(0.75, prob_h))
+
+            rv = random.random()
+            if rv < prob_h:
+                s1, s2 = random.randint(1, 4), random.randint(0, 2)
+            elif rv < prob_h + 0.25:
+                s1 = s2 = random.randint(0, 3)
+            else:
+                s1, s2 = random.randint(0, 2), random.randint(1, 4)
+
+            w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
+            w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
+
+            await db.execute("""
+                UPDATE league_fixtures 
+                SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? 
+                WHERE id = ?
+            """, (s1, s2, now_time, f_id))
+
+            await db.execute("""
+                UPDATE league_standings 
+                SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?, 
+                    gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
+                WHERE season_id = ? AND user_id = ?
+            """, (w1, d1, l1, s1, s2, s1 - s2, pts1, s_id, h_id))
+
+            await db.execute("""
+                UPDATE league_standings 
+                SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?, 
+                    gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
+                WHERE season_id = ? AND user_id = ?
+            """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
+
+        await db.commit()
+        await settle_league_season(context, db, s_id, chat_id=cid)
+
+# ---------------------------------------------------------------------------
+# دستور جدول لیگ (league_cmd)
+# ---------------------------------------------------------------------------
+
+async def league_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        async with db.execute("""
+            SELECT season_id, status, created_at 
+            FROM league_seasons 
+            WHERE status = 'ACTIVE' 
+            ORDER BY created_at DESC LIMIT 1
+        """) as cur:
+            season_row = await cur.fetchone()
+
+        is_active = True
+        if not season_row:
+            is_active = False
+            async with db.execute("""
+                SELECT season_id, status, created_at 
+                FROM league_seasons 
+                WHERE status = 'FINISHED' 
+                ORDER BY created_at DESC LIMIT 1
+            """) as cur:
+                season_row = await cur.fetchone()
+
+        if not season_row:
+            msg_text = (
+                "🏆 <b>لیگ سراسری فوتبال FC</b>\n\n"
+                "❌ در حال حاضر هیچ لیگی فعال نیست.\n"
+                "⚡ ادمین می‌تواند با دستور <code>/l_on</code> لیگ جدید را آغاز کند."
+            )
+            await safe_edit_message(update, msg_text, reply_markup=kb.get_back_button())
+            return
+
+        s_id, status, c_date = season_row
+        status_label = "🟢 در حال برگزاری" if is_active else "🏁 پایان‌یافته"
+
+        async with db.execute("""
+            SELECT s.user_id, u.first_name, s.played, s.won, s.drawn, s.lost, s.gf, s.ga, s.gd, s.points
+            FROM league_standings s 
+            LEFT JOIN users u ON s.user_id = u.user_id
+            WHERE s.season_id = ? 
+            ORDER BY s.points DESC, s.gd DESC, s.gf DESC
+        """, (s_id,)) as cur:
+            standings = await cur.fetchall()
+
+        text = (
+            f"🏆 <b>جدول رده‌بندی لیگ سراسری</b> ({status_label})\n"
+            f"🆔 شناسه: <code>{s_id}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"<code>رتبه | تیم | بازی | تفاضل | امتیاز</code>\n"
+        )
+
+        for idx, (uid, name, p, w, d, l, gf, ga, gd, pts) in enumerate(standings):
+            medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
+            safe_name = html.escape(name or f"کاربر {uid}")[:12]
+            text += f"{medal} <b>{safe_name}</b> | {p} ب | {gd:+d} | <b>{pts}</b> امتیـاز\n"
+
+        text += "━━━━━━━━━━━━━━━━━━━━━━\n"
+        if is_active:
+            text += "⚽ بازی‌ها به صورت روزانه شبیه‌سازی می‌شوند.\n"
+            text += "💡 ادمین می‌تواند با <code>/pl</code> یک دور بازی را شبیه‌سازی کند."
+        else:
+            text += "✅ مسابقات این فصل به پایان رسیده و جوایز اهدا شده است."
+
+    await safe_edit_message(update, text, reply_markup=kb.get_back_button())
+
+# ---------------------------------------------------------------------------
+# گردونه شانس بدون پوچ (spin_wheel_cmd)
+# ---------------------------------------------------------------------------
+
+async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    today_str = get_iran_now().strftime("%Y-%m-%d")
+
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        async with db.execute("SELECT last_spin_date, points FROM users WHERE user_id = ?", (user.id,)) as cur:
+            row = await cur.fetchone()
+            last_date = row[0] if row else ""
+            current_pts = row[1] if row else 0
+
+        if last_date == today_str:
+            msg = "⏳ شما گردونه شانس امروز را چرخانده‌اید!\nفردا برای چرخش دوباره بازگردید."
+            await safe_edit_message(update, msg, reply_markup=kb.get_back_button())
+            return
+
+        wheel_options = [
+            (50, 30),
+            (100, 30),
+            (200, 20),
+            (350, 12),
+            (600, 6),
+            (1200, 2),
+        ]
+
+        prizes, weights = zip(*wheel_options)
+        won_amount = random.choices(prizes, weights=weights, k=1)[0]
+
+        await db.execute("""
+            UPDATE users 
+            SET points = points + ?, last_spin_date = ? 
+            WHERE user_id = ?
+        """, (won_amount, today_str, user.id))
+        await db.commit()
+
+    res_msg = (
+        f"🎰 <b>گردونه شانس چرخید و متوقف شد!</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🎁 تبریک! شما برنده <b>+{won_amount:,} سکه</b> شدید!\n"
+        f"💰 موجودی جدید شما: <b>{(current_pts + won_amount):,} سکه</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"⏳ چرخش بعدی فردا فعال خواهد شد."
+    )
+
+    await safe_edit_message(update, res_msg, reply_markup=kb.get_back_button())
+
+# ---------------------------------------------------------------------------
+# پردازشگر جامع کلمات فارسی (handle_group_messages)
+# ---------------------------------------------------------------------------
+
+async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_message or not update.effective_message.text:
+        return
+
+    raw_text = update.effective_message.text.strip().lower()
+    msg = raw_text.replace("ي", "ی").replace("ك", "ک").replace("\u200c", "").replace("  ", " ").strip()
+
+    # منوی اصلی
+    if msg in ["منو", "منوی اصلی", "منوی ربات", "menu", "شروع", "start"]:
+        await start(update, context)
+    # ترکیب
+    elif msg in ["ترکیب", "ترکیب من", "تیم", "تیم من", "lineup", "squad"]:
+        await lineup_cmd(update, context)
+    # تاکتیک
+    elif msg in ["تاکتیک", "تاکتیک‌ها", "تاکتیکها", "tactic", "tactics"]:
+        await tactics_menu_cmd(update, context)
+    # لیگ
+    elif msg in ["لیگ", "جدول لیگ", "league"]:
+        await league_cmd(update, context)
+    # مارکت
+    elif msg in ["مارکت", "فروشگاه", "بازار", "market", "shop"]:
+        await market_cmd(update, context)
+    # فروش
+    elif msg in ["فروش", "فروش کارت", "sell"]:
+        await sell_menu_cmd(update, context)
+    # کارت‌های من
+    elif msg in ["کارت‌های من", "کارت های من", "کارت‌هام", "کارت هام", "کارت‌ها", "کارتها", "mycards"]:
+        await my_cards_cmd(update, context)
+    # ارتقا
+    elif msg in ["ارتقا", "ارتقاء", "پیشرفت", "evo", "upgrade"]:
+        await evolution_menu_cmd(update, context)
+    # پک روزانه
+    elif msg in ["پک روزانه", "پک رایگان", "dailypack", "free pack"]:
+        await daily_pack_cmd(update, context)
+    # دوئل
+    elif msg in ["دوئل", "کل‌کل", "کلکل", "duel"]:
+        await trigger_duel(update, context)
+    # پنالتی
+    elif msg in ["پنالتی", "penalty"]:
+        await trigger_penalty_shootout(update, context)
+    # کارت بازی
+    elif msg in ["کارت بازی", "کارت‌بازی", "cardmatch"]:
+        await trigger_card_match(update, context)
+    # شوت
+    elif msg in ["شوت", "شوت روزانه", "shoot"]:
+        await daily_shoot_cmd(update, context)
+    # پاداش
+    elif msg in ["جایزه", "پاداش", "جایزه روزانه", "daily"]:
+        await daily_reward_cmd(update, context)
+    # گردونه
+    elif msg in ["گردونه", "گردونه شانس", "wheel"]:
+        await spin_wheel_cmd(update, context)
+    # جک‌پات
+    elif msg in ["جکپات", "جک‌پات", "jackpot"]:
+        await jackpot_cmd(update, context)
+    # لیدربورد
+    elif msg in ["لیدربورد", "رتبه‌بندی", "رتبه بندی", "جدول برترین‌ها", "top", "ranking"]:
+        await leaderboard_cmd(update, context)
+    # ماموریت‌ها
+    elif msg in ["ماموریت", "ماموریت‌ها", "ماموریتها", "quests"]:
+        await quests_cmd(update, context)
+    # پروفایل
+    elif msg in ["پروفایل", "مشخصات", "profile", "stats", "آمار"]:
+        target_user = update.effective_user
+        if update.message and update.message.reply_to_message:
+            target_user = update.message.reply_to_message.from_user
+        await user_profile_handler(update.effective_message, target_user=target_user)
+    # شرط‌بندی دابل
+    elif re.match(r"^\s*(?:دابل|شرط|کازینو|double)\s+(\d+)\s*$", msg):
+        await double_or_nothing_cmd(update, context)
+
+# ---------------------------------------------------------------------------
+# رَپر جامع callback_router (پوشش کامل تاکتیک‌ها و مسابقات زنده)
+# ---------------------------------------------------------------------------
+
+_orig_callback_router = callback_router
+
+async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if not query:
+        return
+    data = query.data
+    uid = update.effective_user.id
+
+    # باز کردن اتاق تاکتیک
+    if data == "open_tactics":
+        await query.answer()
+        await tactics_menu_cmd(update, context)
+        return
+
+    # مراحل ۴ گانه تغییر تاکتیک (Style, Depth, Buildup, Risk)
+    elif data == "set_tac_step1":
+        await query.answer()
+        await safe_edit_message(
+            query,
+            "🪄 <b>انتخاب سبک بازی تیم (Style):</b>\n"
+            "سبک مورد نظر خود را برای اعمال روی تیم انتخاب کنید:\n\n"
+            "• <b>تیکی‌تاکا:</b> تسلط بر زمین با پاس‌های کوتاه و مالکیت بالا\n"
+            "• <b>گگن‌پرس:</b> پرس شدید در زمین حریف و بازپس‌گیری سریع\n"
+            "• <b>ضدحمله سریع:</b> انتقال برق‌آسا به هجوم پس از قطع توپ\n"
+            "• <b>اتوبوسی:</b> دفاع فشرده و چندلایه با ریسک حداقل",
+            reply_markup=get_tactic_step1_kb()
+        )
+        return
+
+    elif data == "set_tac_step2":
+        await query.answer()
+        await safe_edit_message(
+            query,
+            "📏 <b>تنظیم عمق خط دفاعی (Defensive Depth):</b>\n"
+            "میزان پیشروی خط دفاعی تیم خود را مشخص کنید:\n\n"
+            "• <b>خط دفاعی بالا:</b> تحت فشار گذاشتن حریف در زمین خودی\n"
+            "• <b>متعادل:</b> موضع‌گیری استاندارد دفاعی\n"
+            "• <b>دفاع عمقی:</b> تجمع در نزدیکی محوطه جریمه خودی",
+            reply_markup=get_tactic_step2_kb()
+        )
+        return
+
+    elif data == "set_tac_step3":
+        await query.answer()
+        await safe_edit_message(
+            query,
+            "🎯 <b>نحوه بازیسازی و انتقال توپ (Build-Up Play):</b>\n"
+            "شیوه پیشروی بازیکنان برای رسیدن به دروازه حریف:\n\n"
+            "• <b>پاس کوتاه:</b> بازیسازی پله‌پله و آرام از عقب زمین\n"
+            "• <b>ارسال بلند:</b> ارسال مستقیم برای مهاجمان نوک هدف",
+            reply_markup=get_tactic_step3_kb()
+        )
+        return
+
+    elif data == "set_tac_step4":
+        await query.answer()
+        await safe_edit_message(
+            query,
+            "🔥 <b>میزان ریسک و شدت هجوم (Risk Level):</b>\n"
+            "تعداد نفرات اضافه شونده به حمله را مشخص کنید:\n\n"
+            "• <b>هجوم همه‌جانبه:</b> اضافه شدن مدافعان و ریسک گل خوردن\n"
+            "• <b>متعادل و منطقی:</b> حفظ توازن در هنگام حمله",
+            reply_markup=get_tactic_step4_kb()
+        )
+        return
+
+    # ذخیره انتخاب‌های تاکتیکی (save_tac_*)
+    elif data.startswith("save_tac_"):
+        parts = data.split("_", 3)
+        if len(parts) >= 4:
+            field, val = parts[2], parts[3]
+            now_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
+            try:
+                async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+                    await db.execute("""
+                        CREATE TABLE IF NOT EXISTS user_tactics (
+                            user_id INTEGER PRIMARY KEY,
+                            style TEXT DEFAULT 'TIKI_TAKA',
+                            depth TEXT DEFAULT 'BALANCED',
+                            buildup TEXT DEFAULT 'SHORT',
+                            risk TEXT DEFAULT 'BALANCED',
+                            updated_at TEXT
+                        )
+                    """)
+                    await db.execute("""
+                        INSERT INTO user_tactics (user_id, style, depth, buildup, risk, updated_at) 
+                        VALUES (?, 'TIKI_TAKA', 'BALANCED', 'SHORT', 'BALANCED', ?) 
+                        ON CONFLICT(user_id) DO NOTHING
+                    """, (uid, now_str))
+                    await db.execute(f"UPDATE user_tactics SET {field} = ?, updated_at = ? WHERE user_id = ?", (val, now_str, uid))
+                    await db.commit()
+                val_title = TACTIC_NAMES.get(val, val)
+                await query.answer(f"✅ انتخاب شد: {val_title[:20]}", show_alert=False)
+            except Exception as e:
+                logger.error(f"Error saving tactic: {e}")
+                await query.answer("✅ تاکتیک ذخیره شد.")
+
+        await tactics_menu_cmd(update, context)
+        return
+
+    # مسابقات امروز و فردا
+    elif data == "select_matches_today":
+        await query.answer()
+        await safe_edit_message(
+            query,
+            "⚽ <b>انتخاب لیگ برای مسابقات امروز:</b>\nلیگ مورد نظر خود را انتخاب کنید:",
+            reply_markup=kb.get_matches_leagues_keyboard("today")
+        )
+        return
+
+    elif data == "select_matches_tomorrow":
+        await query.answer()
+        await safe_edit_message(
+            query,
+            "📅 <b>انتخاب لیگ برای مسابقات فردا:</b>\nلیگ مورد نظر خود را انتخاب کنید:",
+            reply_markup=kb.get_matches_leagues_keyboard("tmrw")
+        )
+        return
+
+    # نمایش بازی‌های لیگ‌ها (today_* یا tmrw_* یا tomorrow_*)
+    elif data.startswith("today_") or data.startswith("tmrw_") or data.startswith("tomorrow_"):
+        await query.answer("⏳ دریافت مسابقات...")
+        is_today = data.startswith("today_")
+        prefix = "today_" if is_today else ("tmrw_" if data.startswith("tmrw_") else "tomorrow_")
+        league_code = data.replace(prefix, "")
+
+        target_date = get_iran_now() if is_today else (get_iran_now() + timedelta(days=1))
+        date_str = target_date.strftime("%Y%m%d")
+        day_label = "امروز" if is_today else "فردا"
+        title = LEAGUE_TITLES_MAP.get(league_code, "مسابقات فوتبال")
+
+        matches = []
+        if "provider" in globals():
+            try:
+                matches = await provider.get_matches(date_str, league_code=league_code)
+            except Exception as e:
+                logger.error(f"Error getting matches for {league_code}: {e}")
+
+        if not matches:
+            await safe_edit_message(
+                query,
+                f"⏳ مسابقه‌ای برای <b>{title}</b> در تاریخ <b>{day_label}</b> یافت نشد.\n"
+                f"💡 ممکن است در روزهای آینده برگزار شود یا لیگ در تعطیلات باشد.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("‹ انتخاب لیگ دیگر", callback_data=f"select_matches_{'today' if is_today else 'tomorrow'}")],
+                    [InlineKeyboardButton("‹ بازگشت به منوی اصلی", callback_data="home")]
+                ])
+            )
+            return
+
+        text = f"⚽️ <b>برنامه مسابقات {title} ({day_label}):</b>\n────────────────────\n\n"
+        for m in matches[:10]:
+            if "id" in m and "MATCH_CACHE" in globals():
+                MATCH_CACHE[m["id"]] = m
+            format_fn = globals().get("format_iran_time", lambda d: "نامشخص")
+            time_str = format_fn(m.get("date"))
+            status = m.get("status", "UPCOMING")
+            if status in ["LIVE", "IN_PLAY", "1H", "2H", "HT"]:
+                badge = f"🔴 زنده [{m.get('home_score', 0)} - {m.get('away_score', 0)}]"
+            elif status in ["FINISHED", "FT", "POST"]:
+                badge = f"🏁 پایان [{m.get('home_score', 0)} - {m.get('away_score', 0)}]"
+            else:
+                badge = f"⏰ <code>{time_str}</code>"
+
+            text += f"▫️ <b>{m.get('home_team', 'میزبان')}</b> 🆚 <b>{m.get('away_team', 'میهمان')}</b>\n"
+            text += f"    └ {badge}  •  {m.get('venue', 'ورزشگاه')}\n\n"
+
+            text += "────────────────────"
+            await safe_edit_message(query, text, reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("‹ انتخاب لیگ دیگر", callback_data=f"select_matches_{'today' if is_today else 'tomorrow'}")],
+                [InlineKeyboardButton("‹ منوی اصلی", callback_data="home")]
+            ]))
+            return
+
+    # جدول لیگ‌ها
+    elif data == "select_standings_league":
+        await query.answer()
+        if "get_standings_leagues_keyboard" in dir(kb):
+            await safe_edit_message(
+                query,
+                "🏆 <b>جدول رده‌بندی لیگ مورد نظر را انتخاب کنید:</b>",
+                reply_markup=kb.get_standings_leagues_keyboard()
+            )
+        else:
+            await league_cmd(update, context)
+        return
+
+    # پیش‌بینی مسابقات
+    elif data == "predictions_hub":
+        await query.answer()
+        if "predictions_hub_handler" in globals():
+            await predictions_hub_handler(query)
+        else:
+            await safe_edit_message(
+                query,
+                "🎯 <b>تالار پیش‌بینی مسابقات:</b>\nبرای ثبت فرم پیش‌بینی یا جک‌پات انتخاب کنید:",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🎰 شرکت در جک‌پات کمبو", callback_data="jackpot_hub")],
+                    [InlineKeyboardButton("‹ منوی اصلی", callback_data="home")]
+                ])
+            )
+        return
+
+    # گردونه شانس
+    elif data == "spin_wheel":
+        await query.answer()
+        await spin_wheel_cmd(update, context)
+        return
+
+    # جک‌پات
+    elif data == "jackpot_hub":
+        await query.answer()
+        await jackpot_cmd(update, context)
+        return
+
+    # در غیر این صورت، هدایت به روتر اصلی
+    await _orig_callback_router(update, context)
 
 if __name__ == "__main__":
     main()
