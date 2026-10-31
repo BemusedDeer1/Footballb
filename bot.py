@@ -4181,6 +4181,8 @@ def main():
 
     logger.info("Football Hub Bot running smoothly!")
     app.run_polling(drop_pending_updates=True)
+from bot_patches import *
+callback_router = wrap_callback_router(callback_router)
 
 if __name__ == "__main__":
     main()
