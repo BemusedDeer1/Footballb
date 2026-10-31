@@ -101,7 +101,6 @@ async def init_db():
             )
         """)
 
-        # اطمینان از وجود ستون settled در جدول predictions
         async with db.execute("PRAGMA table_info(predictions)") as cur:
             pred_columns = [row[1] for row in await cur.fetchall()]
         if "settled" not in pred_columns:
@@ -168,7 +167,7 @@ async def init_db():
             )
         """)
 
-        # ۸. جدول کارت‌های خریداری‌شده بازیکنان FC
+        # ۸. جدول کارت‌های بازیکنان FC
         await db.execute("""
             CREATE TABLE IF NOT EXISTS user_cards (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -178,11 +177,49 @@ async def init_db():
                 position TEXT,
                 rarity TEXT,
                 is_in_lineup INTEGER DEFAULT 0,
-                acquired_at TEXT
+                acquired_at TEXT,
+                base_rating INTEGER DEFAULT 0,
+                evo_count INTEGER DEFAULT 0,
+                is_evolved INTEGER DEFAULT 0
             )
         """)
 
-        # ۹. جدول مارکت و پیشنهادات روزانه نقل‌وانتقالات
+        # اضافه کردن خودکار ستون‌های اوولوشن به کارت‌های قبلی (Safe Migration)
+        async with db.execute("PRAGMA table_info(user_cards)") as cur:
+            card_columns = [row[1] for row in await cur.fetchall()]
+
+        required_card_columns = {
+            "base_rating": "INTEGER DEFAULT 0",
+            "evo_count": "INTEGER DEFAULT 0",
+            "is_evolved": "INTEGER DEFAULT 0"
+        }
+
+        for col_name, col_def in required_card_columns.items():
+            if col_name not in card_columns:
+                try:
+                    await db.execute(f"ALTER TABLE user_cards ADD COLUMN {col_name} {col_def}")
+                    logger.info(f"Added column {col_name} to user_cards table.")
+                except Exception as e:
+                    logger.debug(f"Column {col_name} note in user_cards: {e}")
+
+        # ۹. جدول لاگ و تاریخچه رسمی اوولوشن‌ها
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS card_evolutions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                card_id INTEGER,
+                player_name TEXT,
+                plan_key TEXT,
+                old_rating INTEGER,
+                new_rating INTEGER,
+                old_rarity TEXT,
+                new_rarity TEXT,
+                cost_paid INTEGER,
+                evolved_at TEXT
+            )
+        """)
+
+        # ۱۰. جدول مارکت روزانه بازیکنان
         await db.execute("""
             CREATE TABLE IF NOT EXISTS daily_market (
                 user_id INTEGER,
@@ -192,7 +229,7 @@ async def init_db():
             )
         """)
 
-        # ۱۰. جدول ماموریت‌های روزانه (Daily Quests)
+        # ۱۱. جدول ماموریت‌های روزانه (Daily Quests)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS daily_quests (
                 user_id INTEGER,
@@ -205,7 +242,7 @@ async def init_db():
             )
         """)
 
-        # ۱۱. جداول لیگ رفت و برگشت کارت‌های FC
+        # ۱۲. جداول لیگ رفت و برگشت کارت‌های FC
         await db.execute("""
             CREATE TABLE IF NOT EXISTS league_seasons (
                 season_id TEXT PRIMARY KEY,
@@ -251,7 +288,7 @@ async def init_db():
             )
         """)
 
-        # ۱۲. جدول تاکتیک هوشمند اختصاصی تیم‌ها
+        # ۱۳. جدول تاکتیک هوشمند اختصاصی تیم‌ها
         await db.execute("""
             CREATE TABLE IF NOT EXISTS user_tactics (
                 user_id INTEGER PRIMARY KEY,
@@ -263,11 +300,13 @@ async def init_db():
             )
         """)
 
-        # ۱۳. ایندکس‌های بهینه‌ساز سرعت اجرای کوئری‌ها
+        # ۱۴. ایندکس‌های بهینه‌ساز عملکرد کوئری‌ها
         await db.execute("CREATE INDEX IF NOT EXISTS idx_users_points ON users(points DESC);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_predictions_match ON predictions(match_id, settled);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_user_cards_uid ON user_cards(user_id, is_in_lineup);")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_user_cards_evo ON user_cards(user_id, is_evolved);")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_card_evolutions_uid ON card_evolutions(user_id, card_id);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_league_fixtures_season ON league_fixtures(season_id, status);")
 
         await db.commit()
-        logger.info("Database initialized with WAL mode, migrations, tables, and indexes successfully.")
+        logger.info("Database initialized successfully.")
