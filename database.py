@@ -109,7 +109,7 @@ async def init_db():
             except Exception:
                 pass
 
-        # ۴. جدول استخر ۳۰۰ امتیازی مسابقات ویژه
+        # ۴. جدول استخر مسابقات ویژه (۵۰۰ امتیازی)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS special_pool_predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,7 +184,6 @@ async def init_db():
             )
         """)
 
-        # اضافه کردن خودکار ستون‌های اوولوشن به کارت‌های قبلی (Safe Migration)
         async with db.execute("PRAGMA table_info(user_cards)") as cur:
             card_columns = [row[1] for row in await cur.fetchall()]
 
@@ -300,13 +299,95 @@ async def init_db():
             )
         """)
 
-        # ۱۴. ایندکس‌های بهینه‌ساز عملکرد کوئری‌ها
+        # ۱۴. جدول انبار پک‌های کاربران (جدید)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS user_inventory_packs (
+                user_id INTEGER,
+                pack_type TEXT,
+                count INTEGER DEFAULT 0,
+                PRIMARY KEY (user_id, pack_type)
+            )
+        """)
+
+        # ۱۵. جدول ترنسفر مارکت بازیکنان (جدید)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS transfer_market (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                seller_id INTEGER,
+                player_name TEXT,
+                rating INTEGER,
+                position TEXT,
+                rarity TEXT,
+                price INTEGER,
+                expires_at TEXT,
+                created_at TEXT,
+                status TEXT DEFAULT 'ACTIVE'
+            )
+        """)
+
+        # ۱۶. جداول چمپیونزلیگ (UCL) (جدید)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS ucl_tournaments (
+                season_id TEXT PRIMARY KEY,
+                stage TEXT,
+                status TEXT,
+                created_at TEXT
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS ucl_group_standings (
+                season_id TEXT,
+                group_name TEXT,
+                user_id INTEGER,
+                played INTEGER DEFAULT 0,
+                won INTEGER DEFAULT 0,
+                drawn INTEGER DEFAULT 0,
+                lost INTEGER DEFAULT 0,
+                gf INTEGER DEFAULT 0,
+                ga INTEGER DEFAULT 0,
+                gd INTEGER DEFAULT 0,
+                points INTEGER DEFAULT 0,
+                PRIMARY KEY (season_id, user_id)
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS ucl_group_fixtures (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                season_id TEXT,
+                group_name TEXT,
+                home_id INTEGER,
+                away_id INTEGER,
+                home_score INTEGER,
+                away_score INTEGER,
+                status TEXT DEFAULT 'PENDING'
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS ucl_knockout_fixtures (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                season_id TEXT,
+                round_name TEXT,
+                home_id INTEGER,
+                away_id INTEGER,
+                home_score INTEGER,
+                away_score INTEGER,
+                winner_id INTEGER,
+                status TEXT DEFAULT 'PENDING'
+            )
+        """)
+
+        # ۱۷. ایندکس‌های بهینه‌ساز عملکرد کوئری‌ها
         await db.execute("CREATE INDEX IF NOT EXISTS idx_users_points ON users(points DESC);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_predictions_match ON predictions(match_id, settled);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_user_cards_uid ON user_cards(user_id, is_in_lineup);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_user_cards_evo ON user_cards(user_id, is_evolved);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_card_evolutions_uid ON card_evolutions(user_id, card_id);")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_league_fixtures_season ON league_fixtures(season_id, status);")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_transfer_market_status ON transfer_market(status, expires_at);")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_ucl_fixtures ON ucl_group_fixtures(season_id, status);")
 
         await db.commit()
-        logger.info("Database initialized successfully.")
+        logger.info("Database initialized successfully with all new tables.")
