@@ -164,9 +164,48 @@ CHEAT_MODE_USERS = set()
 TRACKED_LIVE_MATCHES = {}
 USER_JACKPOT_DRAFTS = {}
 ACTIVE_ASYNCIO_TIMERS = {}
+USER_JACKPOT_DRAFTS = {}
+ACTIVE_ASYNCIO_TIMERS = {}
+USER_TRANSFER_SELL_DRAFT = {}
 
 EVO_PLANS = {
-    USER_TRANSFER_SELL_DRAFT = {}
+    "academy": {
+        "title": "🧬 جهش آکادمی (Future Prodigy)",
+        "desc": "ارتقای پدیده‌های جوان و بازیکنان معمولی به سطح گلد ریر",
+        "boost": 5, "max_input_ovr": 80, "rarities": ["COMMON"],
+        "cost": 1200, "sac_rarity": "COMMON", "sac_count": 3
+    },
+    "rare_boost": {
+        "title": "💎 کیمیاگری کهکشانی (Galactico Blueprint)",
+        "desc": "ارتقای ستاره‌های گلد ریر به رده بازیکنان نخبه الیت",
+        "boost": 3, "min_input_ovr": 81, "max_input_ovr": 85, "rarities": ["RARE"],
+        "cost": 2500, "sac_rarity": "RARE", "sac_count": 2
+    },
+    "elite_push": {
+        "title": "⚡️ تولد اسطوره (Legendary Metamorphosis)",
+        "desc": "تبدیل سوپراستارهای الیت به تالار افتخارات آیکان",
+        "boost": 3, "min_input_ovr": 86, "max_input_ovr": 89, "rarities": ["ELITE"],
+        "cost": 5000, "sac_rarity": "ELITE", "sac_count": 2
+    },
+    "icon_titan": {
+        "title": "👑 تایتان نامیرا (Immortal Titan)",
+        "desc": "تقویت سنگین اسطوره‌ها و آیکان‌های تاریخ (تا سقف ۹۶)",
+        "boost": 2, "min_input_ovr": 90, "max_input_ovr": 94, "rarities": ["ICON"],
+        "cost": 8500, "sac_rarity": "ICON", "sac_count": 1
+    },
+    "messi_99": {
+        "title": "🐐🇦🇷 لا پولگا جاودانه (La Pulga Immortal)",
+        "desc": "آزاد کردن پتانسیل ماورایی لیونل مسی و جهش به ۹۹ OVR",
+        "target_name": "لیونل مسی", "fixed_ovr": 99,
+        "cost": 18000, "sac_icon": 2, "sac_elite": 3
+    },
+    "cr7_99": {
+        "title": "🐐🇵🇹 فرمانده ماورایی (El Comandante Prime)",
+        "desc": "آزاد کردن نسخه اوج و بی‌مرگ کریستیانو رونالدو و جهش به ۹۹ OVR",
+        "target_name": "کریستیانو رونالدو", "fixed_ovr": 99,
+        "cost": 18000, "sac_icon": 2, "sac_elite": 3
+    }
+}
 
 PACK_DEFINITIONS = {
     "ucl_super": {
@@ -228,7 +267,6 @@ def unpack_inventory_card(pack_type: str):
     return random.choice(pool)
 
 def calculate_exact_market_card_price(card: dict, wealth_mult: float) -> int:
-    """محاسبه تصاعدی قیمت دقیقاً بر اساس ریتینگ کارت و تورم جامعه"""
     ovr = card.get("ovr", 75)
     rarity = card.get("rarity", "COMMON")
     base = 120 * (1.15 ** max(0, ovr - 75))
@@ -242,7 +280,6 @@ def calculate_exact_market_card_price(card: dict, wealth_mult: float) -> int:
     return max(120, int(base * rarity_factor * wealth_mult * random_fluctuation))
 
 def get_card_min_transfer_price(ovr: int, rarity: str) -> int:
-    """حداقل قیمت ضدتقلب بر اساس ریتینگ و ارزش کوییک‌سل"""
     quick_sell = SELL_PRICES.get(rarity, 50)
     ovr_floor = int(45 * (1.12 ** max(0, ovr - 75)))
     return max(quick_sell * 2, ovr_floor)
