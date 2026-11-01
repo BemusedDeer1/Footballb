@@ -845,7 +845,8 @@ async def play_league_day_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     await update.effective_message.reply_text("⚽️ <b>در حال شبیه‌سازی ۲ مسابقه برای هر تیم و محاسبه نتایج...</b>", parse_mode="HTML")
     await simulate_daily_league_task(context, reply_chat_id=chat_id)
-    async def add_points_to_all_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+async def add_points_to_all_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
     if not context.args:
