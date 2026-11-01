@@ -165,91 +165,6 @@ TRACKED_LIVE_MATCHES = {}
 USER_JACKPOT_DRAFTS = {}
 ACTIVE_ASYNCIO_TIMERS = {}
 
-USER_TRANSFER_SELL_DRAFT = {}
-
-PACK_DEFINITIONS = {
-    "ucl_super": {
-        "title": "🏆 سوپر پک قهرمان UCL",
-        "min_ovr": 90,
-        "weights": {"COMMON": 0, "RARE": 0, "ELITE": 40.0, "ICON": 60.0}
-    },
-    "ucl_elite": {
-        "title": "🥈 پک نایب‌قهرمان UCL",
-        "min_ovr": 86,
-        "weights": {"COMMON": 0, "RARE": 10.0, "ELITE": 70.0, "ICON": 20.0}
-    },
-    "league_p1": {
-        "title": "🥇 پک طلایی قهرمان لیگ",
-        "min_ovr": 86,
-        "weights": {"COMMON": 0, "RARE": 15.0, "ELITE": 65.0, "ICON": 20.0}
-    },
-    "league_p2": {
-        "title": "🥈 پک نقره‌ای نایب‌قهرمان لیگ",
-        "min_ovr": 83,
-        "weights": {"COMMON": 0, "RARE": 45.0, "ELITE": 50.0, "ICON": 5.0}
-    },
-    "league_p3": {
-        "title": "🥉 پک برنزی لیگ",
-        "min_ovr": 80,
-        "weights": {"COMMON": 20.0, "RARE": 70.0, "ELITE": 10.0, "ICON": 0.0}
-    },
-    "league_part": {
-        "title": "📦 پک مشارکت لیگ",
-        "min_ovr": 75,
-        "weights": {"COMMON": 60.0, "RARE": 38.0, "ELITE": 2.0, "ICON": 0.0}
-    }
-}
-
-async def add_pack_to_inventory(user_id: int, pack_type: str, count: int = 1):
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        await db.execute("""
-            INSERT INTO user_inventory_packs (user_id, pack_type, count)
-            VALUES (?, ?, ?)
-            ON CONFLICT(user_id, pack_type) DO UPDATE SET count = count + ?
-        """, (user_id, pack_type, count, count))
-        await db.commit()
-
-async def get_user_inventory_packs(user_id: int) -> list:
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT pack_type, count FROM user_inventory_packs WHERE user_id = ? AND count > 0", (user_id,)) as cur:
-            return await cur.fetchall()
-
-def unpack_inventory_card(pack_type: str):
-    cfg = PACK_DEFINITIONS.get(pack_type, PACK_DEFINITIONS["league_part"])
-    weights = cfg["weights"]
-    min_ovr = cfg.get("min_ovr", 75)
-    chosen_rarity = random.choices(list(weights.keys()), weights=list(weights.values()))[0]
-    pool = [c for c in FC_CATALOG if c["rarity"] == chosen_rarity and c.get("ovr", 0) >= min_ovr]
-    if not pool:
-        pool = [c for c in FC_CATALOG if c.get("ovr", 0) >= min_ovr]
-    if not pool:
-        pool = FC_CATALOG
-    return random.choice(pool)
-
-def calculate_exact_market_card_price(card: dict, wealth_mult: float) -> int:
-    ovr = card.get("ovr", 75)
-    rarity = card.get("rarity", "COMMON")
-    base = 120 * (1.15 ** max(0, ovr - 75))
-    rarity_factor = {
-        "COMMON": 1.0,
-        "RARE": 1.25,
-        "ELITE": 1.6,
-        "ICON": 2.2
-    }.get(rarity, 1.0)
-    random_fluctuation = random.uniform(0.95, 1.05)
-    return max(120, int(base * rarity_factor * wealth_mult * random_fluctuation))
-
-def get_card_min_transfer_price(ovr: int, rarity: str) -> int:
-    quick_sell = SELL_PRICES.get(rarity, 50)
-    ovr_floor = int(45 * (1.12 ** max(0, ovr - 75)))
-    return max(quick_sell * 2, ovr_floor)
-
-async def clean_expired_transfers():
-    now_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        await db.execute("UPDATE transfer_market SET status = 'EXPIRED' WHERE status = 'ACTIVE' AND expires_at <= ?", (now_str,))
-        await db.commit()
-
 EVO_PLANS = {
     "academy": {
         "title": "🧬 جهش آکادمی (Future Prodigy)",
@@ -584,9 +499,9 @@ async def get_wealth_multiplier():
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT AVG(points) FROM users WHERE user_id != ?", (ESCOBAR_AI_ID,)) as cur:
             row = await cur.fetchone()
-            avg_pts = row[0] if row and row[0] else 500
-    mult = 1.0 + max(0.0, (avg_pts - 500) / 800.0)
-    return max(1.0, mult)
+            avg_pts = row[0] if row and row[0] else 200
+    mult = 1.0 + max(0.0, (avg_pts - 300) / 1000.0)
+    return min(2.5, mult)
 
 async def get_penalty_count_db(user_id: int) -> int:
     today_str = get_iran_now().strftime("%Y-%m-%d")
@@ -2696,6 +2611,7 @@ async def league_off_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🔴 لیگ فعال فعلی لغو و متوقف شد.")
 
 async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str):
+    """تسویه حساب نهایی لیگ با جوایز تعیین شده امیر"""
     async with db.execute("""
         SELECT s.user_id, u.first_name, s.points, s.gd
         FROM league_standings s JOIN users u ON s.user_id = u.user_id
@@ -2704,20 +2620,20 @@ async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str
         final_ranks = await cur.fetchall()
 
     if final_ranks:
+        # جوایز دقیق خواسته شده: نفر اول 5000 و 1000XP، دوم 3000 و 750XP، سوم 1500 و 500XP
         prizes = {
-            0: (5000, 1000, "league_p1"),
-            1: (3000, 750, "league_p2"),
-            2: (1500, 500, "league_p3")
+            0: (5000, 1000),
+            1: (3000, 750),
+            2: (1500, 500)
         }
-        summary = "🏁 <b>پایان رسمی فصل لیگ کارت‌های FC 26 و اهدای جوایز + پک‌های انبار!</b>\n────────────────────\n"
+        summary = "🏁 <b>پایان رسمی فصل لیگ کارت‌های FC 26 و اهدای جوایز!</b>\n────────────────────\n"
         xp_awards = []
         for idx, (uid, name, pts, gd) in enumerate(final_ranks):
-            p_pts, p_xp, p_pack = prizes.get(idx, (300, 150, "league_part"))
+            p_pts, p_xp = prizes.get(idx, (200, 100))
             await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (p_pts, uid))
-            await add_pack_to_inventory(uid, p_pack, count=1)
             xp_awards.append((uid, p_xp))
             medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
-            summary += f"{medal} <b>{html.escape(name)}</b>: {pts} امتیاز ➔ 💰 <b>+{p_pts:,} PTS</b> + 📦 <b>{PACK_DEFINITIONS[p_pack]['title']}</b>\n"
+            summary += f"{medal} <b>{html.escape(name)}</b>: {pts} امتیاز (تفاضل {gd:+d}) ➔ 💰 <b>+{p_pts:,} PTS</b> و <b>+{p_xp} XP</b>\n"
 
         await db.execute("UPDATE league_seasons SET status = 'FINISHED' WHERE season_id = ?", (s_id,))
         await db.commit()
@@ -3184,448 +3100,7 @@ async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         CHEAT_MODE_USERS.discard(user.id)
         await update.effective_message.reply_text("🔴 <b>Ch Mode غیرفعال شد.</b>", parse_mode="HTML")
 
-# ==================== CHAMPIONS LEAGUE (UCL) ENGINE ====================
-
-async def champions_league_status_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT season_id, stage, status FROM ucl_tournaments WHERE status = 'ACTIVE' LIMIT 1") as cur:
-            row = await cur.fetchone()
-
-        if not row:
-            msg = "🏆 <b>در حال حاضر هیچ تورنمنت چمپیونزلیگی فعال نیست!</b>\nبا دستور <code>/cp_on</code> توسط ادمین فعال می‌شود."
-            if update.callback_query:
-                await safe_edit_message(update.callback_query, msg, reply_markup=kb.get_back_button())
-            else:
-                await update.message.reply_text(msg, parse_mode="HTML")
-            return
-
-        s_id, stage, status = row
-
-        if stage == "GROUP":
-            async with db.execute("""
-                SELECT g.group_name, u.first_name, g.played, g.won, g.drawn, g.lost, g.gd, g.points
-                FROM ucl_group_standings g
-                JOIN users u ON g.user_id = u.user_id
-                WHERE g.season_id = ?
-                ORDER BY g.group_name ASC, g.points DESC, g.gd DESC
-            """, (s_id,)) as cur:
-                all_standings = await cur.fetchall()
-
-            groups = {}
-            for g_name, u_name, p, w, d, l, gd, pts in all_standings:
-                groups.setdefault(g_name, []).append((u_name, p, w, d, l, gd, pts))
-
-            text = "🏆⭐️ <b>لیگ قهرمانان اروپا (UEFA Champions League)</b>\n────────────────────\n📍 مرحله فعلی: <b>مرحله گروهی</b>\n\n"
-            for grp, teams in sorted(groups.items()):
-                text += f"🔹 <b>گروه {grp}:</b>\n<pre>"
-                text += "# | Team        | P | W | D | L | GD| Pts\n--+-------------+---+---+---+---+---+---\n"
-                for idx, (t_name, p, w, d, l, gd, pts) in enumerate(teams, 1):
-                    t_str = t_name[:11].ljust(11)
-                    text += f"{idx:<1} | {t_str} | {p:<1} | {w:<1} | {d:<1} | {l:<1} |{gd:+2} | {pts:<2}\n"
-                text += "</pre>\n"
-            text += "✨ <i>۲ تیم برتر هر گروه راهی مرحله حذفی می‌شوند!</i>"
-        else:
-            async with db.execute("""
-                SELECT f.round_name, u1.first_name, f.home_score, f.away_score, u2.first_name, f.status
-                FROM ucl_knockout_fixtures f
-                JOIN users u1 ON f.home_id = u1.user_id
-                JOIN users u2 ON f.away_id = u2.user_id
-                WHERE f.season_id = ? ORDER BY f.id ASC
-            """, (s_id,)) as cur:
-                fixtures = await cur.fetchall()
-
-            text = f"🏆⭐️ <b>مرحله حذفی لیگ قهرمانان اروپا ({stage})</b>\n────────────────────\n\n"
-            for r_name, h_name, hs, as_, a_name, f_status in fixtures:
-                status_str = f"<b>[{hs} - {as_}]</b> 🏁" if f_status == "FINISHED" else "<b>[Vs]</b> ⏳"
-                text += f"▫️ <b>{r_name}:</b>\n    {h_name} {status_str} {a_name}\n\n"
-
-    if update.callback_query:
-        await safe_edit_message(update.callback_query, text, reply_markup=kb.get_back_button())
-    else:
-        await update.message.reply_text(text, parse_mode="HTML")
-
-async def cp_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if str(user.id) != str(ADMIN_ID): return
-
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT season_id FROM ucl_tournaments WHERE status = 'ACTIVE'") as cur:
-            if await cur.fetchone():
-                await update.message.reply_text("⚠️ یک دوره چمپیونزلیگ در جریان است! با /cp_off یا /cp_end مدیریت کنید.")
-                return
-
-        async with db.execute("SELECT user_id FROM user_cards WHERE is_in_lineup = 1 GROUP BY user_id HAVING COUNT(*) >= 1") as cur:
-            eligible = [r[0] for r in await cur.fetchall()]
-
-    if len(eligible) < 4:
-        await update.message.reply_text(f"⛔️ تعداد تیم‌ها کافی نیست (حداقل ۴ تیم، موجود: {len(eligible)}).")
-        return
-
-    random.shuffle(eligible)
-    num_groups = 4 if len(eligible) >= 8 else 2
-    groups_dict = {chr(65 + i): [] for i in range(num_groups)}
-    for idx, uid in enumerate(eligible):
-        groups_dict[chr(65 + (idx % num_groups))].append(uid)
-
-    s_id = f"UCL_{get_iran_now().strftime('%Y%m%d_%H%M')}"
-    now_str = get_iran_now().strftime("%Y-%m-%d %H:%M")
-
-    fixtures = []
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        await db.execute("INSERT INTO ucl_tournaments (season_id, stage, status, created_at) VALUES (?, 'GROUP', 'ACTIVE', ?)", (s_id, now_str))
-        for grp, uids in groups_dict.items():
-            for uid in uids:
-                await db.execute("INSERT INTO ucl_group_standings (season_id, group_name, user_id) VALUES (?, ?, ?)", (s_id, grp, uid))
-            for h in uids:
-                for a in uids:
-                    if h != a:
-                        fixtures.append((s_id, grp, h, a))
-
-        random.shuffle(fixtures)
-        for s_code, grp, h, a in fixtures:
-            await db.execute("INSERT INTO ucl_group_fixtures (season_id, group_name, home_id, away_id, status) VALUES (?, ?, ?, ?, 'PENDING')", (s_code, grp, h, a))
-        await db.commit()
-
-    msg = (
-        f"🏆⭐️🔥 <b>آغاز فصل جدید چمپیونزلیگ (UCL)!</b>\n────────────────────\n"
-        f"👥 تیم‌ها: <b>{len(eligible)} تیم</b> در <b>{num_groups} گروه</b>\n"
-        f"🥇 قهرمان: <b>۲۰,۰۰۰ PTS + ۳ سوپر پک UCL</b>\n"
-        f"🥈 نایب‌قهرمان: <b>۱۰,۰۰۰ PTS + ۳ اولتیمیت پک UCL</b>\n"
-        f"▫️ هر برد گروهی: <b>+150 PTS</b> | مساوی: <b>+60 PTS</b>\n"
-        f"▫️ صعود از گروه: <b>+1,000 PTS</b> | برد حذفی: <b>+2,000 PTS</b>\n"
-        "────────────────────\nوضعیت مسابقات با نوشتن کلمه: <b>چمپ</b>"
-    )
-    target_chat_id = await get_live_chat_id()
-    if target_chat_id:
-        await context.bot.send_message(chat_id=target_chat_id, text=msg, parse_mode="HTML")
-    await update.message.reply_text("✅ چمپیونزلیگ آغاز گردید!", parse_mode="HTML")
-
-async def cp_off_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if str(user.id) != str(ADMIN_ID): return
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        await db.execute("UPDATE ucl_tournaments SET status = 'CANCELLED' WHERE status = 'ACTIVE'")
-        await db.commit()
-    await update.message.reply_text("🔴 چمپیونزلیگ متوقف شد.")
-
-async def cp_play_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if str(user.id) != str(ADMIN_ID): return
-
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT season_id, stage FROM ucl_tournaments WHERE status = 'ACTIVE' LIMIT 1") as cur:
-            row = await cur.fetchone()
-        if not row:
-            await update.message.reply_text("⚠️ چمپیونزلیگ فعالی در جریان نیست.")
-            return
-        s_id, stage = row
-
-    if stage == "GROUP":
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT id, group_name, home_id, away_id FROM ucl_group_fixtures WHERE season_id = ? AND status = 'PENDING' LIMIT 4", (s_id,)) as cur:
-                matches = await cur.fetchall()
-
-        if not matches:
-            await update.message.reply_text("🏁 مسابقات گروهی تمام شده، دستور /cp_end را بزنید.")
-            return
-
-        report = ["⭐️⚽️ <b>نتایج دور مسابقات گروهی چمپیونزلیگ:</b>\n────────────────────"]
-        for f_id, grp, h_id, a_id in matches:
-            t1, t2 = await get_user_team_info(h_id), await get_user_team_info(a_id)
-            p1_prob = max(0.20, min(0.80, (t1["eff_ovr"]**1.3) / ((t1["eff_ovr"]**1.3) + (t2["eff_ovr"]**1.3))))
-            s1, s2 = 0, 0
-            for _ in range(random.randint(5, 7)):
-                if random.random() < p1_prob: s1 += 1
-                else: s2 += 1
-
-            w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
-            w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
-            rew_h = 150 if s1 > s2 else (60 if s1 == s2 else 0)
-            rew_a = 150 if s2 > s1 else (60 if s1 == s2 else 0)
-
-            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-                await db.execute("UPDATE ucl_group_fixtures SET home_score = ?, away_score = ?, status = 'FINISHED' WHERE id = ?", (s1, s2, f_id))
-                await db.execute("UPDATE ucl_group_standings SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?, gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? WHERE season_id = ? AND user_id = ?", (w1, d1, l1, s1, s2, s1 - s2, pts1, s_id, h_id))
-                await db.execute("UPDATE ucl_group_standings SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?, gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? WHERE season_id = ? AND user_id = ?", (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
-                if rew_h: await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (rew_h, h_id))
-                if rew_a: await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (rew_a, a_id))
-                await db.commit()
-                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (h_id,)) as cur: h_name = (await cur.fetchone())[0]
-                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (a_id,)) as cur: a_name = (await cur.fetchone())[0]
-            report.append(f"▫️ گروه {grp}: <b>{h_name}</b> [{s1} - {s2}] <b>{a_name}</b>")
-
-        target_chat_id = await get_live_chat_id() or update.effective_chat.id
-        await context.bot.send_message(chat_id=target_chat_id, text="\n".join(report), parse_mode="HTML")
-    else:
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT id, round_name, home_id, away_id FROM ucl_knockout_fixtures WHERE season_id = ? AND status = 'PENDING'", (s_id,)) as cur:
-                fixtures = await cur.fetchall()
-
-        if not fixtures:
-            await update.message.reply_text("🏁 بازی‌های این مرحله تمام شد، دستور /cp_end را بزنید.")
-            return
-
-        report = ["🔥⭐️ <b>نتایج مرحله حذفی چمپیونزلیگ:</b>\n────────────────────"]
-        for f_id, r_name, h_id, a_id in fixtures:
-            t1, t2 = await get_user_team_info(h_id), await get_user_team_info(a_id)
-            p1_prob = max(0.20, min(0.80, (t1["eff_ovr"]**1.3) / ((t1["eff_ovr"]**1.3) + (t2["eff_ovr"]**1.3))))
-            s1, s2 = 0, 0
-            for _ in range(random.randint(6, 8)):
-                if random.random() < p1_prob: s1 += 1
-                else: s2 += 1
-            if s1 == s2:
-                s1 += 1 if random.random() < 0.5 else 0
-                s2 += 1 if s1 == s2 else 0
-
-            win_id = h_id if s1 > s2 else a_id
-            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-                await db.execute("UPDATE ucl_knockout_fixtures SET home_score = ?, away_score = ?, winner_id = ?, status = 'FINISHED' WHERE id = ?", (s1, s2, win_id, f_id))
-                await db.execute("UPDATE users SET points = points + 2000 WHERE user_id = ?", (win_id,))
-                await db.commit()
-                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (h_id,)) as cur: h_name = (await cur.fetchone())[0]
-                async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (a_id,)) as cur: a_name = (await cur.fetchone())[0]
-            report.append(f"▫️ <b>{r_name}:</b> {h_name} [{s1} - {s2}] {a_name} ➔ صعود: <b>{h_name if win_id == h_id else a_name}</b> (+2,000 PTS)")
-
-        target_chat_id = await get_live_chat_id() or update.effective_chat.id
-        await context.bot.send_message(chat_id=target_chat_id, text="\n".join(report), parse_mode="HTML")
-
-async def cp_end_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if str(user.id) != str(ADMIN_ID): return
-
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("SELECT season_id, stage FROM ucl_tournaments WHERE status = 'ACTIVE' LIMIT 1") as cur:
-            row = await cur.fetchone()
-        if not row: return
-        s_id, stage = row
-
-    if stage == "GROUP":
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT group_name, user_id FROM ucl_group_standings WHERE season_id = ? ORDER BY group_name ASC, points DESC, gd DESC", (s_id,)) as cur:
-                rows = await cur.fetchall()
-
-        groups = {}
-        for grp, uid in rows:
-            groups.setdefault(grp, []).append(uid)
-
-        qualified = []
-        for grp, uids in groups.items():
-            top2 = uids[:2]
-            qualified.extend(top2)
-            for q_id in top2:
-                async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-                    await db.execute("UPDATE users SET points = points + 1000 WHERE user_id = ?", (q_id,))
-                    await db.commit()
-
-        next_stage = "SEMIFINAL" if len(qualified) == 4 else ("FINAL" if len(qualified) == 2 else "KNOCKOUT")
-        r_name = "نیمه‌نهایی" if next_stage == "SEMIFINAL" else ("فینال بزرگ" if next_stage == "FINAL" else "حذفی")
-        random.shuffle(qualified)
-
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            await db.execute("UPDATE ucl_tournaments SET stage = ? WHERE season_id = ?", (next_stage, s_id))
-            for i in range(0, len(qualified), 2):
-                if i + 1 < len(qualified):
-                    await db.execute("INSERT INTO ucl_knockout_fixtures (season_id, round_name, home_id, away_id, status) VALUES (?, ?, ?, ?, 'PENDING')", (s_id, r_name, qualified[i], qualified[i+1]))
-            await db.commit()
-
-        target_chat_id = await get_live_chat_id() or update.effective_chat.id
-        await context.bot.send_message(chat_id=target_chat_id, text=f"🏁 <b>مرحله گروهی UCL تمام شد!</b>\nپاداش صعود (+1,000 PTS) واریز شد.\nقرعه‌کشی مرحله <b>{r_name}</b> انجام گردید.", parse_mode="HTML")
-
-    elif stage in ["KNOCKOUT", "SEMIFINAL"]:
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT winner_id FROM ucl_knockout_fixtures WHERE season_id = ? AND status = 'FINISHED'", (s_id,)) as cur:
-                winners = [r[0] for r in await cur.fetchall()]
-
-        if len(winners) == 2:
-            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-                await db.execute("UPDATE ucl_tournaments SET stage = 'FINAL' WHERE season_id = ?", (s_id,))
-                await db.execute("INSERT INTO ucl_knockout_fixtures (season_id, round_name, home_id, away_id, status) VALUES (?, 'فینال بزرگ', ?, ?, 'PENDING')", (s_id, winners[0], winners[1]))
-                await db.commit()
-            target_chat_id = await get_live_chat_id() or update.effective_chat.id
-            await context.bot.send_message(chat_id=target_chat_id, text="🔥 <b>فینالیست‌های چمپیونزلیگ مشخص شدند!</b> بازی فینال با /cp_play.", parse_mode="HTML")
-
-    elif stage == "FINAL":
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT home_id, away_id, winner_id FROM ucl_knockout_fixtures WHERE season_id = ? AND round_name LIKE '%فینال%' AND status = 'FINISHED'", (s_id,)) as cur:
-                fin_row = await cur.fetchone()
-        if not fin_row: return
-        h_id, a_id, champ_id = fin_row
-        runner_id = a_id if champ_id == h_id else h_id
-
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            await db.execute("UPDATE users SET points = points + 20000 WHERE user_id = ?", (champ_id,))
-            await db.execute("UPDATE users SET points = points + 10000 WHERE user_id = ?", (runner_id,))
-            await db.execute("UPDATE ucl_tournaments SET status = 'FINISHED' WHERE season_id = ?", (s_id,))
-            await db.commit()
-            async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (champ_id,)) as cur: champ_name = (await cur.fetchone())[0]
-            async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (runner_id,)) as cur: runner_name = (await cur.fetchone())[0]
-
-        await add_pack_to_inventory(champ_id, "ucl_super", count=3)
-        await add_pack_to_inventory(runner_id, "ucl_elite", count=3)
-
-        msg = (
-            f"👑🏆⭐️ <b>پایان رسمی لیگ قهرمانان اروپا!</b>\n────────────────────\n"
-            f"🥇 <b>قهرمان: {html.escape(champ_name)}</b> ➔ 💰 <b>+20,000 PTS</b> + 🎁 <b>۳ سوپر پک UCL</b>\n"
-            f"🥈 <b>نایب‌قهرمان: {html.escape(runner_name)}</b> ➔ 💰 <b>+10,000 PTS</b> + 🎁 <b>۳ پک اولتیمیت UCL</b>\n"
-            "────────────────────\n🎒 پک‌ها به انبار مارکت برندگان واریز شد!"
-        )
-        target_chat_id = await get_live_chat_id() or update.effective_chat.id
-        await context.bot.send_message(chat_id=target_chat_id, text=msg, parse_mode="HTML")
-
-# ==================== ترنسفر مارکت ====================
-
-async def transfer_market_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await clean_expired_transfers()
-    user = update.effective_user
-    await ensure_user(user)
-
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        async with db.execute("""
-            SELECT tm.id, tm.seller_id, u.first_name, tm.player_name, tm.rating, tm.position, tm.rarity, tm.price
-            FROM transfer_market tm JOIN users u ON tm.seller_id = u.user_id
-            WHERE tm.status = 'ACTIVE' ORDER BY tm.created_at DESC
-        """) as cur:
-            listings = await cur.fetchall()
-        async with db.execute("SELECT points FROM users WHERE user_id = ?", (user.id,)) as cur:
-            user_pts = (await cur.fetchone())[0]
-        async with db.execute("SELECT COUNT(*) FROM transfer_market WHERE seller_id = ? AND status = 'EXPIRED'", (user.id,)) as cur:
-            expired_count = (await cur.fetchone())[0]
-
-    text = f"🔄 <b>ترنسفر مارکت P2P</b>\n────────────────────\n💰 موجودی: <b>{user_pts:,} PTS</b> | مالیات: <b>۵٪</b> | اعتبار: <b>۲۴ ساعت</b>\n────────────────────\n"
-    buttons = []
-    if expired_count > 0:
-        buttons.append([InlineKeyboardButton(f"📥 دریافت کارت‌های منقضی ({expired_count})", callback_data="tm_reclaim_all")])
-
-    if not listings:
-        text += "▫️ در حال حاضر بازیکنی لیست نشده است."
-    else:
-        for t_id, s_id, s_name, name, ovr, pos, rar, price in listings[:8]:
-            tag = RARITY_COLORS.get(rar, rar)
-            badge = " [شما]" if s_id == user.id else f" ({s_name[:10]})"
-            text += f"▫️ <b>{name}</b> ({pos}) ➔ <b>{ovr} OVR</b> {tag}{badge}\n    └ 💰 {price:,} PTS\n\n"
-            if s_id == user.id:
-                buttons.append([InlineKeyboardButton(f"❌ لغو {name} ({ovr})", callback_data=f"tm_cancel_{t_id}")])
-            else:
-                buttons.append([InlineKeyboardButton(f"🛒 خرید {name} ({ovr}) - {price:,} PTS", callback_data=f"tm_buy_{t_id}")])
-
-    buttons.append([InlineKeyboardButton("➕ فروش بازیکن در ترنسفر", callback_data="tm_open_sell"), InlineKeyboardButton("‹ بازگشت", callback_data="home")])
-    kb_markup = InlineKeyboardMarkup(buttons)
-    if update.callback_query:
-        await safe_edit_message(update.callback_query, text, reply_markup=kb_markup)
-    else:
-        await update.message.reply_text(text, reply_markup=kb_markup, parse_mode="HTML")
-
 # --- CALLBACK ROUTER ---
-
-elif data == "open_transfer_market":
-        await query.answer()
-        await transfer_market_cmd(update, context)
-
-    elif data == "open_inventory_packs":
-        await query.answer()
-        packs = await get_user_inventory_packs(uid)
-        if not packs:
-            await query.answer("انبار پک‌های شما خالی است!", show_alert=True)
-            return
-        text = "🎒 <b>انبار پک‌های اهدایی لیگ و UCL شما:</b>\n────────────────────\n"
-        buttons = []
-        for p_type, cnt in packs:
-            cfg = PACK_DEFINITIONS.get(p_type, PACK_DEFINITIONS["league_part"])
-            text += f"▫️ <b>{cfg['title']}</b>: <code>{cnt} عدد</code> موجود\n"
-            buttons.append([InlineKeyboardButton(f"🎁 باز کردن {cfg['title']}", callback_data=f"open_pack_{p_type}")])
-        buttons.append([InlineKeyboardButton("‹ بازگشت به مارکت", callback_data="view_market")])
-        await safe_edit_message(query, text, reply_markup=InlineKeyboardMarkup(buttons))
-
-    elif data.startswith("open_pack_"):
-        p_type = data.replace("open_pack_", "")
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT count FROM user_inventory_packs WHERE user_id = ? AND pack_type = ?", (uid, p_type)) as cur:
-                row = await cur.fetchone()
-            if not row or row[0] <= 0:
-                await query.answer("این پک در انبار موجود نیست!", show_alert=True)
-                return
-            await db.execute("UPDATE user_inventory_packs SET count = count - 1 WHERE user_id = ? AND pack_type = ?", (uid, p_type))
-            c = unpack_inventory_card(p_type)
-            today_str = get_iran_now().strftime("%Y-%m-%d")
-            await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)", (uid, c["name"], c["ovr"], c["pos"], c["rarity"], today_str))
-            await db.commit()
-
-        await profile_add_xp(uid, 60)
-        tag = RARITY_COLORS.get(c["rarity"], c["rarity"])
-        res_txt = f"🎉 <b>کارت جدید شما:</b>\n⭐️ <b>{c['name']}</b> ({c['pos']}) ➔ <b>{c['ovr']} OVR</b>\n    └ {tag}\nبه ترکیب اضافه شد!"
-        await safe_edit_message(query, res_txt, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🎒 انبار پک‌ها", callback_data="open_inventory_packs")], [InlineKeyboardButton("🛡 ترکیب تیم", callback_data="view_lineup")]]))
-
-    elif data == "tm_open_sell":
-        await query.answer()
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT id, player_name, rating, position, rarity FROM user_cards WHERE user_id = ? AND is_in_lineup = 0 ORDER BY rating DESC", (uid,)) as cur:
-                cards = await cur.fetchall()
-        if not cards:
-            await query.answer("کارت مازادی برای فروش ندارید!", show_alert=True)
-            return
-        buttons = []
-        for cid, name, ovr, pos, rar in cards[:10]:
-            min_p = get_card_min_transfer_price(ovr, rar)
-            buttons.append([InlineKeyboardButton(f"{name} ({ovr}) - کف: {min_p:,}", callback_data=f"tm_sellcard_{cid}")])
-        buttons.append([InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")])
-        await safe_edit_message(query, "📋 بازیکن مورد نظر را برای فروش انتخاب کنید:", reply_markup=InlineKeyboardMarkup(buttons))
-
-    elif data.startswith("tm_sellcard_"):
-        cid = int(data.replace("tm_sellcard_", ""))
-        USER_TRANSFER_SELL_DRAFT[uid] = cid
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT player_name, rating, rarity FROM user_cards WHERE id = ?", (cid,)) as cur:
-                p_name, ovr, rar = await cur.fetchone()
-        min_p = get_card_min_transfer_price(ovr, rar)
-        await safe_edit_message(query, f"💰 فروش {p_name} ({ovr} OVR)\nکف قیمت مجاز: <b>{min_p:,} PTS</b>\nقیمت پیشنهادی را در چت تایپ کن (مثلا: 2000):", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")]]))
-
-    elif data.startswith("tm_buy_"):
-        t_id = int(data.replace("tm_buy_", ""))
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT seller_id, player_name, rating, position, rarity, price FROM transfer_market WHERE id = ? AND status = 'ACTIVE'", (t_id,)) as cur:
-                row = await cur.fetchone()
-            if not row or row[0] == uid:
-                await query.answer("خرید غیرمجاز یا کارت نامعتبر است!", show_alert=True)
-                return
-            s_id, p_name, ovr, pos, rar, price = row
-            async with db.execute("SELECT points FROM users WHERE user_id = ?", (uid,)) as cur:
-                buyer_pts = (await cur.fetchone())[0]
-            if buyer_pts < price:
-                await query.answer("موجودی ناکافی!", show_alert=True)
-                return
-            tax = int(price * 0.05)
-            await db.execute("UPDATE users SET points = points - ? WHERE user_id = ?", (price, uid))
-            await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (price - tax, s_id))
-            await db.execute("UPDATE transfer_market SET status = 'SOLD' WHERE id = ?", (t_id,))
-            today_str = get_iran_now().strftime("%Y-%m-%d")
-            await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)", (uid, p_name, ovr, pos, rar, today_str))
-            await db.commit()
-        await query.answer("✅ کارت با موفقیت خریداری شد!", show_alert=True)
-        await transfer_market_cmd(update, context)
-
-    elif data.startswith("tm_cancel_"):
-        t_id = int(data.replace("tm_cancel_", ""))
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT seller_id, player_name, rating, position, rarity FROM transfer_market WHERE id = ? AND status = 'ACTIVE'", (t_id,)) as cur:
-                row = await cur.fetchone()
-            if row and row[0] == uid:
-                _, p_name, ovr, pos, rar = row
-                await db.execute("UPDATE transfer_market SET status = 'CANCELLED' WHERE id = ?", (t_id,))
-                today_str = get_iran_now().strftime("%Y-%m-%d")
-                await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)", (uid, p_name, ovr, pos, rar, today_str))
-                await db.commit()
-        await transfer_market_cmd(update, context)
-
-    elif data == "tm_reclaim_all":
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT id, player_name, rating, position, rarity FROM transfer_market WHERE seller_id = ? AND status = 'EXPIRED'", (uid,)) as cur:
-                expired = await cur.fetchall()
-            today_str = get_iran_now().strftime("%Y-%m-%d")
-            for tid, p_name, ovr, pos, rar in expired:
-                await db.execute("UPDATE transfer_market SET status = 'RECLAIMED' WHERE id = ?", (tid,))
-                await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)", (uid, p_name, ovr, pos, rar, today_str))
-            await db.commit()
-        await transfer_market_cmd(update, context)
 
 async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -4347,38 +3822,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # --- GROUP TEXT MESSAGE HANDLER ---
 
-# ثبت قیمت ترنسفر مارکت
-    if uid in USER_TRANSFER_SELL_DRAFT and msg.isdigit():
-        price = int(msg)
-        cid = USER_TRANSFER_SELL_DRAFT.pop(uid)
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-            async with db.execute("SELECT player_name, rating, position, rarity FROM user_cards WHERE id = ? AND user_id = ?", (cid, uid)) as cur:
-                card = await cur.fetchone()
-            if card:
-                p_name, ovr, pos, rar = card
-                min_p = get_card_min_transfer_price(ovr, rar)
-                if price < min_p:
-                    await update.effective_message.reply_text(f"⛔️ حداقل قیمت قانونی: <b>{min_p:,} PTS</b> است!", parse_mode="HTML")
-                    return
-                now = get_iran_now()
-                exp = now + timedelta(hours=24)
-                await db.execute("DELETE FROM user_cards WHERE id = ?", (cid,))
-                await db.execute("""
-                    INSERT INTO transfer_market (seller_id, player_name, rating, position, rarity, price, expires_at, created_at, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')
-                """, (uid, p_name, ovr, pos, rar, price, exp.strftime("%Y-%m-%d %H:%M"), now.strftime("%Y-%m-%d %H:%M")))
-                await db.commit()
-                await update.effective_message.reply_text(f"✅ کارت <b>{p_name} ({ovr})</b> با موفقیت به قیمت <b>{price:,} PTS</b> در ترنسفر مارکت قرار گرفت.", parse_mode="HTML")
-                return
-
-    # دستورات متنی کلیدی
-    if msg in ["چمپ", "champions", "چمپیونزلیگ", "ucl"]:
-        await champions_league_status_cmd(update, context)
-        return
-    elif msg in ["ترنسفر", "transfer", "ترانسفر"]:
-        await transfer_market_cmd(update, context)
-        return
-
 async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.effective_message or not update.effective_message.text: return
     raw_text = update.effective_message.text.strip()
@@ -4458,78 +3901,6 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 # --- APPLICATION INITIALIZATION ---
 
 async def post_init(application: Application):
-
-    await db.execute("""
-            CREATE TABLE IF NOT EXISTS transfer_market (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                seller_id INTEGER,
-                player_name TEXT,
-                rating INTEGER,
-                position TEXT,
-                rarity TEXT,
-                price INTEGER,
-                expires_at TEXT,
-                created_at TEXT,
-                status TEXT DEFAULT 'ACTIVE'
-            )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS user_inventory_packs (
-                user_id INTEGER,
-                pack_type TEXT,
-                count INTEGER DEFAULT 0,
-                PRIMARY KEY (user_id, pack_type)
-            )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS ucl_tournaments (
-                season_id TEXT PRIMARY KEY,
-                stage TEXT,
-                status TEXT,
-                created_at TEXT
-            )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS ucl_group_standings (
-                season_id TEXT,
-                group_name TEXT,
-                user_id INTEGER,
-                played INTEGER DEFAULT 0,
-                won INTEGER DEFAULT 0,
-                drawn INTEGER DEFAULT 0,
-                lost INTEGER DEFAULT 0,
-                gf INTEGER DEFAULT 0,
-                ga INTEGER DEFAULT 0,
-                gd INTEGER DEFAULT 0,
-                points INTEGER DEFAULT 0,
-                PRIMARY KEY (season_id, user_id)
-            )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS ucl_group_fixtures (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                season_id TEXT,
-                group_name TEXT,
-                home_id INTEGER,
-                away_id INTEGER,
-                home_score INTEGER,
-                away_score INTEGER,
-                status TEXT DEFAULT 'PENDING'
-            )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS ucl_knockout_fixtures (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                season_id TEXT,
-                round_name TEXT,
-                home_id INTEGER,
-                away_id INTEGER,
-                home_score INTEGER,
-                away_score INTEGER,
-                winner_id INTEGER,
-                status TEXT DEFAULT 'PENDING'
-            )
-        """)
     await init_db()
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("PRAGMA journal_mode=WAL;")
@@ -4619,12 +3990,6 @@ def main():
     app.add_handler(CommandHandler(["nesf", "Nesf"], halve_points_cmd))
     app.add_handler(CommandHandler(["mr", "Mr"], reset_market_cmd))
     app.add_handler(CommandHandler("info", lambda u, c: handle_group_messages(u, c)))
-    app.add_handler(CommandHandler("cp_on", cp_on_cmd))
-    app.add_handler(CommandHandler("cp_off", cp_off_cmd))
-    app.add_handler(CommandHandler("cp_play", cp_play_cmd))
-    app.add_handler(CommandHandler("cp_end", cp_end_cmd))
-    app.add_handler(CommandHandler(["champions", "ucl"], champions_league_status_cmd))
-    app.add_handler(CommandHandler("transfer", transfer_market_cmd))
 
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
