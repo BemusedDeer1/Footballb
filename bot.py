@@ -3526,8 +3526,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = user.id
     await ensure_user(user)
 
-    if data == "home":
-        # فعال‌سازی دکمه مارکت
+    if data in ["home", "main_menu", "start"]:
+        await query.answer()
+        await start(update, context)
+
+    # فعال‌سازی دکمه مارکت
     elif data in ["view_market", "market", "open_market", "daily_market"]:
         await query.answer()
         await market_cmd(update, context)
@@ -3541,11 +3544,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data in ["league", "view_league", "league_table", "league_standings", "league_hub", "standings"]:
         await query.answer()
         await league_cmd(update, context)
-        await query.answer()
-        await start(update, context)
+
     elif data == "open_transfer_market":
         await query.answer()
         await transfer_market_cmd(update, context)
+
     elif data == "open_inventory_packs":
         await query.answer()
         packs = await get_user_inventory_packs(uid)
@@ -3560,6 +3563,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             buttons.append([InlineKeyboardButton(f"🎁 باز کردن {cfg['title']}", callback_data=f"open_pack_{p_type}")])
         buttons.append([InlineKeyboardButton("‹ بازگشت به مارکت", callback_data="view_market")])
         await safe_edit_message(query, text, reply_markup=InlineKeyboardMarkup(buttons))
+
     elif data.startswith("open_pack_"):
         p_type = data.replace("open_pack_", "")
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3577,6 +3581,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         tag = RARITY_COLORS.get(c["rarity"], c["rarity"])
         res_txt = f"🎉 <b>کارت جدید شما:</b>\n⭐️ <b>{c['name']}</b> ({c['pos']}) ➔ <b>{c['ovr']} OVR</b>\n    └ {tag}\nبه کلکسیون اضافه شد!"
         await safe_edit_message(query, res_txt, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🎒 انبار پک‌ها", callback_data="open_inventory_packs")], [InlineKeyboardButton("🛡 ترکیب تیم", callback_data="view_lineup")]]))
+
     elif data == "tm_open_sell":
         await query.answer()
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3591,6 +3596,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             buttons.append([InlineKeyboardButton(f"{name} ({ovr}) - کف: {min_p:,}", callback_data=f"tm_sellcard_{cid}")])
         buttons.append([InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")])
         await safe_edit_message(query, "📋 بازیکن مورد نظر را برای فروش انتخاب کنید:", reply_markup=InlineKeyboardMarkup(buttons))
+
     elif data.startswith("tm_sellcard_"):
         cid = int(data.replace("tm_sellcard_", ""))
         USER_TRANSFER_SELL_DRAFT[uid] = cid
@@ -3599,6 +3605,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 p_name, ovr, rar = await cur.fetchone()
         min_p = get_card_min_transfer_price(ovr, rar)
         await safe_edit_message(query, f"💰 فروش {p_name} ({ovr} OVR)\nکف قیمت مجاز: <b>{min_p:,} PTS</b>\nقیمت پیشنهادی را در چت تایپ کن (مثلا: 2000):", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")]]))
+
     elif data.startswith("tm_buy_"):
         t_id = int(data.replace("tm_buy_", ""))
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3622,6 +3629,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.commit()
         await query.answer("✅ کارت با موفقیت خریداری شد!", show_alert=True)
         await transfer_market_cmd(update, context)
+
     elif data.startswith("tm_cancel_"):
         t_id = int(data.replace("tm_cancel_", ""))
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3634,6 +3642,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)", (uid, p_name, ovr, pos, rar, today_str))
                 await db.commit()
         await transfer_market_cmd(update, context)
+
     elif data == "tm_reclaim_all":
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT id, player_name, rating, position, rarity FROM transfer_market WHERE seller_id = ? AND status = 'EXPIRED'", (uid,)) as cur:
@@ -3645,25 +3654,28 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.commit()
         await query.answer(f"✅ تعداد {len(expired)} کارت به ترکیب بازگردانده شد.")
         await transfer_market_cmd(update, context)
-    elif data == "view_market":
-        await query.answer()
-        await market_cmd(update, context)
+
     elif data == "open_sell_menu":
         await query.answer()
         await sell_menu_cmd(update, context)
+
     elif data == "view_my_cards":
         await query.answer()
         await my_cards_cmd(update, context)
+
     elif data == "view_lineup":
         await query.answer()
         await lineup_cmd(update, context)
+
     elif data == "auto_lineup":
         await auto_lineup_logic(uid)
         await query.answer("⚡️ ترکیب به طور خودکار چیده شد!")
         await lineup_cmd(update, context)
+
     elif data == "claim_daily_pack":
         await query.answer()
         await daily_pack_cmd(update, context)
+
     elif data == "claim_quests":
         today_str = get_iran_now().strftime("%Y-%m-%d")
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3724,7 +3736,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer(f"✅ کارت {c['name']} با موفقیت خریداری شد!")
         await market_cmd(update, context)
 
-    # --- خرید پک‌ها: اصلاح شده برای دادن دقیقا ۱ کارت و شرایط ریتینگ خواسته شده ---
     elif data in ["buy_pack_gold", "buy_pack_ultimate", "buy_pack_super"]:
         pack_cfg = {
             "buy_pack_gold": {"price": 500, "name": "📦 گلد پک"},
@@ -3741,7 +3752,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.answer("موجودی شما کافی نیست!", show_alert=True)
                 return
 
-            # طبق خواسته: دقیقا ۱ بازیکن به کاربر داده می‌شود
             c = generate_card_for_pack(data)
             today_str = get_iran_now().strftime("%Y-%m-%d")
 
