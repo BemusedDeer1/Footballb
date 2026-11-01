@@ -3527,6 +3527,20 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(user)
 
     if data == "home":
+        # فعال‌سازی دکمه مارکت
+    elif data in ["view_market", "market", "open_market", "daily_market"]:
+        await query.answer()
+        await market_cmd(update, context)
+
+    # فعال‌سازی مسابقات امروز و فردا (پیش‌بینی)
+    elif data in ["predictions_hub", "matches", "today_matches", "matches_today", "matches_hub", "predictions", "predict", "upcoming_matches", "fixtures"]:
+        await query.answer()
+        await predictions_hub_handler(query)
+
+    # فعال‌سازی جدول لیگ سراسری
+    elif data in ["league", "view_league", "league_table", "league_standings", "league_hub", "standings"]:
+        await query.answer()
+        await league_cmd(update, context)
         await query.answer()
         await start(update, context)
     elif data == "open_transfer_market":
