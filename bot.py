@@ -239,14 +239,21 @@ PACK_DEFINITIONS = {
     }
 }
 
-async def add_pack_to_inventory(user_id: int, pack_type: str, count: int = 1):
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+async def add_pack_to_inventory(user_id: int, pack_type: str, count: int = 1, db=None):
+    if db:
         await db.execute("""
             INSERT INTO user_inventory_packs (user_id, pack_type, count)
             VALUES (?, ?, ?)
             ON CONFLICT(user_id, pack_type) DO UPDATE SET count = count + ?
         """, (user_id, pack_type, count, count))
-        await db.commit()
+    else:
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as local_db:
+            await local_db.execute("""
+                INSERT INTO user_inventory_packs (user_id, pack_type, count)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id, pack_type) DO UPDATE SET count = count + ?
+            """, (user_id, pack_type, count, count))
+            await local_db.commit()
 
 async def get_user_inventory_packs(user_id: int) -> list:
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -726,103 +733,105 @@ async def finish_league_instantly_cmd(update: Update, context: ContextTypes.DEFA
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
 
-    chat_id = update.effective_chat.id
-
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        await db.execute("PRAGMA journal_mode=WAL;")
-        async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
-            row = await cur.fetchone()
-            if not row:
-                await update.effective_message.reply_text("⚠️ هیچ لیگی در وضعیت فعال (ACTIVE) پیدا نشد.", parse_mode="HTML")
-                return
-            s_id = row[0]
-
-        async with db.execute("""
-            SELECT id, home_id, away_id 
-            FROM league_fixtures 
-            WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')
-            ORDER BY id ASC
-        """, (s_id,)) as cur:
-            pending_matches = await cur.fetchall()
-
-    if not pending_matches:
+    try:
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            await db.execute("PRAGMA journal_mode=WAL;")
+            async with db.execute("SELECT season_id FROM league_seasons WHERE status = 'ACTIVE' LIMIT 1") as cur:
+                row = await cur.fetchone()
+                if not row:
+                    await update.effective_message.reply_text("⚠️ هیچ لیگی در وضعیت فعال (ACTIVE) پیدا نشد.", parse_mode="HTML")
+                    return
+                s_id = row[0]
+
+            async with db.execute("""
+                SELECT id, home_id, away_id 
+                FROM league_fixtures 
+                WHERE season_id = ? AND (status = 'PENDING' OR status IS NULL OR status = '')
+                ORDER BY id ASC
+            """, (s_id,)) as cur:
+                pending_matches = await cur.fetchall()
+
+        if not pending_matches:
+            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+                await settle_league_season(context, db, s_id)
+            await update.effective_message.reply_text("🏁 تمام بازی‌ها قبلاً انجام شده بود؛ فصل تسویه گردید.", parse_mode="HTML")
+            return
+
+        await update.effective_message.reply_text(
+            f"⚡️ <b>شبیه‌سازی سریع کل فصل آغاز شد!</b>\nدر حال محاسبه <b>{len(pending_matches)} مسابقه</b> باقی‌مانده و بستن پرونده لیگ...",
+            parse_mode="HTML"
+        )
+
+        all_uids = {uid for _, h, a in pending_matches for uid in (h, a)}
+        teams_data = {uid: await get_user_team_info(uid) for uid in all_uids}
+        tactics_data = {uid: await get_user_tactics(uid) for uid in all_uids}
+
+        now_time = get_iran_now().strftime("%Y-%m-%d %H:%M")
+        match_updates = []
+
+        for f_id, h_id, a_id in pending_matches:
+            t1, t2 = teams_data[h_id], teams_data[a_id]
+            tac1, tac2 = tactics_data[h_id], tactics_data[a_id]
+            b1, b2, _ = calculate_tactical_clash(tac1, tac2)
+
+            p1_power = (t1["eff_ovr"] ** 1.3) * (1 + t1["chem"] / 100.0) * (1.0 + b1)
+            p2_power = (t2["eff_ovr"] ** 1.3) * (1 + t2["chem"] / 100.0) * (1.0 + b2)
+            p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
+
+            s1, s2 = 0, 0
+            for _ in range(random.randint(6, 8)):
+                if random.random() < p1_chance_prob:
+                    if simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]:
+                        s1 += 1
+                else:
+                    if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:
+                        s2 += 1
+
+            reward_h = (50 if s1 > s2 else (20 if s1 == s2 else 0)) + (s1 * 5)
+            reward_a = (50 if s2 > s1 else (20 if s1 == s2 else 0)) + (s2 * 5)
+            match_updates.append((f_id, h_id, a_id, s1, s2, reward_h, reward_a))
+
+        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+            await db.execute("PRAGMA journal_mode=WAL;")
+            for f_id, h_id, a_id, s1, s2, reward_h, reward_a in match_updates:
+                await db.execute("""
+                    UPDATE league_fixtures 
+                    SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? 
+                    WHERE id = ?
+                """, (s1, s2, now_time, f_id))
+
+                w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
+                w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
+
+                await db.execute("""
+                    UPDATE league_standings 
+                    SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
+                        gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
+                    WHERE season_id = ? AND user_id = ?
+                """, (w1, d1, l1, s1, s2, s1 - s2, pts1, s_id, h_id))
+
+                await db.execute("""
+                    UPDATE league_standings 
+                    SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
+                        gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
+                    WHERE season_id = ? AND user_id = ?
+                """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
+
+                if reward_h > 0:
+                    await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_h, h_id))
+                if reward_a > 0:
+                    await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_a, a_id))
+
+            await db.commit()
             await settle_league_season(context, db, s_id)
-        await update.effective_message.reply_text("🏁 تمام بازی‌ها قبلاً انجام شده بود؛ فصل تسویه گردید.", parse_mode="HTML")
-        return
 
-    await update.effective_message.reply_text(
-        f"⚡️ <b>شبیه‌سازی سریع کل فصل آغاز شد!</b>\nدر حال محاسبه <b>{len(pending_matches)} مسابقه</b> باقی‌مانده و بستن پرونده لیگ...",
-        parse_mode="HTML"
-    )
-
-    all_uids = {uid for _, h, a in pending_matches for uid in (h, a)}
-    teams_data = {uid: await get_user_team_info(uid) for uid in all_uids}
-    tactics_data = {uid: await get_user_tactics(uid) for uid in all_uids}
-
-    now_time = get_iran_now().strftime("%Y-%m-%d %H:%M")
-    match_updates = []
-
-    for f_id, h_id, a_id in pending_matches:
-        t1, t2 = teams_data[h_id], teams_data[a_id]
-        tac1, tac2 = tactics_data[h_id], tactics_data[a_id]
-        b1, b2, _ = calculate_tactical_clash(tac1, tac2)
-
-        p1_power = (t1["eff_ovr"] ** 1.3) * (1 + t1["chem"] / 100.0) * (1.0 + b1)
-        p2_power = (t2["eff_ovr"] ** 1.3) * (1 + t2["chem"] / 100.0) * (1.0 + b2)
-        p1_chance_prob = max(0.20, min(0.80, p1_power / (p1_power + p2_power)))
-
-        s1, s2 = 0, 0
-        for _ in range(random.randint(6, 8)):
-            if random.random() < p1_chance_prob:
-                if simulate_chained_fc26_attack({"name": "میزبان", "team": t1}, {"name": "میهمان", "team": t2}, "")[0]:
-                    s1 += 1
-            else:
-                if simulate_chained_fc26_attack({"name": "میهمان", "team": t2}, {"name": "میزبان", "team": t1}, "")[0]:
-                    s2 += 1
-
-        reward_h = (50 if s1 > s2 else (20 if s1 == s2 else 0)) + (s1 * 5)
-        reward_a = (50 if s2 > s1 else (20 if s1 == s2 else 0)) + (s2 * 5)
-        match_updates.append((f_id, h_id, a_id, s1, s2, reward_h, reward_a))
-
-    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-        await db.execute("PRAGMA journal_mode=WAL;")
-        for f_id, h_id, a_id, s1, s2, reward_h, reward_a in match_updates:
-            await db.execute("""
-                UPDATE league_fixtures 
-                SET home_score = ?, away_score = ?, status = 'FINISHED', played_date = ? 
-                WHERE id = ?
-            """, (s1, s2, now_time, f_id))
-
-            w1, d1, l1, pts1 = (1, 0, 0, 3) if s1 > s2 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
-            w2, d2, l2, pts2 = (1, 0, 0, 3) if s2 > s1 else ((0, 1, 0, 1) if s1 == s2 else (0, 0, 1, 0))
-
-            await db.execute("""
-                UPDATE league_standings 
-                SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
-                    gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
-                WHERE season_id = ? AND user_id = ?
-            """, (w1, d1, l1, s1, s2, s1 - s2, pts1, s_id, h_id))
-
-            await db.execute("""
-                UPDATE league_standings 
-                SET played = played + 1, won = won + ?, drawn = drawn + ?, lost = lost + ?,
-                    gf = gf + ?, ga = ga + ?, gd = gd + ?, points = points + ? 
-                WHERE season_id = ? AND user_id = ?
-            """, (w2, d2, l2, s2, s1, s2 - s1, pts2, s_id, a_id))
-
-            if reward_h > 0:
-                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_h, h_id))
-            if reward_a > 0:
-                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward_a, a_id))
-
-        await db.commit()
-        await settle_league_season(context, db, s_id)
-
-    await update.effective_message.reply_text(
-        f"✅ <b>تمام {len(pending_matches)} مسابقه با موفقیت شبیه‌سازی و پرونده لیگ بسته شد!</b>",
-        parse_mode="HTML"
-    )
+        await update.effective_message.reply_text(
+            f"✅ <b>تمام {len(pending_matches)} مسابقه با موفقیت شبیه‌سازی و پرونده لیگ بسته شد!</b>",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        logger.error(f"Error in finish_league_instantly_cmd: {e}", exc_info=True)
+        await update.effective_message.reply_text(f"❌ <b>خطا در شبیه‌سازی:</b> <code>{html.escape(str(e))}</code>", parse_mode="HTML")
 
 async def play_league_day_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """اجرای ۲ مسابقه روزانه هر تیم در لیگ"""
@@ -2688,7 +2697,7 @@ async def league_off_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🔴 لیگ فعال فعلی لغو و متوقف شد.")
 
 async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str):
-    """تسویه حساب نهایی لیگ با جوایز تعیین شده امیر و اهدای پک‌های انبار"""
+    """تسویه حساب نهایی لیگ با جوایز تعیین شده و اهدای پک‌های انبار بدون قفل شدن دیتابیس"""
     async with db.execute("""
         SELECT s.user_id, u.first_name, s.points, s.gd
         FROM league_standings s JOIN users u ON s.user_id = u.user_id
@@ -2707,7 +2716,7 @@ async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str
         for idx, (uid, name, pts, gd) in enumerate(final_ranks):
             p_pts, p_xp, p_pack = prizes.get(idx, (300, 150, "league_part"))
             await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (p_pts, uid))
-            await add_pack_to_inventory(uid, p_pack, count=1)
+            await add_pack_to_inventory(uid, p_pack, count=1, db=db)
             xp_awards.append((uid, p_xp))
             medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
             summary += f"{medal} <b>{html.escape(name)}</b>: {pts} امتیاز (تفاضل {gd:+d}) ➔ 💰 <b>+{p_pts:,} PTS</b> + 📦 <b>{PACK_DEFINITIONS[p_pack]['title']}</b>\n"
@@ -2722,8 +2731,8 @@ async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str
         if target_chat_id:
             try:
                 await context.bot.send_message(chat_id=target_chat_id, text=summary, parse_mode="HTML")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Error sending settle summary: {e}")
 
 async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_chat_id: int = None):
     iran_now = get_iran_now()
