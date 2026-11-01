@@ -164,9 +164,6 @@ CHEAT_MODE_USERS = set()
 TRACKED_LIVE_MATCHES = {}
 USER_JACKPOT_DRAFTS = {}
 ACTIVE_ASYNCIO_TIMERS = {}
-USER_JACKPOT_DRAFTS = {}
-ACTIVE_ASYNCIO_TIMERS = {}
-USER_TRANSFER_SELL_DRAFT = {}
 
 EVO_PLANS = {
     "academy": {
@@ -206,6 +203,8 @@ EVO_PLANS = {
         "cost": 18000, "sac_icon": 2, "sac_elite": 3
     }
 }
+
+USER_TRANSFER_SELL_DRAFT = {}
 
 PACK_DEFINITIONS = {
     "ucl_super": {
@@ -289,43 +288,6 @@ async def clean_expired_transfers():
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         await db.execute("UPDATE transfer_market SET status = 'EXPIRED' WHERE status = 'ACTIVE' AND expires_at <= ?", (now_str,))
         await db.commit()
-    "academy": {
-        "title": "🧬 جهش آکادمی (Future Prodigy)",
-        "desc": "ارتقای پدیده‌های جوان و بازیکنان معمولی به سطح گلد ریر",
-        "boost": 5, "max_input_ovr": 80, "rarities": ["COMMON"],
-        "cost": 1200, "sac_rarity": "COMMON", "sac_count": 3
-    },
-    "rare_boost": {
-        "title": "💎 کیمیاگری کهکشانی (Galactico Blueprint)",
-        "desc": "ارتقای ستاره‌های گلد ریر به رده بازیکنان نخبه الیت",
-        "boost": 3, "min_input_ovr": 81, "max_input_ovr": 85, "rarities": ["RARE"],
-        "cost": 2500, "sac_rarity": "RARE", "sac_count": 2
-    },
-    "elite_push": {
-        "title": "⚡️ تولد اسطوره (Legendary Metamorphosis)",
-        "desc": "تبدیل سوپراستارهای الیت به تالار افتخارات آیکان",
-        "boost": 3, "min_input_ovr": 86, "max_input_ovr": 89, "rarities": ["ELITE"],
-        "cost": 5000, "sac_rarity": "ELITE", "sac_count": 2
-    },
-    "icon_titan": {
-        "title": "👑 تایتان نامیرا (Immortal Titan)",
-        "desc": "تقویت سنگین اسطوره‌ها و آیکان‌های تاریخ (تا سقف ۹۶)",
-        "boost": 2, "min_input_ovr": 90, "max_input_ovr": 94, "rarities": ["ICON"],
-        "cost": 8500, "sac_rarity": "ICON", "sac_count": 1
-    },
-    "messi_99": {
-        "title": "🐐🇦🇷 لا پولگا جاودانه (La Pulga Immortal)",
-        "desc": "آزاد کردن پتانسیل ماورایی لیونل مسی و جهش به ۹۹ OVR",
-        "target_name": "لیونل مسی", "fixed_ovr": 99,
-        "cost": 18000, "sac_icon": 2, "sac_elite": 3
-    },
-    "cr7_99": {
-        "title": "🐐🇵🇹 فرمانده ماورایی (El Comandante Prime)",
-        "desc": "آزاد کردن نسخه اوج و بی‌مرگ کریستیانو رونالدو و جهش به ۹۹ OVR",
-        "target_name": "کریستیانو رونالدو", "fixed_ovr": 99,
-        "cost": 18000, "sac_icon": 2, "sac_elite": 3
-    }
-}
 
 def schedule_timer(context, callback_coro, delay_seconds, data, name=None):
     if getattr(context, 'job_queue', None):
@@ -883,8 +845,7 @@ async def play_league_day_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     await update.effective_message.reply_text("⚽️ <b>در حال شبیه‌سازی ۲ مسابقه برای هر تیم و محاسبه نتایج...</b>", parse_mode="HTML")
     await simulate_daily_league_task(context, reply_chat_id=chat_id)
-
-async def add_points_to_all_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def add_points_to_all_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if str(user.id) != str(ADMIN_ID): return
     if not context.args:
@@ -975,7 +936,7 @@ async def generate_pool_message_text(match, participants):
     time_str = format_iran_time(match.get("date"))
 
     text = (
-        f"🔥 <b>استخر جایزه ویژه ۳۰۰ امتیازی مسابقه بزرگ!</b> 🎁\n"
+        f"🔥 <b>استخر جایزه ویژه ۵۰۰ امتیازی مسابقه بزرگ!</b> 🎁\n"
         "────────────────────\n"
         f"⚽️ <b>{home_name}</b> 🆚 <b>{away_name}</b>\n"
         f"⏰ ساعت شروع: <code>{time_str}</code> (تهران)\n"
@@ -1141,7 +1102,7 @@ async def monitor_live_matches_and_banter(context: ContextTypes.DEFAULT_TYPE):
                         winners = await cur.fetchall()
                     if winners:
                         share = 500 // len(winners)
-                        winners_text = f"\n\n🎁 <b>برندگان استخر ۳۰۰ امتیازی (هر نفر +{share} PTS):</b>\n"
+                        winners_text = f"\n\n🎁 <b>برندگان استخر ۵۰۰ امتیازی (هر نفر +{share} PTS):</b>\n"
                         for w_id, w_name in winners:
                             await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (share, w_id))
                             winners_text += f"▫️ <b>{html.escape(w_name)}</b>\n"
@@ -1483,7 +1444,7 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.callback_query:
         await safe_edit_message(update.callback_query, msg, reply_markup=kb.get_back_button())
     else:
-        await update.effective_message.reply_text(msg, parse_mode="HTML")
+        await update.message.reply_text(msg, parse_mode="HTML")
 
 async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     job_data = context.job.data
@@ -1534,8 +1495,7 @@ async def start_guess_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.effective_message.reply_text(text, parse_mode="HTML")
     schedule_timer(context, guess_timeout_job, 30, data={"chat_id": chat_id, "user_id": user.id}, name=f"guess_timer_{chat_id}")
-
-# --- DOUBLE OR NOTHING ---
+    # --- DOUBLE OR NOTHING ---
 
 async def double_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     job_data = context.job.data
@@ -1900,17 +1860,14 @@ def generate_random_card_by_rarity(rarity_weights=None):
 def generate_card_for_pack(pack_type: str):
     """تولید یک بازیکن دقیق بر اساس نوع پک درخواستی کاربر"""
     if pack_type == "buy_pack_gold":
-        # گلدپک: شامل همه بازیکنان با کمترین شانس برای کارت‌های تاپ
         weights = {"COMMON": 75.0, "RARE": 20.0, "ELITE": 4.5, "ICON": 0.5}
         return generate_random_card_by_rarity(weights)
     elif pack_type == "buy_pack_ultimate":
-        # اولتیمیت پک: بالای ریتینگ ۸۰
         pool = [c for c in FC_CATALOG if c.get("ovr", 0) >= 80]
         if not pool:
             pool = [c for c in FC_CATALOG if c.get("rarity") in ["RARE", "ELITE", "ICON"]]
         return random.choice(pool)
     elif pack_type == "buy_pack_super":
-        # سوپر پک: بالای ریتینگ ۸۵
         pool = [c for c in FC_CATALOG if c.get("ovr", 0) >= 85]
         if not pool:
             pool = [c for c in FC_CATALOG if c.get("rarity") in ["ELITE", "ICON"]]
@@ -2355,8 +2312,7 @@ async def get_user_team_info(user_id: int):
         "mid_ovr": mid_ovr, "mids": [m["name"] for m in mids_c],
         "cards": enriched[:5]
     }
-
-# --- FC 26 MATCH ENGINE ---
+    # --- FC 26 MATCH ENGINE ---
 
 def simulate_chained_fc26_attack(att_dict, def_dict, minute_label="", momentum_boost=0.0):
     t_att = att_dict.get("team") if isinstance(att_dict.get("team"), dict) else (att_dict or {})
@@ -2753,7 +2709,7 @@ async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str
             await add_pack_to_inventory(uid, p_pack, count=1)
             xp_awards.append((uid, p_xp))
             medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
-            summary += f"{medal} <b>{html.escape(name)}</b>: {pts} امتیاز ➔ 💰 <b>+{p_pts:,} PTS</b> + 📦 <b>{PACK_DEFINITIONS[p_pack]['title']}</b>\n"
+            summary += f"{medal} <b>{html.escape(name)}</b>: {pts} امتیاز (تفاضل {gd:+d}) ➔ 💰 <b>+{p_pts:,} PTS</b> + 📦 <b>{PACK_DEFINITIONS[p_pack]['title']}</b>\n"
 
         await db.execute("UPDATE league_seasons SET status = 'FINISHED' WHERE season_id = ?", (s_id,))
         await db.commit()
@@ -2767,7 +2723,7 @@ async def settle_league_season(context: ContextTypes.DEFAULT_TYPE, db, s_id: str
                 await context.bot.send_message(chat_id=target_chat_id, text=summary, parse_mode="HTML")
             except Exception:
                 pass
-                
+
 async def simulate_daily_league_task(context: ContextTypes.DEFAULT_TYPE, reply_chat_id: int = None):
     iran_now = get_iran_now()
     today_str = iran_now.strftime("%Y-%m-%d")
@@ -3219,11 +3175,10 @@ async def cheat_mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     elif command == "/ch_off":
         CHEAT_MODE_USERS.discard(user.id)
         await update.effective_message.reply_text("🔴 <b>Ch Mode غیرفعال شد.</b>", parse_mode="HTML")
-
-
-# ==================== CHAMPIONS LEAGUE (UCL) ENGINE ====================
+        # ==================== CHAMPIONS LEAGUE (UCL) ENGINE ====================
 
 async def champions_league_status_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """نمایش وضعیت چمپیونزلیگ با دستور (چمپ)"""
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT season_id, stage, status FROM ucl_tournaments WHERE status = 'ACTIVE' LIMIT 1") as cur:
             row = await cur.fetchone()
@@ -3322,8 +3277,9 @@ async def cp_on_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.commit()
 
     msg = (
-        f"🏆⭐️🔥 <b>آغاز فصل جدید لیگ قهرمانان اروپا (UCL)!</b>\n────────────────────\n"
-        f"👥 تیم‌ها: <b>{len(eligible)} تیم</b> در <b>{num_groups} گروه</b>\n"
+        f"🏆⭐️🔥 <b>آغاز فصل جدید لیگ قهرمانان اروپا (UCL)!</b>\n"
+        "────────────────────\n"
+        f"👥 تیم‌های حاضر: <b>{len(eligible)} تیم</b> در <b>{num_groups} گروه</b>\n"
         f"🥇 قهرمان: <b>۲۰,۰۰۰ PTS + ۳ سوپر پک UCL</b>\n"
         f"🥈 نایب‌قهرمان: <b>۱۰,۰۰۰ PTS + ۳ اولتیمیت پک UCL</b>\n"
         f"▫️ هر برد گروهی: <b>+150 PTS</b> | مساوی: <b>+60 PTS</b>\n"
@@ -3409,8 +3365,8 @@ async def cp_play_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if random.random() < p1_prob: s1 += 1
                 else: s2 += 1
             if s1 == s2:
-                s1 += 1 if random.random() < 0.5 else 0
-                s2 += 1 if s1 == s2 else 0
+                if random.random() < 0.5: s1 += 1
+                else: s2 += 1
 
             win_id = h_id if s1 > s2 else a_id
             async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3561,10 +3517,11 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ensure_user(user)
 
     if data == "home":
-        elif data == "open_transfer_market":
+        await query.answer()
+        await start(update, context)
+    elif data == "open_transfer_market":
         await query.answer()
         await transfer_market_cmd(update, context)
-
     elif data == "open_inventory_packs":
         await query.answer()
         packs = await get_user_inventory_packs(uid)
@@ -3579,7 +3536,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             buttons.append([InlineKeyboardButton(f"🎁 باز کردن {cfg['title']}", callback_data=f"open_pack_{p_type}")])
         buttons.append([InlineKeyboardButton("‹ بازگشت به مارکت", callback_data="view_market")])
         await safe_edit_message(query, text, reply_markup=InlineKeyboardMarkup(buttons))
-
     elif data.startswith("open_pack_"):
         p_type = data.replace("open_pack_", "")
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3593,12 +3549,10 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             today_str = get_iran_now().strftime("%Y-%m-%d")
             await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)", (uid, c["name"], c["ovr"], c["pos"], c["rarity"], today_str))
             await db.commit()
-
         await profile_add_xp(uid, 60)
         tag = RARITY_COLORS.get(c["rarity"], c["rarity"])
         res_txt = f"🎉 <b>کارت جدید شما:</b>\n⭐️ <b>{c['name']}</b> ({c['pos']}) ➔ <b>{c['ovr']} OVR</b>\n    └ {tag}\nبه کلکسیون اضافه شد!"
         await safe_edit_message(query, res_txt, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🎒 انبار پک‌ها", callback_data="open_inventory_packs")], [InlineKeyboardButton("🛡 ترکیب تیم", callback_data="view_lineup")]]))
-
     elif data == "tm_open_sell":
         await query.answer()
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3613,7 +3567,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             buttons.append([InlineKeyboardButton(f"{name} ({ovr}) - کف: {min_p:,}", callback_data=f"tm_sellcard_{cid}")])
         buttons.append([InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")])
         await safe_edit_message(query, "📋 بازیکن مورد نظر را برای فروش انتخاب کنید:", reply_markup=InlineKeyboardMarkup(buttons))
-
     elif data.startswith("tm_sellcard_"):
         cid = int(data.replace("tm_sellcard_", ""))
         USER_TRANSFER_SELL_DRAFT[uid] = cid
@@ -3622,7 +3575,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 p_name, ovr, rar = await cur.fetchone()
         min_p = get_card_min_transfer_price(ovr, rar)
         await safe_edit_message(query, f"💰 فروش {p_name} ({ovr} OVR)\nکف قیمت مجاز: <b>{min_p:,} PTS</b>\nقیمت پیشنهادی را در چت تایپ کن (مثلا: 2000):", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")]]))
-
     elif data.startswith("tm_buy_"):
         t_id = int(data.replace("tm_buy_", ""))
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3646,7 +3598,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.commit()
         await query.answer("✅ کارت با موفقیت خریداری شد!", show_alert=True)
         await transfer_market_cmd(update, context)
-
     elif data.startswith("tm_cancel_"):
         t_id = int(data.replace("tm_cancel_", ""))
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3659,7 +3610,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await db.execute("INSERT INTO user_cards (user_id, player_name, rating, position, rarity, acquired_at) VALUES (?, ?, ?, ?, ?, ?)", (uid, p_name, ovr, pos, rar, today_str))
                 await db.commit()
         await transfer_market_cmd(update, context)
-
     elif data == "tm_reclaim_all":
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT id, player_name, rating, position, rarity FROM transfer_market WHERE seller_id = ? AND status = 'EXPIRED'", (uid,)) as cur:
@@ -3671,8 +3621,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.commit()
         await query.answer(f"✅ تعداد {len(expired)} کارت به ترکیب بازگردانده شد.")
         await transfer_market_cmd(update, context)
-        await query.answer()
-        await start(update, context)
     elif data == "view_market":
         await query.answer()
         await market_cmd(update, context)
@@ -4019,7 +3967,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await db.commit()
 
-        await query.answer("✅ پیش‌بینی شما در استخر ۳۰۰ امتیازی ثبت شد!", show_alert=True)
+        await query.answer("✅ پیش‌بینی شما در استخر ۵۰۰ امتیازی ثبت شد!", show_alert=True)
         m_data = MATCH_CACHE.get(m_id)
         if m_data:
             async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -4387,7 +4335,30 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
     raw_text = update.effective_message.text.strip()
     msg = normalize_persian_numbers(raw_text).lower()
     chat_id = update.effective_chat.id
-# ثبت قیمت ترنسفر مارکت
+    user = update.effective_user
+    uid = user.id if user else None
+
+    game = ACTIVE_GUESS_GAMES.get(chat_id)
+    if game and game.get("is_active"):
+        user_ans = msg.lower().strip()
+        is_matched = any(
+            user_ans == alias or re.search(rf"(?:^|\s){re.escape(alias)}(?:$|\s)", user_ans)
+            for alias in game["names"]
+        )
+        if is_matched:
+            winner = update.effective_user
+            await ensure_user(winner)
+            reward = game["reward"]
+            game["is_active"] = False
+            cancel_timer(context, f"guess_timer_{chat_id}")
+            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, winner.id))
+                await db.commit()
+            await profile_record_guess_win(winner.id)
+            await update.effective_message.reply_text(f"🎉🔥 <b>پاسخ صحیح!</b> 👤 {game['names'][0]} | 🏆 برنده: <b>{html.escape(winner.first_name)}</b> (+{reward} PTS)", parse_mode="HTML")
+            return
+
+    # ثبت قیمت ترنسفر مارکت
     if uid in USER_TRANSFER_SELL_DRAFT and msg.isdigit():
         price = int(msg)
         cid = USER_TRANSFER_SELL_DRAFT.pop(uid)
@@ -4418,28 +4389,6 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
     elif msg in ["ترنسفر", "transfer", "ترانسفر"]:
         await transfer_market_cmd(update, context)
         return
-
-
-    game = ACTIVE_GUESS_GAMES.get(chat_id)
-    if game and game.get("is_active"):
-        user_ans = msg.lower().strip()
-        is_matched = any(
-            user_ans == alias or re.search(rf"(?:^|\s){re.escape(alias)}(?:$|\s)", user_ans)
-            for alias in game["names"]
-        
-        )
-        if is_matched:
-            winner = update.effective_user
-            await ensure_user(winner)
-            reward = game["reward"]
-            game["is_active"] = False
-            cancel_timer(context, f"guess_timer_{chat_id}")
-            async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
-                await db.execute("UPDATE users SET points = points + ? WHERE user_id = ?", (reward, winner.id))
-                await db.commit()
-            await profile_record_guess_win(winner.id)
-            await update.effective_message.reply_text(f"🎉🔥 <b>پاسخ صحیح!</b> 👤 {game['names'][0]} | 🏆 برنده: <b>{html.escape(winner.first_name)}</b> (+{reward} PTS)", parse_mode="HTML")
-            return
 
     if msg in ["اطلاعات", "info", "پروفایل", "stats"] or msg.startswith(("/info", "اطلاعات")):
         target_user = update.effective_user
@@ -4496,6 +4445,24 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
 async def post_init(application: Application):
     await init_db()
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        await db.execute("PRAGMA journal_mode=WAL;")
+        await db.execute("PRAGMA busy_timeout=30000;")
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN last_double_date TEXT DEFAULT ''")
+            await db.commit()
+        except Exception: pass
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN last_free_pack_date TEXT DEFAULT ''")
+            await db.commit()
+        except Exception: pass
+        try:
+            await db.execute("ALTER TABLE predictions ADD COLUMN settled INTEGER DEFAULT 0")
+            await db.commit()
+        except Exception: pass
+        try:
+            await db.execute("ALTER TABLE league_fixtures ADD COLUMN status TEXT DEFAULT 'PENDING'")
+            await db.commit()
+        except Exception: pass
         await db.execute("""
             CREATE TABLE IF NOT EXISTS transfer_market (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -4567,24 +4534,6 @@ async def post_init(application: Application):
                 status TEXT DEFAULT 'PENDING'
             )
         """)
-        await db.execute("PRAGMA journal_mode=WAL;")
-        await db.execute("PRAGMA busy_timeout=30000;")
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN last_double_date TEXT DEFAULT ''")
-            await db.commit()
-        except Exception: pass
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN last_free_pack_date TEXT DEFAULT ''")
-            await db.commit()
-        except Exception: pass
-        try:
-            await db.execute("ALTER TABLE predictions ADD COLUMN settled INTEGER DEFAULT 0")
-            await db.commit()
-        except Exception: pass
-        try:
-            await db.execute("ALTER TABLE league_fixtures ADD COLUMN status TEXT DEFAULT 'PENDING'")
-            await db.commit()
-        except Exception: pass
         try:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS user_tactics (
@@ -4653,14 +4602,13 @@ def main():
     app.add_handler(CommandHandler("ch_off", cheat_mode_command))
     app.add_handler(CommandHandler(["nesf", "Nesf"], halve_points_cmd))
     app.add_handler(CommandHandler(["mr", "Mr"], reset_market_cmd))
-    app.add_handler(CommandHandler("info", lambda u, c: handle_group_messages(u, c)))
     app.add_handler(CommandHandler("cp_on", cp_on_cmd))
     app.add_handler(CommandHandler("cp_off", cp_off_cmd))
     app.add_handler(CommandHandler("cp_play", cp_play_cmd))
     app.add_handler(CommandHandler("cp_end", cp_end_cmd))
     app.add_handler(CommandHandler(["champions", "ucl"], champions_league_status_cmd))
     app.add_handler(CommandHandler("transfer", transfer_market_cmd))
-
+    app.add_handler(CommandHandler("info", lambda u, c: handle_group_messages(u, c)))
 
     app.add_handler(CallbackQueryHandler(callback_router))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_group_messages))
