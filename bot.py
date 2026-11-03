@@ -3564,11 +3564,12 @@ async def cp_end_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT season_id, stage FROM ucl_tournaments WHERE status = 'ACTIVE' LIMIT 1") as cur:
             row = await cur.fetchone()
-        if not row: return
+        if not row:
+            await update.message.reply_text("⚠️ هیچ تورنمنت فعالی پیدا نشد!")
+            return
         s_id, stage = row
 
-    if stage == "GROUP":
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        if stage == "GROUP":
             async with db.execute("SELECT group_name, user_id FROM ucl_group_standings WHERE season_id = ? ORDER BY group_name ASC, points DESC, gd DESC", (s_id,)) as cur:
                 rows = await cur.fetchall()
 
@@ -3583,7 +3584,7 @@ async def cp_end_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 for q_id in top2:
                     await db.execute("UPDATE users SET points = points + 1000 WHERE user_id = ?", (q_id,))
 
-            next_stage = "SEMIFINAL" if len(qualified) == 4 else ("FINAL" if len(qualified) == 2 else "KNOCKOUT")
+            next_stage = "SEMIFINAL" if len(qualified) >= 4 else ("FINAL" if len(qualified) == 2 else "KNOCKOUT")
             r_name = "نیمه‌نهایی" if next_stage == "SEMIFINAL" else ("فینال بزرگ" if next_stage == "FINAL" else "حذفی")
             random.shuffle(qualified)
 
@@ -3593,46 +3594,70 @@ async def cp_end_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await db.execute("INSERT INTO ucl_knockout_fixtures (season_id, round_name, home_id, away_id, status) VALUES (?, ?, ?, ?, 'PENDING')", (s_id, r_name, qualified[i], qualified[i+1]))
             await db.commit()
 
-        target_chat_id = await get_live_chat_id() or update.effective_chat.id
-        await context.bot.send_message(chat_id=target_chat_id, text=f"🏁 <b>مرحله گروهی UCL بسته شد!</b>\nپاداش صعود (+1,000 PTS) واریز شد.\nقرعه‌کشی مرحله <b>{r_name}</b> انجام شد.", parse_mode="HTML")
+            target_chat_id = await get_live_chat_id() or update.effective_chat.id
+            await context.bot.send_message(chat_id=target_chat_id, text=f"🏁 <b>مرحله گروهی UCL بسته شد!</b>\nپاداش صعود (+1,000 PTS) واریز شد.\nقرعه‌کشی مرحله <b>{r_name}</b> انجام شد. با /cp_play مسابقات را ادامه دهید.", parse_mode="HTML")
 
-    elif stage in ["KNOCKOUT", "SEMIFINAL"]:
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        elif stage in ["KNOCKOUT", "SEMIFINAL"]:
+            # گرفتن برندگان مسابقات انجام شده در این مرحله حذفی
             async with db.execute("SELECT winner_id FROM ucl_knockout_fixtures WHERE season_id = ? AND status = 'FINISHED'", (s_id,)) as cur:
                 winners = [r[0] for r in await cur.fetchall()]
 
+            if not winners:
+                await update.message.reply_text("⚠️ هنوز هیچ مسابقه حذفی‌ای با دستور /cp_play انجام نشده یا برنده‌ای ثبت نشده است!")
+                return
+
             if len(winners) == 2:
+                # اگر ۲ برنده داشتیم، مستقیم می‌روند برای فینال بزرگ
                 await db.execute("UPDATE ucl_tournaments SET stage = 'FINAL' WHERE season_id = ?", (s_id,))
                 await db.execute("INSERT INTO ucl_knockout_fixtures (season_id, round_name, home_id, away_id, status) VALUES (?, 'فینال بزرگ', ?, ?, 'PENDING')", (s_id, winners[0], winners[1]))
                 await db.commit()
                 target_chat_id = await get_live_chat_id() or update.effective_chat.id
                 await context.bot.send_message(chat_id=target_chat_id, text="🔥 <b>فینالیست‌های لیگ قهرمانان مشخص شدند!</b> با /cp_play فینال را اجرا کنید.", parse_mode="HTML")
+            elif len(winners) > 2:
+                # اگر تعداد برندگان بیشتر بود (مثلا ۴ تیم به نیمه‌نهایی می‌روند)، قرعه‌کشی مرحله بعد
+                random.shuffle(winners)
+                next_r_name = "فینال بزرگ" if len(winners) <= 2 else "نیمه‌نهایی"
+                await db.execute("UPDATE ucl_tournaments SET stage = 'SEMIFINAL' WHERE season_id = ?", (s_id,))
+                for i in range(0, len(winners), 2):
+                    if i + 1 < len(winners):
+                        await db.execute("INSERT INTO ucl_knockout_fixtures (season_id, round_name, home_id, away_id, status) VALUES (?, ?, ?, ?, 'PENDING')", (s_id, next_r_name, winners[i], winners[i+1]))
+                await db.commit()
+                target_chat_id = await get_live_chat_id() or update.effective_chat.id
+                await context.bot.send_message(chat_id=target_chat_id, text=f"🏁 مرحله حذفی به‌روزرسانی شد! قرعه‌کشی مرحله بعد انجام گردید.", parse_mode="HTML")
+            else:
+                await update.message.reply_text("⚠️ تعداد برنده‌های ثبت‌شده برای انتقال به مرحله بعد کافی نیست.")
 
-    elif stage == "FINAL":
-        async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+        elif stage == "FINAL":
             async with db.execute("SELECT home_id, away_id, winner_id FROM ucl_knockout_fixtures WHERE season_id = ? AND round_name LIKE '%فینال%' AND status = 'FINISHED'", (s_id,)) as cur:
                 fin_row = await cur.fetchone()
-            if not fin_row: return
+            if not fin_row:
+                await update.message.reply_text("⚠️ فینال هنوز برگزار نشده است! اول با /cp_play فینال را بازی کنید.")
+                return
             h_id, a_id, champ_id = fin_row
             runner_id = a_id if champ_id == h_id else h_id
 
             await db.execute("UPDATE users SET points = points + 20000 WHERE user_id = ?", (champ_id,))
             await db.execute("UPDATE users SET points = points + 10000 WHERE user_id = ?", (runner_id,))
             await db.execute("UPDATE ucl_tournaments SET status = 'FINISHED' WHERE season_id = ?", (s_id,))
+            
+            # اهدای پک‌های انبار به قهرمان و نایب‌قهرمان
             await add_pack_to_inventory(champ_id, "ucl_super", count=3, db=db)
             await add_pack_to_inventory(runner_id, "ucl_elite", count=3, db=db)
             await db.commit()
-            async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (champ_id,)) as cur: champ_name = (await cur.fetchone())[0]
-            async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (runner_id,)) as cur: runner_name = (await cur.fetchone())[0]
 
-        msg = (
-            f"👑🏆⭐️ <b>پایان رسمی لیگ قهرمانان اروپا و اهدای جوایز!</b>\n────────────────────\n"
-            f"🥇 <b>قهرمان: {html.escape(champ_name)}</b> ➔ 💰 <b>+20,000 PTS</b> + 🎁 <b>۳ سوپر پک UCL</b>\n"
-            f"🥈 <b>نایب‌قهرمان: {html.escape(runner_name)}</b> ➔ 💰 <b>+10,000 PTS</b> + 🎁 <b>۳ اولتیمیت پک UCL</b>\n"
-            "────────────────────\n🎒 <i>پک‌ها در انبار مارکت کاربران ذخیره شد و در هر زمان قابل بازگشایی هستند!</i>"
-        )
-        target_chat_id = await get_live_chat_id() or update.effective_chat.id
-        await context.bot.send_message(chat_id=target_chat_id, text=msg, parse_mode="HTML")
+            async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (champ_id,)) as cur: 
+                champ_name = (await cur.fetchone())[0]
+            async with db.execute("SELECT first_name FROM users WHERE user_id = ?", (runner_id,)) as cur: 
+                runner_name = (await cur.fetchone())[0]
+
+            msg = (
+                f"👑🏆⭐️ <b>پایان رسمی لیگ قهرمانان اروپا و اهدای جوایز!</b>\n────────────────────\n"
+                f"🥇 <b>قهرمان: {html.escape(champ_name)}</b> ➔ 💰 <b>+20,000 PTS</b> + 🎁 <b>۳ سوپر پک UCL</b>\n"
+                f"🥈 <b>نایب‌قهرمان: {html.escape(runner_name)}</b> ➔ 💰 <b>+10,000 PTS</b> + 🎁 <b>۳ اولتیمیت پک UCL</b>\n"
+                "────────────────────\n🎒 <i>پک‌ها در انبار مارکت کاربران ذخیره شد و در هر زمان قابل بازگشایی هستند!</i>"
+            )
+            target_chat_id = await get_live_chat_id() or update.effective_chat.id
+            await context.bot.send_message(chat_id=target_chat_id, text=msg, parse_mode="HTML")
 
 # ==================== ترنسفر مارکت ====================
 
