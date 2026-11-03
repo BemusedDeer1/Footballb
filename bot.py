@@ -3768,7 +3768,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res_txt = f"🎉 <b>کارت جدید شما:</b>\n⭐️ <b>{c['name']}</b> ({c['pos']}) ➔ <b>{c['ovr']} OVR</b>\n    └ {tag}\nبه کلکسیون اضافه شد!"
         await safe_edit_message(query, res_txt, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🎒 انبار پک‌ها", callback_data="open_inventory_packs")], [InlineKeyboardButton("🛡 ترکیب تیم", callback_data="view_lineup")]]))
 
-    elif data == "tm_open_sell":
+elif data == "tm_open_sell":
         await query.answer()
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT id, player_name, rating, position, rarity FROM user_cards WHERE user_id = ? AND is_in_lineup = 0 ORDER BY rating DESC", (uid,)) as cur:
@@ -3783,7 +3783,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons.append([InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")])
         await safe_edit_message(query, "📋 بازیکن مورد نظر را برای فروش انتخاب کنید:", reply_markup=InlineKeyboardMarkup(buttons))
 
-   elif data.startswith("tm_sellcard_"):
+    elif data.startswith("tm_sellcard_"):
         cid = int(data.replace("tm_sellcard_", ""))
         USER_TRANSFER_SELL_DRAFT[uid] = cid
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
