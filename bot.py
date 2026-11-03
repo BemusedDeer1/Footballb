@@ -3660,8 +3660,6 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await transfer_market_cmd(update, context)
 
     elif data == "tm_reclaim_all":
-        async with
-        elif data == "tm_reclaim_all":
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT id, player_name, rating, position, rarity FROM transfer_market WHERE seller_id = ? AND status = 'EXPIRED'", (uid,)) as cur:
                 expired = await cur.fetchall()
@@ -3672,7 +3670,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.commit()
         await query.answer(f"✅ تعداد {len(expired)} کارت به ترکیب بازگردانده شد.", show_alert=True)
         await transfer_market_cmd(update, context)
-
+        
     elif data == "open_sell_menu":
         await query.answer()
         await sell_menu_cmd(update, context)
