@@ -1516,7 +1516,8 @@ async def spin_wheel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await ensure_user(user)
     today_str = get_iran_now().strftime("%Y-%m-%d")
-async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
+
+    async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
         async with db.execute("SELECT last_wheel_date FROM users WHERE user_id = ?", (user.id,)) as cur:
             row = await cur.fetchone()
             if row and row[0] == today_str:
@@ -1543,7 +1544,7 @@ async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
     if update.callback_query:
         await safe_edit_message(update.callback_query, msg, reply_markup=kb.get_back_button())
     else:
-        await update.effective_message.reply_text(msg, parse_mode="HTML")
+        await update.message.reply_text(msg, parse_mode="HTML")
 
 async def guess_timeout_job(context: ContextTypes.DEFAULT_TYPE):
     job_data = context.job.data
