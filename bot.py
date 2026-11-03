@@ -3783,7 +3783,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons.append([InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")])
         await safe_edit_message(query, "📋 بازیکن مورد نظر را برای فروش انتخاب کنید:", reply_markup=InlineKeyboardMarkup(buttons))
 
-    elif data.startswith("tm_sellcard_"):
+   elif data.startswith("tm_sellcard_"):
         cid = int(data.replace("tm_sellcard_", ""))
         USER_TRANSFER_SELL_DRAFT[uid] = cid
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
@@ -3795,14 +3795,15 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         p_name, ovr, rar = row
         min_p = get_card_min_transfer_price(ovr, rar)
         await query.answer()
-await safe_edit_message(
+        await safe_edit_message(
             query,
             f"💰 فروش <b>{p_name}</b> ({ovr} OVR)\n"
             f"کف قیمت مجاز: <b>{min_p:,} PTS</b>\n\n"
             f"👇 قیمت پیشنهادی را در چت تایپ کن (مثلا: 2000):",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")]])
         )
-elif data.startswith("tm_buy_"):
+
+    elif data.startswith("tm_buy_"):
         t_id = int(data.replace("tm_buy_", ""))
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT seller_id, player_name, rating, position, rarity, price FROM transfer_market WHERE id = ? AND status = 'ACTIVE'", (t_id,)) as cur:
