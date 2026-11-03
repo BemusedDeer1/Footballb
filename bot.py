@@ -3802,8 +3802,7 @@ await safe_edit_message(
             f"👇 قیمت پیشنهادی را در چت تایپ کن (مثلا: 2000):",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("‹ انصراف", callback_data="open_transfer_market")]])
         )
-
-    elif data.startswith("tm_buy_"):
+elif data.startswith("tm_buy_"):
         t_id = int(data.replace("tm_buy_", ""))
         async with aiosqlite.connect(DATABASE_PATH, timeout=30.0) as db:
             async with db.execute("SELECT seller_id, player_name, rating, position, rarity, price FROM transfer_market WHERE id = ? AND status = 'ACTIVE'", (t_id,)) as cur:
